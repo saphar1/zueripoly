@@ -1,0 +1,212 @@
+/* Eckfelder, 1,5 × 1,5 Feldbreiten. Text aufrecht und linksbündig. */
+.corner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(var(--u) * 0.05);
+  overflow: hidden;
+  padding: calc(var(--u) * 0.1);
+  background: var(--color-paper);
+}
+
+.corner__title {
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 0.3);
+  font-weight: 800;
+  font-stretch: 75%;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+}
+
+.corner__sub {
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 0.16);
+  font-weight: 700;
+  font-stretch: 75%;
+  line-height: 1;
+}
+
+.corner__arrow {
+  font-size: calc(var(--u) * 0.42);
+  --icon-line: 2.6;
+}
+
+.corner__tokens {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  --token-size: calc(var(--u) * 0.52);
+}
+
+/* Start: Pfeil in Fahrtrichtung, Betrag wie eine Liniennummer */
+.corner--start .corner__arrow {
+  --icon-stroke: var(--color-tram);
+}
+
+.corner--start .corner__title {
+  margin-top: auto;
+  font-size: calc(var(--u) * 0.38);
+}
+
+.corner__badge {
+  padding: calc(var(--u) * 0.02) calc(var(--u) * 0.06);
+  background: var(--color-tram);
+  color: var(--color-paper);
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 0.15);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Gefängnis: Zelle innen (oben rechts), aussen der L-förmige Besucherstreifen */
+.corner--jail {
+  display: grid;
+  grid-template-columns: calc(var(--u) * 0.42) 1fr;
+  grid-template-rows: 1fr calc(var(--u) * 0.42);
+  padding: 0;
+  gap: 0;
+}
+
+.jail__cell {
+  position: relative;
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-paper-dark);
+  border-bottom: var(--line-thick) solid var(--color-ink);
+  border-left: var(--line-thick) solid var(--color-ink);
+}
+
+.jail__label {
+  position: relative;
+  z-index: 2;
+  padding: calc(var(--u) * 0.04) calc(var(--u) * 0.06);
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 0.15);
+  font-weight: 700;
+  font-stretch: 75%;
+}
+
+.jail__tokens {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  --token-size: calc(var(--u) * 0.5);
+}
+
+.jail__bars {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.jail__bars path {
+  stroke: var(--color-ink);
+  stroke-width: var(--line-thick);
+  vector-effect: non-scaling-stroke;
+}
+
+.jail__visit {
+  grid-column: 1 / 3;
+  grid-row: 2;
+  align-self: center;
+  padding-left: calc(var(--u) * 0.1);
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 0.15);
+  font-weight: 700;
+  font-stretch: 75%;
+}
+
+.jail__visitors {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  --token-size: calc(var(--u) * 0.38);
+}
+
+.jail__visitors .token + .token {
+  margin-top: calc(var(--u) * -0.12);
+}
+
+/* Ferien am Zürichsee: Seefläche zur Brettmitte hin */
+.corner__pot {
+  margin-top: calc(var(--u) * 0.04);
+  padding: calc(var(--u) * 0.01) calc(var(--u) * 0.05);
+  border: var(--line-thin) solid var(--color-ink);
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 0.14);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.vacation__lake {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  height: calc(var(--u) * 0.36);
+  margin: auto calc(var(--u) * -0.1) calc(var(--u) * -0.1);
+  background: var(--color-lake);
+  border-top: var(--line-thick) solid var(--color-ink);
+  font-size: calc(var(--u) * 0.32);
+  --icon-stroke: var(--color-paper);
+  --icon-line: 2.4;
+}
+
+/* Gehe ins Gefängnis: Signalrot, grosse Schrift (AA für grossen Text), Pfeil Richtung Gefängnis */
+.corner--gotojail {
+  background: var(--color-signal);
+  color: var(--color-paper);
+}
+
+.corner--gotojail .corner__title {
+  font-size: calc(var(--u) * 0.28);
+}
+
+.corner--gotojail .corner__arrow {
+  margin-top: auto;
+  --icon-stroke: var(--color-paper);
+}
+
+/* Kleines Brett: nur Zeichen, keine Schrift */
+@container board (max-width: 560px) {
+  .corner__title,
+  .corner__sub,
+  .corner__pot,
+  .corner__badge,
+  .jail__label,
+  .jail__visit {
+    display: none;
+  }
+
+  .corner {
+    align-items: center;
+    justify-content: center;
+  }
+
+  .corner__arrow {
+    margin: auto;
+    font-size: calc(var(--u) * 0.7);
+  }
+
+  .vacation__lake {
+    height: 100%;
+    margin: calc(var(--u) * -0.1);
+    border-top: 0;
+    font-size: calc(var(--u) * 0.6);
+  }
+}

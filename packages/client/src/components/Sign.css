@@ -1,0 +1,49 @@
+/* Haltestellentafel. Grössen in --u (Brett), mit Untergrenze für kleine Bildschirme. */
+.sign {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: max(8px, calc(var(--u) * 0.2)) max(10px, calc(var(--u) * 0.25));
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+
+.sign__head {
+  display: flex;
+  align-items: center;
+  gap: max(6px, calc(var(--u) * 0.14));
+  padding-bottom: max(6px, calc(var(--u) * 0.12));
+  border-bottom: var(--line-thin) solid var(--color-paper);
+  --token-size: max(22px, calc(var(--u) * 0.48));
+}
+
+.sign__head .token {
+  box-shadow: none;
+}
+
+.sign__line {
+  font-family: var(--font-display);
+  font-size: max(12px, calc(var(--u) * 0.22));
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.sign__label {
+  margin-top: max(6px, calc(var(--u) * 0.12));
+  font-size: max(11px, calc(var(--u) * 0.18));
+  font-weight: 500;
+}
+
+.sign__stop {
+  font-family: var(--font-display);
+  font-size: max(20px, calc(var(--u) * 0.56));
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.sign__note {
+  margin-top: max(4px, calc(var(--u) * 0.08));
+  font-size: max(11px, calc(var(--u) * 0.19));
+  line-height: 1.3;
+}

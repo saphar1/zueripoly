@@ -1,0 +1,64 @@
+/* Spielfiguren. Linien 3 px (in der 64er-Zeichenfläche), runde Enden. */
+.figure {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.figure .ln {
+  stroke: var(--color-ink);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.figure .fc {
+  fill: currentColor;
+}
+
+.figure .fp {
+  fill: var(--color-paper);
+}
+
+.figure .fi {
+  fill: var(--color-ink);
+}
+
+/* Dicke Linien (Schwanenhals, Henkel): Tintenrand aussen, Spielerfarbe innen. */
+.figure .tube-out {
+  fill: none;
+  stroke: var(--color-ink);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.figure .tube-in {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.figure--tram { color: var(--player-tram); }
+.figure--swan { color: var(--player-swan); }
+.figure--boeoegg { color: var(--player-boeoegg); }
+.figure--fondue { color: var(--player-fondue); }
+.figure--bike { color: var(--player-bike); }
+.figure--coffee { color: var(--player-coffee); }
+
+/* Spielstein: Figur auf Papierscheibe, Tintenrand, harter Druckversatz. */
+.token {
+  display: inline-block;
+  flex: none;
+  width: var(--token-size, 40px);
+  height: var(--token-size, 40px);
+  padding: calc(var(--token-size, 40px) * 0.14);
+  border: var(--line-thick) solid var(--color-ink);
+  border-radius: 50%;
+  background: var(--color-paper);
+  box-shadow: var(--offset-small);
+}

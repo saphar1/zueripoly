@@ -36,6 +36,8 @@ Legende: `[x]` erledigt, `[ ]` offen.
 
 ## Phase 3: Design und lokale Oberfläche  ← nächste Phase
 Vorarbeit: `docs/design.md` und `docs/engine.md` lesen. Die Oberfläche nutzt `getWaitingFor`, `getLegalActions`, `applyAction` und formt Protokoll-Ereignisse in deutsche Sätze.
+
+**Stand:** Statischer Entwurf (Brett + Spielerpanels, fester Beispiel-Spielstand) gebaut, **wartet auf das Okay des Entwicklers**. Ansehen: `npm run dev -w @zueripoly/client`, dann `http://localhost:5173/entwurf.html`. Screenshots: `npm run screenshots -w @zueripoly/client` (optional `-- --details`). Noch keine spielbare Oberfläche, `main.tsx` ist noch das Gerüst.
 - [ ] Statischer HTML-Entwurf: Brett und Spielerpanel (zur Freigabe zeigen, **Okay abwarten**)
 - [ ] Playwright als Dev-Abhängigkeit, Screenshots Desktop und Handy, gegen `docs/design.md` prüfen
 - [ ] Tokens, Schriften lokal einbinden

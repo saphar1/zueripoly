@@ -129,6 +129,20 @@ Dieser Block wird in Phase 3 nach `packages/client/src/styles/tokens.css` kopier
   --group-station: #12161C;
   --group-utility: #8A8F98;
 
+  /* Spielerfarben (je Figur) und Schriftfarbe darauf */
+  --player-tram: var(--color-tram);
+  --player-swan: var(--color-ink);
+  --player-boeoegg: var(--color-signal);
+  --player-fondue: var(--group-orange);
+  --player-bike: var(--group-green);
+  --player-coffee: var(--group-brown);
+  --player-tram-on: var(--color-paper);
+  --player-swan-on: var(--color-paper);
+  --player-boeoegg-on: var(--color-paper);
+  --player-fondue-on: var(--color-ink);
+  --player-bike-on: var(--color-ink);
+  --player-coffee-on: var(--color-paper);
+
   /* Schriften */
   --font-display: "Bricolage Grotesque Variable", "Bricolage Grotesque", sans-serif;
   --font-text: "Familjen Grotesk Variable", "Familjen Grotesk", sans-serif;

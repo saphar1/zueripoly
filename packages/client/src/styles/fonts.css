@@ -1,0 +1,4 @@
+/* Schriften lokal aus node_modules (Fontsource, SIL OFL). Keine externen Aufrufe. */
+/* «standard» enthält bei Bricolage die Achsen Gewicht (200–800) und Breite (75–100 %). */
+@import "@fontsource-variable/bricolage-grotesque/standard.css";
+@import "@fontsource-variable/familjen-grotesk/wght.css";

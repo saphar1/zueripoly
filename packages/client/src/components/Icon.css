@@ -1,0 +1,30 @@
+/* Icons: 2-px-Linie in Tinte. Füllfarbe über --icon-fill steuerbar (Standard: keine). */
+.icon {
+  display: block;
+  width: 1em;
+  height: 1em;
+  flex: none;
+  overflow: visible;
+}
+
+.icon .i-fill,
+.icon .i-line {
+  stroke: var(--icon-stroke, var(--color-ink));
+  stroke-width: var(--icon-line, 2);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icon .i-fill {
+  fill: var(--icon-fill, none);
+}
+
+/* Details (Linien im Inneren) dürfen eine eigene Farbe haben, z. B. Papier auf dunkler Fläche. */
+.icon .i-line {
+  fill: none;
+  stroke: var(--icon-detail, var(--icon-stroke, var(--color-ink)));
+}
+
+.icon .i-dot {
+  fill: var(--icon-detail, var(--icon-stroke, var(--color-ink)));
+}

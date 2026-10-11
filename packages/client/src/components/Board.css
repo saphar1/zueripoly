@@ -1,0 +1,16 @@
+/* Brett: Ecken 1,5 Teile, dazwischen 9 Felder zu 1 Teil. Die Rasterlücken (2 px Tinte) sind die Feldlinien. */
+.board {
+  container: board / size;
+  --gap: var(--line-thick);
+  /* Eine Feldbreite. cqi = 1 % der Brettbreite; wird in den Feldern aufgelöst. */
+  --u: calc((100cqi - 10 * var(--gap)) / 12);
+  display: grid;
+  grid-template-columns: 1.5fr repeat(9, 1fr) 1.5fr;
+  grid-template-rows: 1.5fr repeat(9, 1fr) 1.5fr;
+  gap: var(--gap);
+  width: var(--board-size, 800px);
+  height: var(--board-size, 800px);
+  border: var(--line-thick) solid var(--color-ink);
+  background: var(--color-ink);
+  box-shadow: var(--offset);
+}

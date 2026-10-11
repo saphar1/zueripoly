@@ -1,0 +1,262 @@
+/* Feld am Brettrand. Alle Masse in --u (eine Feldbreite), gesetzt vom Brett. */
+.tile {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-paper);
+}
+
+/* Inhalt immer wie ein Feld der unteren Reihe aufgebaut, dann gedreht. */
+.tile__face {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  width: var(--u);
+  height: calc(var(--u) * 1.5);
+  transform: translate(-50%, -50%) rotate(var(--turn, 0deg));
+}
+
+.tile--left .tile__face {
+  --turn: 90deg;
+}
+
+.tile--right .tile__face {
+  --turn: -90deg;
+}
+
+/* Obere Reihe: aufrecht lesbar, Balken unten (zur Mitte). */
+.tile--top .tile__face {
+  flex-direction: column-reverse;
+}
+
+/* Icons und Häuser bleiben aufrecht, auch wenn die Schrift gedreht ist. */
+.tile--left :is(.tile__icon, .tile__house, .tile__hotel) {
+  transform: rotate(-90deg);
+}
+
+.tile--right :is(.tile__icon, .tile__house, .tile__hotel) {
+  transform: rotate(90deg);
+}
+
+/* Farbbalken mit Häusern */
+.tile__bar {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u) * 0.03);
+  height: calc(var(--u) * 0.27);
+  background: var(--bar);
+  border-bottom: var(--line-thick) solid var(--color-ink);
+}
+
+.tile--top .tile__bar {
+  border-top: var(--line-thick) solid var(--color-ink);
+  border-bottom: 0;
+}
+
+.tile__house {
+  position: relative;
+  z-index: 1;
+  font-size: calc(var(--u) * 0.17);
+  --icon-fill: var(--color-paper);
+  --icon-line: 2.4;
+}
+
+.tile__hotel {
+  position: relative;
+  z-index: 1;
+  font-size: calc(var(--u) * 0.24);
+  --icon-fill: var(--color-signal);
+  --icon-line: 2.2;
+}
+
+/* Hypothek: Balken mit Papierstreifen schraffiert (Maske, Farbe aus Token). */
+.tile--mortgaged .tile__bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--color-paper);
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M-2 2 L2 -2 M0 8 L8 0 M6 10 L10 6' stroke='black' stroke-width='2.4'/%3E%3C/svg%3E");
+  mask-size: 8px 8px;
+}
+
+.tile__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u) * 0.06);
+  min-height: 0;
+  padding: calc(var(--u) * 0.08) calc(var(--u) * 0.05) 0;
+  text-align: center;
+}
+
+.tile--street .tile__body {
+  justify-content: flex-start;
+}
+
+.tile--top.tile--street .tile__body {
+  justify-content: flex-end;
+  padding: 0 calc(var(--u) * 0.05) calc(var(--u) * 0.08);
+}
+
+.tile__name {
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 0.162);
+  font-weight: 700;
+  font-stretch: 75%;
+  line-height: 1.05;
+  hyphens: manual;
+  text-wrap: balance;
+}
+
+.tile__icon {
+  font-size: calc(var(--u) * 0.3);
+  --icon-line: 2;
+}
+
+.tile__icon--event {
+  --icon-fill: var(--color-tram);
+  --icon-detail: var(--color-paper);
+}
+
+.tile__icon--community {
+  --icon-fill: var(--color-ink);
+  --icon-detail: var(--color-paper);
+}
+
+.tile__icon--station {
+  --icon-fill: var(--color-ink);
+  --icon-detail: var(--color-paper);
+}
+
+.tile__icon--utility.icon--power {
+  --icon-fill: var(--color-ink);
+}
+
+.tile__icon--utility.icon--water {
+  --icon-fill: var(--color-lake);
+}
+
+.tile__icon--tax {
+  --icon-fill: var(--color-paper);
+}
+
+.tile__foot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u) * 0.05);
+  height: calc(var(--u) * 0.27);
+}
+
+.tile__price {
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 0.148);
+  font-weight: 600;
+  font-stretch: 85%;
+  white-space: nowrap;
+}
+
+/* Eigentümerzeichen: Kreis in Spielerfarbe */
+.tile__owner {
+  flex: none;
+  width: calc(var(--u) * 0.18);
+  height: calc(var(--u) * 0.18);
+  border: 1.5px solid var(--color-ink);
+  border-radius: 50%;
+  background: var(--owner);
+}
+
+/* Figuren auf dem Feld: aufrecht, zwischen Name und Preis (Name bleibt lesbar), bei mehreren überlappend */
+.tile__tokens {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  --token-size: calc(var(--u) * 0.46);
+  --token-overlap: calc(var(--u) * -0.18);
+}
+
+.tile--bottom .tile__tokens {
+  padding: calc(var(--u) * 0.72) 0 calc(var(--u) * 0.26);
+}
+
+.tile--top .tile__tokens {
+  padding: calc(var(--u) * 0.26) 0 calc(var(--u) * 0.72);
+}
+
+.tile--left .tile__tokens,
+.tile--right .tile__tokens {
+  flex-direction: column;
+}
+
+.tile--left .tile__tokens {
+  padding: 0 calc(var(--u) * 0.72) 0 calc(var(--u) * 0.26);
+}
+
+.tile--right .tile__tokens {
+  padding: 0 calc(var(--u) * 0.26) 0 calc(var(--u) * 0.72);
+}
+
+.tile--bottom .tile__tokens .token + .token,
+.tile--top .tile__tokens .token + .token {
+  margin-left: var(--token-overlap);
+}
+
+.tile--left .tile__tokens .token + .token,
+.tile--right .tile__tokens .token + .token {
+  margin-top: var(--token-overlap);
+}
+
+/* Kleines Brett (Handy-Übersicht): Namen und Preise wären unlesbar, also nur Balken, Icons, Besitz. */
+@container board (max-width: 560px) {
+  .tile__name,
+  .tile__price {
+    display: none;
+  }
+
+  .tile__bar {
+    height: calc(var(--u) * 0.3);
+    gap: 1px;
+  }
+
+  .tile__house {
+    font-size: calc(var(--u) * 0.2);
+    --icon-line: 3;
+  }
+
+  .tile__icon {
+    font-size: calc(var(--u) * 0.48);
+    --icon-line: 2.6;
+  }
+
+  .tile__foot {
+    flex: 1;
+    height: auto;
+  }
+
+  .tile__owner {
+    width: calc(var(--u) * 0.44);
+    height: calc(var(--u) * 0.44);
+    border-width: 1px;
+  }
+
+  /* Ohne Namen ist Platz: Figuren grösser und mittig */
+  .tile .tile__tokens {
+    padding: 0;
+    --token-size: calc(var(--u) * 0.66);
+    --token-overlap: calc(var(--u) * -0.3);
+  }
+
+  .tile__tokens .token {
+    border-width: 1.5px;
+  }
+}

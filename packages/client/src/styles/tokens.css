@@ -1,0 +1,73 @@
+/* Design-Tokens. Kopie des Blocks aus docs/design.md, Abschnitt 9. Änderungen immer zuerst dort. */
+:root {
+  /* Farben */
+  --color-paper: #F5F2EA;
+  --color-paper-dark: #E9E4D6;
+  --color-ink: #12161C;
+  --color-lake: #1F7FB8;
+  --color-tram: #0B4FA8;
+  --color-signal: #D8312B;
+
+  /* Farbgruppen */
+  --group-brown: #7A4A2B;
+  --group-lightblue: #8FCDEB;
+  --group-pink: #E0709F;
+  --group-orange: #EE8A2A;
+  --group-red: #D8312B;
+  --group-yellow: #F2C418;
+  --group-green: #2F9E5B;
+  --group-navy: #1B2559;
+  --group-station: #12161C;
+  --group-utility: #8A8F98;
+
+  /* Spielerfarben (je Figur) und Schriftfarbe darauf */
+  --player-tram: var(--color-tram);
+  --player-swan: var(--color-ink);
+  --player-boeoegg: var(--color-signal);
+  --player-fondue: var(--group-orange);
+  --player-bike: var(--group-green);
+  --player-coffee: var(--group-brown);
+  --player-tram-on: var(--color-paper);
+  --player-swan-on: var(--color-paper);
+  --player-boeoegg-on: var(--color-paper);
+  --player-fondue-on: var(--color-ink);
+  --player-bike-on: var(--color-ink);
+  --player-coffee-on: var(--color-paper);
+
+  /* Schriften */
+  --font-display: "Bricolage Grotesque Variable", "Bricolage Grotesque", sans-serif;
+  --font-text: "Familjen Grotesk Variable", "Familjen Grotesk", sans-serif;
+
+  /* Abstände (8-px-Raster) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Linien, Ecken, Druckversatz */
+  --line-thick: 2px;
+  --line-thin: 1px;
+  --radius: 0;
+  --offset: 4px 4px 0 var(--color-ink);
+  --offset-small: 2px 2px 0 var(--color-ink);
+
+  /* Bewegung */
+  --motion-dice: 600ms;
+  --motion-step: 150ms;
+  --motion-card: 500ms;
+  --motion-count: 600ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-dice: 1ms;
+    --motion-step: 1ms;
+    --motion-card: 1ms;
+    --motion-count: 1ms;
+  }
+}

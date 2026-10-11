@@ -1,0 +1,22 @@
+.dice {
+  display: flex;
+  gap: var(--dice-gap, var(--space-3));
+}
+
+.die {
+  display: block;
+  width: var(--die-size, 56px);
+  height: var(--die-size, 56px);
+  overflow: visible;
+  filter: drop-shadow(3px 3px 0 var(--color-ink));
+}
+
+.die__face {
+  fill: var(--color-paper);
+  stroke: var(--color-ink);
+  stroke-width: 4;
+}
+
+.die__pip {
+  fill: var(--color-ink);
+}
