@@ -121,13 +121,13 @@ Miete: **4 ×** Augensumme (1 Versorger) / **10 ×** Augensumme (beide).
 ## 6. Ereigniskarten (16)
 
 Stapel «Ereignis»: Bewegung, Bussen und kleine Zwischenfälle aus dem Zürcher Alltag.
-Effektcodes sind für die Engine gedacht (Phase 2).
+Effektcodes sind für die Engine gedacht; umgesetzt in `packages/engine/src/cards.ts`.
 
 | ID | Text | Effekt |
 |---|---|---|
 | E01 | Sechseläuten! Der Böögg brennt, du eilst zur Feier: Rücke vor auf Start und ziehe 200 CHF ein. | `moveTo:0`, Start-Bonus |
 | E02 | Street Parade: Du tanzt dich bis zum Utoquai. Kommst du an Start vorbei, ziehst du 200 CHF ein. | `moveTo:34`, Start-Bonus bei Überquerung |
-| E03 | Züri Fäscht: Du ergatterst den besten Platz an der Bahnhofstrasse. Rücke vor, Start-Bonus bei Überquerung. | `moveTo:39`, Start-Bonus bei Überquerung |
+| E03 | Züri Fäscht: Du ergatterst den besten Platz an der Bahnhofstrasse. Rücke vor. Kommst du an Start vorbei, ziehst du 200 CHF ein. | `moveTo:39`, Start-Bonus bei Überquerung |
 | E04 | Der Strom fällt aus: Rücke vor zum nächsten Versorger. Gehört er niemandem, darfst du ihn kaufen. Sonst würfle und zahle dem Besitzer das 10-Fache der Augensumme. | `moveToNearest:utility`, Miete ×10 |
 | E05 | Tram verpasst: Fahre zum nächsten Bahnhof. Gehört er jemandem, zahle die doppelte Miete. Sonst darfst du ihn kaufen. | `moveToNearest:station`, Miete ×2 |
 | E06 | Tram verpasst, zweiter Versuch: Fahre zum nächsten Bahnhof. Gehört er jemandem, zahle die doppelte Miete. Sonst darfst du ihn kaufen. | `moveToNearest:station`, Miete ×2 |

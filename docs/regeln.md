@@ -41,7 +41,7 @@ Landet ein Spieler auf einem **unbesetzten** Grundstück (Strasse, Bahnhof, Vers
 - Alle noch im Spiel befindlichen Spieler dürfen bieten, **auch der Spieler, der nicht gekauft hat**.
 - Eröffnungsgebot ab **10 CHF**, jedes Gebot muss das letzte um mindestens **10 CHF** übersteigen.
 - Reihum, beginnend links vom Spieler, der gerade am Zug ist. Wer aussteigt («Passen»), bleibt draussen.
-- Es gewinnt das letzte verbliebene Gebot. Wer bietet, muss das Geld **sofort** haben (Bargeld; Verkäufe oder Hypotheken vor dem Bieten sind erlaubt). Niemand bietet: Das Feld bleibt unbesetzt.
+- Es gewinnt das letzte verbliebene Gebot. Wer bietet, muss das Geld **sofort** haben (Bargeld; Gebäude verkaufen oder Hypotheken aufnehmen vor dem eigenen Gebot ist erlaubt, bauen und handeln nicht). Niemand bietet: Das Feld bleibt unbesetzt.
 - Dasselbe Verfahren gilt für Grundstücke, die bei einem Bankrott an die Bank fallen (Abschnitt 12), und für Häuser bei Hausknappheit (Abschnitt 8).
 
 ## 7. Miete
@@ -52,8 +52,8 @@ Landet man auf einem Feld, das einem anderen Spieler gehört (und nicht hypothek
   - Ohne Haus: Grundmiete. Besitzt der Spieler **alle Strassen der Farbgruppe** (und keine ist belastet), ist die Miete **doppelt**, solange kein Haus steht.
   - Mit 1 bis 4 Häusern oder 1 Hotel: Mietstaffel aus brett.md.
   - Innerhalb einer Farbgruppe bleibt die Verdopplung für unbebaute Strassen auch dann bestehen, wenn eine andere Strasse der Gruppe bebaut ist.
-- **Bahnhöfe:** 25 / 50 / 100 / 200 CHF bei 1 / 2 / 3 / 4 Bahnhöfen im Besitz des Eigentümers.
-- **Versorger:** Besitzt der Eigentümer **einen** Versorger: **4 ×** die gewürfelte Augensumme; beide: **10 ×** die Augensumme.
+- **Bahnhöfe:** 25 / 50 / 100 / 200 CHF bei 1 / 2 / 3 / 4 Bahnhöfen im Besitz des Eigentümers. Gezählt werden alle Bahnhöfe im Besitz, auch belastete (diese bringen selbst aber keine Miete).
+- **Versorger:** Besitzt der Eigentümer **einen** Versorger: **4 ×** die gewürfelte Augensumme; beide: **10 ×** die Augensumme. Auch hier zählen belastete Versorger beim Zählen mit.
   - Wer wegen einer Ereigniskarte zum Versorger muss, würfelt neu und zahlt **10 ×** die neue Augensumme.
   - Wer wegen einer Ereigniskarte zum nächsten Bahnhof muss, zahlt dem Besitzer die **doppelte** Miete.
 
@@ -61,8 +61,8 @@ Landet man auf einem Feld, das einem anderen Spieler gehört (und nicht hypothek
 - Bauen darf man nur, wenn man **alle Strassen einer Farbgruppe** besitzt und **keine davon** belastet ist. Bahnhöfe und Versorger werden nicht bebaut.
 - **Gleichmässig bauen:** Der Unterschied zwischen den Strassen einer Gruppe darf nie mehr als **ein Haus** betragen. Man baut reihum je ein Haus pro Strasse.
 - Ein **Hotel** kostet den Hauspreis und die 4 Häuser der Strasse (diese gehen zurück an die Bank). Voraussetzung: **alle Strassen der Gruppe haben mindestens 4 Häuser** (oder ein Hotel). Pro Strasse höchstens 1 Hotel.
-- Die Bank hat **32 Häuser und 12 Hotels**. Sind keine Häuser mehr da, kann niemand ein Haus bauen. Sind mehrere Spieler interessiert, entscheidet bei knapper Menge eine **Versteigerung** der verfügbaren Häuser (Eröffnung 10 CHF je Haus).
-- **Verkaufen:** Häuser und Hotels gehen zur **Hälfte des Hauspreises** zurück an die Bank. Auch hier gilt **gleichmässig** (von der am höchsten bebauten Strasse zuerst). Ein Hotel wird zu 4 Häusern zurückgebaut (das Hotel geht zurück an die Bank, 4 Häuser kommen aus deren Vorrat). Sind nicht 4 Häuser frei, kann das Hotel nur ganz abgerissen werden; dafür gibt es die Hälfte des Preises von 5 Bauten (Hotel = 5 Hauspreise).
+- Die Bank hat **32 Häuser und 12 Hotels**. Sind keine Häuser mehr da, kann niemand ein Haus bauen. Weil nur der Spieler am Zug bauen darf, wollen nie zwei Spieler gleichzeitig dieselben Häuser: Wer zuerst am Zug ist, baut zuerst. Eine Versteigerung von Häusern gibt es deshalb nicht.
+- **Verkaufen:** Häuser und Hotels gehen zur **Hälfte des Hauspreises** zurück an die Bank. Auch hier gilt **gleichmässig** (von der am höchsten bebauten Strasse zuerst). Ein Hotel wird zu 4 Häusern zurückgebaut (das Hotel geht zurück an die Bank, 4 Häuser kommen aus deren Vorrat). Sind nicht 4 Häuser frei, kann das Hotel nur ganz abgerissen werden; dafür gibt es die Hälfte des Preises von 5 Bauten (Hotel = 5 Hauspreise). Die Gruppe ist danach ungleich bebaut; das ist erlaubt. Es gilt weiter: gebaut wird immer auf einer Strasse mit der **tiefsten**, verkauft von einer mit der **höchsten** Stufe der Gruppe.
 - Vor einer **Hypothek** auf eine Strasse müssen alle Gebäude **der ganzen Gruppe** verkauft sein.
 - Gebäude dürfen **nicht gehandelt** werden: Zum Handel müssen alle Gebäude der Farbgruppe vorher an die Bank verkauft werden.
 
@@ -71,7 +71,7 @@ Landet man auf einem Feld, das einem anderen Spieler gehört (und nicht hypothek
 - Landen auf **«Gehe ins Gefängnis»** (Feld 30).
 - Ziehen einer Karte «Gehe direkt ins Gefängnis».
 - **Dritter Pasch** in Folge.
-Dann: Figur direkt auf Feld 10 (Gefängnis), **ohne Start-Geld**, der Zug endet **sofort** (auch bei Pasch).
+Dann: Figur direkt auf Feld 10 (Gefängnis), **ohne Start-Geld**, der Zug endet **sofort** (auch bei Pasch): kein weiterer Wurf. Verwalten (bauen, belasten, handeln) und «Zug beenden» bleiben möglich.
 
 **Wer nur «zu Besuch» auf Feld 10 landet**, ist nicht im Gefängnis und zieht ganz normal weiter.
 
@@ -80,7 +80,7 @@ Dann: Figur direkt auf Feld 10 (Gefängnis), **ohne Start-Geld**, der Zug endet 
 2. **Freikarte** abgeben (Karte geht zurück unter den Stapel) und normal würfeln und ziehen.
 3. **Würfeln und einen Pasch erzielen**: Figur zieht die Augensumme, der Spieler würfelt aber **nicht** noch einmal.
 
-Wird in drei aufeinanderfolgenden eigenen Zügen kein Pasch erzielt, muss der Spieler nach dem **dritten** Zug **50 CHF zahlen** und sofort mit der gewürfelten Augensumme ziehen. Kann er nicht zahlen, gilt die Schuld-Regel (Abschnitt 11).
+Wird in drei aufeinanderfolgenden eigenen Zügen kein Pasch erzielt, muss der Spieler nach dem **dritten** Zug **50 CHF zahlen** und sofort mit der gewürfelten Augensumme ziehen. Kann er nicht bar zahlen, zieht er trotzdem; die 50 CHF werden zur Schuld, die vor allen späteren Zahlungen beglichen werden muss (Abschnitt 11).
 
 Im Gefängnis darf man weiterhin **Miete einfordern, bauen, handeln** und Hypotheken aufnehmen.
 
@@ -95,7 +95,9 @@ Wer Geld schuldet (Miete, Steuer, Karte, Gefängnisgebühr), das er nicht bar ha
 1. Er **muss** Geld auftreiben durch Verkauf von Gebäuden (zu ½ Hauspreis), **Hypotheken** aufnehmen und **Handel**.
 2. Er darf Grundstücke nicht «einfach so» verschenken; nur über den Handel (Abschnitt 13).
 3. Kommt er nicht auf die Schuld, ist er **bankrott** (Abschnitt 12).
-Wer zahlen **kann**, muss zahlen (kein Aufschieben).
+Wer zahlen **kann**, muss zahlen (kein Aufschieben). Die Engine bucht jede Zahlung automatisch ab, sobald genug Bargeld da ist; der Schuldner muss nur Geld auftreiben.
+- Mehrere Schulden (z. B. «Zahle jedem Mitspieler 50», «Jeder Mitspieler zahlt dir 50») werden **der Reihe nach** beglichen, beginnend beim nächsten Spieler in Zugreihenfolge. Solange eine Schuld offen ist, wartet das Spiel auf diesen Schuldner.
+- Während einer Schuld darf der Schuldner nur: Gebäude verkaufen, Hypotheken aufnehmen, handeln oder (wenn nichts mehr reicht) Bankrott erklären.
 
 ### Hypotheken
 - Ein unbebautes Grundstück kann von der Bank belastet werden und bringt den **Hypothekenwert** (½ des Preises) in bar.
@@ -105,10 +107,12 @@ Wer zahlen **kann**, muss zahlen (kein Aufschieben).
 - Beim Handel mit belasteten Feldern: Der Käufer zahlt sofort **10 %** des Hypothekenwerts als Zins und darf entscheiden, ob er die Hypothek **sofort ablöst** (Hypothekenwert + 10 %) oder belastet lässt (dann nur die 10 % Zins).
 
 ## 12. Bankrott
-Ein Spieler ist bankrott, wenn er eine Schuld nicht bezahlen kann, auch nach Verkauf aller Gebäude und Aufnahme aller Hypotheken.
+Ein Spieler ist bankrott, wenn er eine Schuld nicht bezahlen kann, auch nach Verkauf aller Gebäude und Aufnahme aller Hypotheken. **Bankrott erklären** geht nur, wenn Bargeld + Verkaufswert aller Gebäude + alle noch möglichen Hypotheken zusammen nicht reichen.
 - **Schulden bei einem Mitspieler:** Alle Grundstücke und Freikarten gehen an den **Gläubiger**. Gebäude werden vorher zu ½ Hauspreis an die Bank verkauft (das Geld geht an den Gläubiger). Belastete Felder: Der Gläubiger zahlt sofort **10 %** und darf wie im Handel entscheiden (sofort ablösen oder belastet lassen). Sein restliches Bargeld erhält der Gläubiger ebenfalls.
 - **Schulden bei der Bank** (Steuer, Karte): Alles geht an die Bank. Gebäude zurück in den Vorrat, Grundstücke werden einzeln **versteigert** (unbelastet; vorher Hypotheken aufgehoben, kein Zins), Freikarten gehen unter den Stapel.
-- Der bankrotte Spieler scheidet aus.
+- Fehlt dem Gläubiger das Geld für den Zins auf übernommene belastete Felder, entsteht eine Schuld bei der Bank.
+- Der Restbetrag einer Schuld bei der Bank (Bargeld des Bankrotteurs) fliesst mit Jackpot-Option in den Topf, wenn die Schuld eine Steuer, Karte oder Gefängnisgebühr war.
+- Der bankrotte Spieler scheidet aus. Seine übrigen offenen Schulden (und Schulden an ihn) verfallen. War er am Zug, ist nach den Versteigerungen der nächste Spieler dran.
 - **Gewonnen** hat der letzte verbliebene Spieler.
 
 ## 13. Handel
@@ -116,7 +120,9 @@ Ein Spieler ist bankrott, wenn er eine Schuld nicht bezahlen kann, auch nach Ver
 - Das Angebot ist erst gültig, wenn der andere **zustimmt**. Der Anbieter kann es bis dahin zurückziehen.
 - Beide Seiten müssen genug Bargeld haben für das, was sie bieten.
 - **Grundstücke mit Gebäuden** (in der Farbgruppe) dürfen nicht gehandelt werden (Abschnitt 8).
-- Belastete Felder: siehe Abschnitt 11.
+- Belastete Felder: siehe Abschnitt 11. Der Anbieter entscheidet beim Angebot, welche erhaltenen belasteten Felder er sofort ablöst, der Empfänger beim Annehmen.
+- Ein Handel darf **keine Schuld** erzeugen: Jede Seite muss nach dem Tausch Zins und Ablösung bar bezahlen können, sonst ist das Angebot ungültig.
+- Es gibt immer höchstens **ein offenes Angebot**. Solange es offen ist, wartet das Spiel auf die Antwort.
 - Computergegner prüfen Angebote nach ihrer Logik (Phase 4).
 - Es gibt **keine** versteckten Absprachen: Gegenleistungen wie «Ich zahle dir künftig keine Miete» sind keine Spielregel und werden nicht umgesetzt.
 
@@ -124,7 +130,7 @@ Ein Spieler ist bankrott, wenn er eine Schuld nicht bezahlen kann, auch nach Ver
 | Option | Standard | Wirkung |
 |---|---|---|
 | **Jackpot bei Ferien am Zürichsee** | aus | Alle Zahlungen an die Bank (Steuern, Kartenbussen, Gefängnisgebühr) fliessen in einen Topf. Wer auf **Ferien am Zürichsee** landet, erhält den ganzen Topf. Der Topf startet bei 0. Aus: Zahlungen gehen an die Bank, Ferien tut nichts. |
-| **Zeitlimit pro Zug** | aus (Wahl: 30 / 60 / 90 Sekunden) | Läuft die Zeit ab, wird für den Spieler automatisch gehandelt: würfeln, wenn er noch nicht gewürfelt hat; **nicht kaufen** (also Versteigerung); Zug beenden. Nur in Online-Spielen und lokal mit Zeitlimit-Anzeige. Computergegner sind davon unberührt. |
+| **Zeitlimit pro Zug** | aus (Wahl: 30 / 60 / 90 Sekunden) | Läuft die Zeit ab, wird für den Spieler automatisch gehandelt: würfeln, wenn er noch nicht gewürfelt hat; **nicht kaufen** (also Versteigerung); Zug beenden. In anderen Lagen: bei Versteigerung passen, Handelsangebot ablehnen, belastete Felder belastet lassen, bei Schuld automatisch Geld auftreiben (zuerst belasten, dann Gebäude verkaufen) oder Bankrott. Nur in Online-Spielen und lokal mit Zeitlimit-Anzeige. Computergegner sind davon unberührt. |
 | **Startkapital** | 1500 CHF | Wählbar von 500 bis 5000 CHF in 100er-Schritten. Gilt für alle Spieler. |
 
 ## 15. Sonderfälle
@@ -146,3 +152,8 @@ Diese bewussten Vereinfachungen sind hier festgehalten, damit sie später nicht 
 3. Versteigerung beginnt immer bei 10 CHF mit Mindeststufe 10 CHF.
 4. Einkommenssteuer ist fix 200 CHF (kein «10 %»-Wahlrecht).
 5. Das Zeitlimit und der Jackpot sind Lobby-Optionen und standardmässig aus.
+6. Keine Versteigerung von Häusern bei Häusermangel (nur der Spieler am Zug baut, siehe Abschnitt 8).
+7. Doppelte Grundmiete nur, wenn **keine** Strasse der Farbgruppe belastet ist (im Original genügt der Besitz).
+8. Nach dem dritten Pasch oder einer Gefängniskarte darf der Spieler vor «Zug beenden» noch verwalten.
+9. Ein Handel darf keine Schuld erzeugen (Abschnitt 13).
+10. Mehrere Schulden aus einer Karte werden der Reihe nach beglichen; geht der Zahler dabei bankrott, verfallen die übrigen (Abschnitt 11).

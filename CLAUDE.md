@@ -15,13 +15,13 @@ Alle Texte im Spiel und in der Doku: **Deutsch, Schweizer Schreibweise** (immer 
   - `packages/client`: Vite + React. Zeigt nur an und schickt Aktionen. Importiert die Engine für Solo und Lokal.
 - Dieselbe Engine läuft für Solo, Lokal und Online. Zustand ist ein Wert, Aktionen sind Funktionen `(Zustand, Aktion) → neuer Zustand`; Zufall (Würfel, Mischen) kommt über eine übergebene, seedbare Zufallsquelle.
 - Umgebung: **Windows 11, PowerShell, Node 24, npm 11, Git.** Skripte müssen unter Windows laufen (keine reinen Bash-Befehle in npm-Skripten, keine `rm -rf`, `cp` usw.).
-- Hauptquellen der Wahrheit: `docs/regeln.md`, `docs/brett.md`, `docs/design.md`.
+- Hauptquellen der Wahrheit: `docs/regeln.md`, `docs/brett.md`, `docs/design.md`. Engine-Schnittstelle: `docs/engine.md`.
 
 ## Befehle
 Im Projektordner `C:\Users\sapir\zueripoly`:
 ```powershell
 npm install        # Abhängigkeiten
-npm test           # Engine-Tests (Vitest)
+npm test           # Engine-Tests (Vitest), inkl. 300 Zufallspartien (~12 s)
 npm run typecheck  # TypeScript in allen Paketen
 npm run dev        # Server und Client gleichzeitig
 npm run build      # Client bauen
@@ -64,6 +64,20 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 
 ## Stand und Entscheidungen
 - **Phase 1 abgeschlossen**: Workspace, Gerüste, Doku. Details in `PLAN.md`.
+- **Phase 2 abgeschlossen**: Engine mit allen Regeln, 108 Tests, 300 Zufallspartien. Details in `docs/engine.md`.
+
+### Engine (Phase 2)
+- Dateien: `types.ts` (alle Typen), `board.ts` (Felder, Konstanten), `cards.ts`, `random.ts` (Mulberry32, `createSeededRng`), `rules.ts` (reine Abfragen und Prüfungen), `validate.ts` (Aktion prüfen, `getLegalActions`, deutsche Fehlermeldungen), `game.ts` (`createGame`, `applyAction`), `invariants.ts`, `save.ts`.
+- `applyAction(state, playerId, action, rng)` kopiert den Zustand (JSON-Kopie ohne Protokoll), arbeitet auf der Kopie und ruft danach `settle()` auf: Schulden automatisch zahlen, Versteigerungen aus der Warteschlange starten, Zug weitergeben, Gewinner feststellen.
+- Das Spiel wartet immer auf genau einen Spieler (`getWaitingFor`). Vorrang: Handelsangebot > Hypothekenentscheid > Schuld > Versteigerung > Zug (`preRoll` / `buy` / `postRoll`).
+- Jede Geldänderung läuft über `transfer()` und erzeugt ein `moneyTransferred`-Ereignis. Nie `money` direkt ändern, sonst schlägt `checkMoneyLog` fehl.
+- `PropertyState.houses`: 0–4 Häuser, 5 = Hotel. Gebäudevorrat in `state.bank`.
+- Kartenstapel: oberste Karte = Index 0, gezogene Karte kommt ans Ende; Freikarten bleiben beim Spieler bis zur Nutzung.
+- Spieler-IDs «bank» und «jackpot» sind reserviert (Geldparteien im Protokoll).
+- Figuren-IDs: `tram`, `swan`, `boeoegg`, `fondue`, `bike`, `coffee` (Namen in `TOKEN_NAMES`).
+- `state.log` hält die letzten 200 Ereignisse; das vollständige Protokoll entsteht aus `createGame().log` plus allen `events` aus `applyAction`.
+- Regelklarstellungen und weitere Abweichungen (Häuserversteigerung entfällt, Hotelabriss, Handel ohne Schulden, Schulden der Reihe nach usw.) stehen in `docs/regeln.md`, Abschnitt 16.
+- Tests: `packages/engine/tests/helpers.ts` (`newGame`, `act` mit Invariantenprüfung, `dice(...)` für vorgegebene Würfe, `own`, `setHouses`, `cardOnTop`). Zufallspartien in `random-play.ts`, aufgeteilt auf zwei Testdateien (laufen parallel).
 - Schriften gewählt: Bricolage Grotesque + Familjen Grotesk.
 - Preise und Mieten wie im Original, in CHF (`docs/brett.md`).
 - Bots: regelbasiert, zwei Stufen (einfach, clever), keine Simulation.
@@ -72,4 +86,5 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 - Regelabweichungen vom Original: siehe `docs/regeln.md`, Abschnitt 16.
 
 ## Bekannte Probleme
-- Noch keine.
+- Zufallspartien können ewig dauern (Häusermangel-Patt: alle 32 Häuser verbaut, kein Hotel möglich). Der Test bricht nach 6000 Aktionen ab und verlangt nur, dass über 80 % mit Gewinner enden. Für echte Spieler (und die Bots in Phase 4) ist das kein Fehler der Engine.
+- Ohne Zeitlimit kann ein menschlicher Schuldner das Spiel blockieren, wenn er weder Geld auftreibt noch handelt (er darf nur Bankrott erklären, wenn nichts mehr reicht). Online fängt das Zeitlimit oder (Phase 5) die Bot-Übernahme ab.

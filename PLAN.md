@@ -14,27 +14,28 @@ Legende: `[x]` erledigt, `[ ]` offen.
 - [x] `CLAUDE.md`, `PLAN.md`, `README.md`
 - [x] `npm test` und `npm run typecheck` grün, Commit
 
-## Phase 2: Engine mit allen Regeln und Tests  ← nächste Phase
-- [ ] `types.ts`: Feld, Spieler, Spielzustand, Aktionen, Ereignisse (Protokolleinträge als Daten, nicht als Text)
-- [ ] `board.ts`: 40 Felder aus `docs/brett.md` (inkl. Test: 40 Felder, 22/4/2/12)
-- [ ] `cards.ts`: 2 × 16 Karten, seedbares Mischen, Freikarten
-- [ ] Seedbare Zufallsquelle (Würfel, Mischen)
-- [ ] `game.ts`: Spiel erstellen (2–6 Spieler, Optionen), Aktionen anwenden, gültige Aktionen abfragen
-- [ ] Würfeln, Ziehen, Start-Geld, Pasch, dritter Pasch
-- [ ] Kaufen und Versteigerung
-- [ ] Miete (Strasse, Farbgruppe, Bahnhof, Versorger)
-- [ ] Bauen und Verkaufen (gleichmässig, Hausmangel 32/12)
-- [ ] Hypotheken (10 % Zins)
-- [ ] Gefängnis (zahlen, Pasch, Freikarte, 3 Runden)
-- [ ] Steuern, Ereignis- und Gemeindekarten, Jackpot-Option
-- [ ] Handel (Felder, Geld, Freikarten)
-- [ ] Schulden und Bankrott (Gläubiger oder Bank), Gewinner
-- [ ] Zeitlimit-Option als Engine-Aktion (`timeout`)
-- [ ] Spielstand als JSON (serialisieren und laden)
-- [ ] Zufallsspiele: Hunderte komplette Partien mit zufälligen gültigen Aktionen laufen durch (Invarianten: Geldsumme, Häuser, Besitz)
-- [ ] Abschluss der Phase gemäss `CLAUDE.md`
+## Phase 2: Engine mit allen Regeln und Tests
+- [x] `types.ts`: Feld, Spieler, Spielzustand, Aktionen, Ereignisse (Protokolleinträge als Daten, nicht als Text)
+- [x] `board.ts`: 40 Felder aus `docs/brett.md` (inkl. Test: 40 Felder, 22/4/2/12)
+- [x] `cards.ts`: 2 × 16 Karten, seedbares Mischen, Freikarten
+- [x] Seedbare Zufallsquelle (Würfel, Mischen): `random.ts`
+- [x] `game.ts`: Spiel erstellen (2–6 Spieler, Optionen), Aktionen anwenden; `validate.ts`: gültige Aktionen abfragen
+- [x] Würfeln, Ziehen, Start-Geld, Pasch, dritter Pasch
+- [x] Kaufen und Versteigerung
+- [x] Miete (Strasse, Farbgruppe, Bahnhof, Versorger)
+- [x] Bauen und Verkaufen (gleichmässig, Hausmangel 32/12, Hotelabriss)
+- [x] Hypotheken (10 % Zins)
+- [x] Gefängnis (zahlen, Pasch, Freikarte, 3 Runden)
+- [x] Steuern, Ereignis- und Gemeindekarten, Jackpot-Option
+- [x] Handel (Felder, Geld, Freikarten, belastete Felder)
+- [x] Schulden und Bankrott (Gläubiger oder Bank), Gewinner
+- [x] Zeitlimit-Option als Engine-Aktion (`timeout`)
+- [x] Spielstand als JSON (serialisieren und laden): `save.ts`
+- [x] Zufallsspiele: 300 komplette Partien mit zufälligen gültigen Aktionen (Invarianten nach jeder Aktion, Geld-Protokoll am Ende): `invariants.ts`
+- [x] Abschluss der Phase gemäss `CLAUDE.md`
 
-## Phase 3: Design und lokale Oberfläche
+## Phase 3: Design und lokale Oberfläche  ← nächste Phase
+Vorarbeit: `docs/design.md` und `docs/engine.md` lesen. Die Oberfläche nutzt `getWaitingFor`, `getLegalActions`, `applyAction` und formt Protokoll-Ereignisse in deutsche Sätze.
 - [ ] Statischer HTML-Entwurf: Brett und Spielerpanel (zur Freigabe zeigen, **Okay abwarten**)
 - [ ] Playwright als Dev-Abhängigkeit, Screenshots Desktop und Handy, gegen `docs/design.md` prüfen
 - [ ] Tokens, Schriften lokal einbinden
@@ -42,6 +43,7 @@ Legende: `[x]` erledigt, `[ ]` offen.
 - [ ] Brett, Felder, Zoom
 - [ ] Hauptmenü, Lokal-Lobby (Namen, Figuren, Optionen)
 - [ ] Spielansicht, Aktionsleiste, Besitzkarten, Karten, Auktion, Handel, Protokoll
+- [ ] Protokoll-Ereignisse (`GameEvent`) als deutsche Sätze formatieren
 - [ ] Lokal spielbar von Anfang bis Gewinner
 
 ## Phase 4: Computergegner

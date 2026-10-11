@@ -4,7 +4,7 @@ Ein Brettspiel rund ums Geld, die Quartiere und die Trams von Zürich. Kaufe Str
 
 Alle Namen, Karten und Grafiken sind eigene Inhalte. Die Spielregeln folgen einem klassischen Immobilien-Brettspiel; dessen Name, Logo und Grafiken werden nicht verwendet.
 
-**Stand:** Phase 1 (Projektgerüst und Dokumente). Das Spiel selbst ist noch nicht spielbar. Siehe [PLAN.md](PLAN.md).
+**Stand:** Phase 2 (Spiellogik mit allen Regeln, getestet). Eine Oberfläche gibt es noch nicht. Siehe [PLAN.md](PLAN.md).
 
 ## Starten
 
@@ -36,7 +36,7 @@ npm run dev
 - Hypotheken, Handel zwischen Spielern, Ereignis- und Gemeindekarten.
 - Wer zahlungsunfähig wird, scheidet aus. Gewonnen hat der Letzte, der noch im Spiel ist.
 
-Alle Details: [docs/regeln.md](docs/regeln.md). Das Brett: [docs/brett.md](docs/brett.md). Die Gestaltung: [docs/design.md](docs/design.md).
+Alle Details: [docs/regeln.md](docs/regeln.md). Das Brett: [docs/brett.md](docs/brett.md). Die Gestaltung: [docs/design.md](docs/design.md). Die Spiellogik: [docs/engine.md](docs/engine.md).
 
 ## Spielmodi
 
