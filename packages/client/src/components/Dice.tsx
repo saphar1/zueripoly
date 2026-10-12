@@ -13,7 +13,7 @@ const PIPS: Record<number, [number, number][]> = {
 
 export function Die({ value }: { value: number }) {
   return (
-    <svg className="die" viewBox="0 0 64 64" role="img" aria-label={`Würfel: ${value}`}>
+    <svg className="die" viewBox="0 0 64 64" role="img" aria-label={value > 0 ? `Würfel: ${value}` : "Würfel"}>
       <rect className="die__face" x="2" y="2" width="60" height="60" />
       {(PIPS[value] ?? []).map(([cx, cy]) => (
         <circle key={`${cx}-${cy}`} className="die__pip" cx={cx} cy={cy} r="6" />

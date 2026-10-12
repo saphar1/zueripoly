@@ -44,36 +44,10 @@
   dominant-baseline: central;
 }
 
-/* Logo: reine Typografie mit Liniennummern-Kreis */
-.logo {
+/* Logo (Komponente Logo): Grösse in Feldbreiten */
+.center .logo {
   grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: calc(var(--u) * 0.18);
   font-size: calc(var(--u) * 0.92);
-  font-weight: 800;
-  letter-spacing: -0.035em;
-  line-height: 1;
-}
-
-.logo__badge {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 0.92em;
-  height: 0.92em;
-  border-radius: 50%;
-  background: var(--color-tram);
-  color: var(--color-paper);
-  font-size: 0.85em;
-  letter-spacing: 0;
-}
-
-.logo__badge {
-  font-size: calc(var(--u) * 0.6);
-  width: calc(var(--u) * 0.85);
-  height: calc(var(--u) * 0.85);
 }
 
 /* Tafel und Würfel nebeneinander */

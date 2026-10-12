@@ -4,6 +4,7 @@ import type { DeckId, Dice as DicePair, GameState } from "@zueripoly/engine";
 import { DECK_NAMES } from "@zueripoly/engine";
 import { Dice } from "./Dice";
 import { DeckPattern } from "./EventCard";
+import { Logo } from "./Logo";
 import { Sign, type SignMessage } from "./Sign";
 import "./BoardCenter.css";
 
@@ -79,16 +80,12 @@ interface BoardCenterProps {
 }
 
 export function BoardCenter({ state, message, rollingDice = null, overlay, onRoll, onDeckSelect }: BoardCenterProps) {
-  const dice = rollingDice ?? state.turn.dice;
+  // Vor dem ersten Wurf: leere Würfel, damit sie als Knopf da sind.
+  const dice = rollingDice ?? state.turn.dice ?? (onRoll ? ([0, 0] as DicePair) : null);
   return (
     <div className="center">
       <Lake />
-      <h1 className="logo">
-        <span className="logo__badge" aria-hidden="true">
-          Z
-        </span>
-        ZüriPoly
-      </h1>
+      <Logo />
       <div className="center__move">
         {message && <Sign {...message} />}
         <div className="center__aside">

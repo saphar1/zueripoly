@@ -1,0 +1,88 @@
+/* Desktop: Brett links (bleibt beim Scrollen stehen), rechts oben die Tafel, darunter Spieler und Protokoll. */
+.game {
+  display: grid;
+  grid-template-columns: auto minmax(360px, 520px);
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "board panel"
+    "board side";
+  gap: var(--space-5) var(--space-6);
+  align-items: start;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--space-5);
+  --board-size: min(calc(100vh - 2 * var(--space-5) - 4px), calc(100vw - 520px - 3 * var(--space-6)));
+}
+
+.game__board {
+  position: sticky;
+  top: var(--space-5);
+  grid-area: board;
+}
+
+.game__panel {
+  grid-area: panel;
+  min-width: 0;
+}
+
+.game__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  grid-area: side;
+  min-width: 0;
+}
+
+.game__below {
+  display: none;
+}
+
+.game__leave {
+  align-self: flex-start;
+}
+
+.game__leave-ask {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: var(--line-thick) solid var(--color-signal);
+}
+
+.game__leave-ask p {
+  flex-basis: 100%;
+  font-weight: 600;
+}
+
+/* Handy und schmale Fenster: Brett, Tafel, dann Haltestellentafel und Karten, dann Spieler. */
+@media (max-width: 899px) {
+  .game {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      "board"
+      "panel"
+      "below"
+      "side";
+    padding: var(--space-4);
+    --board-size: calc(100vw - 2 * var(--space-4) - 4px);
+  }
+
+  .game__board {
+    position: static;
+  }
+
+  .game__below {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    grid-area: below;
+    /* Tafel und Karten rechnen in Feldbreiten; ausserhalb des Bretts eine feste Grösse. */
+    --u: 46px;
+  }
+
+  .game__below .deed-card {
+    width: auto;
+  }
+}

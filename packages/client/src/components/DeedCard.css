@@ -93,6 +93,7 @@
 
 .deed-card__facts dd {
   margin: 0;
+  white-space: nowrap;
   font-family: var(--font-display);
   font-weight: 700;
 }

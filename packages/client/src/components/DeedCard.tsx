@@ -1,6 +1,6 @@
 // Besitzkarte (Titelkarte) eines Feldes: Farbbalken, Mietentabelle, Hauspreis, Hypothek, Besitzer.
 // Für Felder ohne Besitz (Ecken, Karten, Steuern) zeigt sie die Regel des Feldes.
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { GameState, PropertySpace, Space, SpaceIndex } from "@zueripoly/engine";
 import {
   GROUP_NAMES,
@@ -99,7 +99,8 @@ function buildingsLabel(houses: number): string | null {
   return null;
 }
 
-export function DeedCard({ state, index }: { state: GameState; index: SpaceIndex }) {
+/** `children`: z. B. Knöpfe zum Bauen oder Belasten, erscheinen unten auf der Karte. */
+export function DeedCard({ state, index, children }: { state: GameState; index: SpaceIndex; children?: ReactNode }) {
   const space = getSpace(index);
   const property = state.properties[index];
   const owner = ownerOf(state, index);
@@ -184,6 +185,7 @@ export function DeedCard({ state, index }: { state: GameState; index: SpaceIndex
           ))}
         </div>
       )}
+      {children}
     </article>
   );
 }

@@ -103,6 +103,29 @@ p {
   color: var(--color-paper);
 }
 
+/* Folgenschwer (z. B. Bankrott): Signalrot als Rand, Schrift bleibt Tinte (Kontrast) */
+.button--danger {
+  border-color: var(--color-signal);
+  box-shadow: 2px 2px 0 var(--color-signal);
+}
+
+.button--danger:hover {
+  box-shadow: 4px 4px 0 var(--color-signal);
+}
+
+/* Gesperrt: liegt flach im Papier */
+.button:disabled {
+  background: var(--color-paper-dark);
+  box-shadow: none;
+  color: var(--color-ink);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.button--primary:disabled {
+  border-style: dashed;
+}
+
 /* Tastaturfokus überall gleich: Tram-Blau, nie ein Leuchtrand */
 :focus-visible {
   outline: 3px solid var(--color-tram);

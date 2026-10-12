@@ -14,7 +14,8 @@ export type IconName =
   | "jail"
   | "arrow"
   | "arrowDiagonal"
-  | "waves";
+  | "waves"
+  | "close";
 
 const PATHS: Record<IconName, () => JSX.Element> = {
   house: () => <path className="i-fill" d="M4 11 L12 4 L20 11 V20 H4 Z" />,
@@ -50,6 +51,7 @@ const PATHS: Record<IconName, () => JSX.Element> = {
   jail: () => <path className="i-fill" d="M4 4 H20 V20 H4 Z M9 4 V20 M15 4 V20" />,
   arrow: () => <path className="i-line" d="M21 12 H4 M10 6 L4 12 L10 18" />,
   arrowDiagonal: () => <path className="i-line" d="M19 5 L5 19 M5 10 V19 H14" />,
+  close: () => <path className="i-line" d="M6 6 L18 18 M18 6 L6 18" />,
   waves: () => <path className="i-line" d="M2 9 C5 6 8 6 11 9 S17 12 20 9 L22 8 M2 15 C5 12 8 12 11 15 S17 18 20 15 L22 14" />,
 };
 

@@ -37,7 +37,7 @@ Legende: `[x]` erledigt, `[ ]` offen.
 ## Phase 3: Design und lokale Oberfläche  ← läuft (Teil 1 Design fertig, Teil 2 spielbare Oberfläche offen)
 Vorarbeit: `docs/design.md` und `docs/engine.md` lesen. Die Oberfläche nutzt `getWaitingFor`, `getLegalActions`, `applyAction` und formt Protokoll-Ereignisse in deutsche Sätze.
 
-**Stand:** Designentwurf am 2026-10-12 vom Entwickler **freigegeben**. Ansehen: `npm run dev -w @zueripoly/client`, dann `http://localhost:5173/entwurf.html` (Seite bleibt als Stilreferenz). Noch keine spielbare Oberfläche, `main.tsx` ist noch das Gerüst.
+**Stand:** Designentwurf am 2026-10-12 **freigegeben**. Lokal spielbar von Anfang bis Gewinner: `npm run dev -w @zueripoly/client`, dann `http://localhost:5173/`. Entwurf bleibt als Stilreferenz unter `/entwurf.html`. Offen: Handel vorschlagen, Zoom auf dem Handy, Abschluss.
 
 Teil 1: Design
 - [x] Statischer Entwurf: Brett und Spielerpanel, gezeigt und freigegeben
@@ -46,16 +46,19 @@ Teil 1: Design
 - [x] SVG-Figuren, Würfel, Icons
 - [x] Brett und Felder, Hover/Fokus, Besitzkarte (`DeedCard`), Kartenumdrehen (`EventCard`), hochzählender Kontostand (`Money`)
 
-Teil 2: spielbare Oberfläche (Vorschlag für die Reihenfolge)
-- [ ] `main.tsx`: App mit Bildschirmen Hauptmenü → Lobby → Spiel (einfacher Zustand, kein Router)
-- [ ] Hauptmenü, Lokal-Lobby (Namen, Figuren, Optionen: Startkapital, Jackpot, Zeitlimit)
-- [ ] Spielansicht: Hook `useLocalGame` (Zustand + `applyAction` + seedbare Zufallsquelle), Brett und Panels mit echtem Zustand
-- [ ] Aktionsleiste aus `getLegalActions` für den Spieler aus `getWaitingFor` (Würfeln, Kaufen, Bauen, Hypothek, Zug beenden)
-- [ ] Tafeln für Entscheidungen: Kauf, Auktion, Schulden, Hypothekenentscheid, Handel, Gefängnis
-- [ ] Protokoll-Ereignisse (`GameEvent`) als deutsche Sätze formatieren, Spielprotokoll und Haltestellentafel daraus
-- [ ] Bewegungen aus der Entwurfs-Demo übernehmen (Figur hüpft, Würfel rollen, Geld zählt, Karte dreht)
+Teil 2: spielbare Oberfläche
+- [x] `main.tsx` → `App.tsx`: Bildschirme Hauptmenü → Lobby → Spiel (einfacher Zustand, kein Router)
+- [x] Hauptmenü (Linientafel, noch nicht gebaute Spielarten «noch nicht in Betrieb»), Lokal-Lobby (Namen, Figuren, Startkapital, Jackpot, Zeitlimit)
+- [x] Spielansicht: Hook `game/use-local-game.ts` (Zustand + `applyAction` + seedbare Zufallsquelle, spielt Ereignisse als Bewegung ab)
+- [x] Tafel (`ActionPanel`) aus `getWaitingFor` + `getLegalActions`: Würfeln, Gefängnis, Kaufen, Versteigerung, Schulden, Bankrott, Hypothekenentscheid, Handelsangebot beantworten, Zug beenden, Spielende
+- [x] Verwalten über die Besitzkarte (`PropertyActions`): bauen, verkaufen, belasten, auslösen, mit Grund, wenn Bauen nicht geht
+- [x] Protokoll-Ereignisse als deutsche Sätze (`game-text.ts`), Spielprotokoll und Haltestellentafel daraus
+- [x] Bewegungen: Würfel rollen, Figur hüpft, Karte dreht, Geld zählt (reduzierte Bewegung: springen)
+- [x] Zeitlimit (`game/use-turn-timer.ts`, schickt `timeout`)
+- [x] Durchspiel-Test der Oberfläche (`npm run playtest -w @zueripoly/client`): Partie bis zum Gewinner ohne Fehler
+- [ ] Handelsangebot erstellen (Tafel mit zwei Spalten: Gib / Bekomme)
 - [ ] Zoom und Verschieben auf dem Handy
-- [ ] Lokal spielbar von Anfang bis Gewinner, Screenshots geprüft
+- [ ] Abschluss: Screenshots Desktop und Handy prüfen, Doku, Commit «Phase 3»
 
 ## Phase 4: Computergegner
 - [ ] `bot.ts`: Entscheidungsschnittstelle (Zustand → Aktion)

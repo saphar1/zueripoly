@@ -28,6 +28,8 @@ npm run build      # Client bauen
 npm run dev -w @zueripoly/client                        # nur Client; Designentwurf: http://localhost:5173/entwurf.html
 npm run screenshots -w @zueripoly/client                # Playwright: Desktop 1440×900 + Handy 390×844 nach screenshots/
 npm run screenshots -w @zueripoly/client -- --details   # zusätzlich Brett-Viertel (2×) und Interaktionszustände
+npm run playtest -w @zueripoly/client                   # Durchspiel-Test der Oberfläche (Playwright klickt zufällig)
+npm run playtest -w @zueripoly/client -- --money 500    # kurze Partie bis zum Gewinner (wenig Startkapital)
 ```
 
 ## Namenskonventionen
@@ -68,7 +70,7 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 ## Stand und Entscheidungen
 - **Phase 1 abgeschlossen**: Workspace, Gerüste, Doku. Details in `PLAN.md`.
 - **Phase 2 abgeschlossen**: Engine mit allen Regeln, 108 Tests, 300 Zufallspartien. Details in `docs/engine.md`.
-- **Phase 3, Teil 1 (Design) fertig und freigegeben** (2026-10-12). Teil 2 (spielbare Oberfläche) offen, Reihenfolge in `PLAN.md`.
+- **Phase 3, Teil 1 (Design) fertig und freigegeben** (2026-10-12). **Teil 2: lokal spielbar** bis zum Gewinner; offen sind Handel vorschlagen und Zoom (siehe `PLAN.md`).
 
 ### Client (Phase 3, Teil 1)
 - Entwurfsseite `entwurf.html` → `src/entwurf.tsx` → `screens/DesignDraft.tsx` mit Beispielzustand (`demo/demo-state.ts`) und Bewegungs-Demo ohne Spielregeln (`demo/use-demo.ts`). Bleibt als Stilreferenz bestehen.
@@ -79,6 +81,13 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 - Texte: `format.ts` (`formatChf` mit ’, `hyphenate` = weiche Trennstellen für lange Feldnamen), `space-text.ts` (Feldbeschreibung, Feldregeln, Hinweis bei Ankunft).
 - Wiederverwendbar für Teil 2: `Board` (Props für Hover, Auswahl, Hervorhebung, ziehende Figur, Overlay), `PlayerList`, `Sign`, `DeedCard`, `EventCard`, `Money`, `Dice`, `.button` / `.button--primary` (in `styles/base.css`).
 - Schriften lokal über Fontsource: Bricolage `standard.css` (Gewicht + Breite 75–100 %), Familjen `wght.css`.
+
+### Client (Phase 3, Teil 2: spielbar)
+- `App.tsx` wechselt Bildschirme (`screens/MainMenu`, `screens/Lobby`, `screens/GameScreen`). Neues Spiel: `createSeededRng(createRandomSeed())` + `createGame` → `GameSession`.
+- `game/use-local-game.ts`: `state` = Wahrheit (nach `applyAction`), `view` = Anzeige. Nach einer Aktion werden die Ereignisse abgespielt (Würfel, Figur Feld für Feld, Karte, Gefängnis), erst danach springt `view` auf `state`. Während `busy` nimmt der Hook keine Aktionen an. Die Augen beim Rollen kommen aus `Math.random`, nie aus der Spiel-Zufallsquelle.
+- Wer entscheidet, sagt immer `getWaitingFor`; die Tafel (`components/ActionPanel.tsx`) bietet nur an, was `getLegalActions` erlaubt (Vergleich der ganzen Aktion, nicht nur `type`). Verwalten (bauen, verkaufen, belasten, auslösen) läuft über die angeklickte Besitzkarte (`PropertyActions`).
+- Texte zu Ereignissen: `game-text.ts` (`formatEvent`, `formatEvents` fasst Wurf + Zug zusammen). Feldnamen mit Artikel über die Tabelle `GENDER` («die Enge», «das Seefeld», «Höngg» ohne Artikel). Keine Pronomen für Spieler, immer den Namen.
+- Die Tafel hat `aria-busy`, solange eine Bewegung läuft (nutzt auch der Durchspiel-Test).
 
 ### Engine (Phase 2)
 - Dateien: `types.ts` (alle Typen), `board.ts` (Felder, Konstanten), `cards.ts`, `random.ts` (Mulberry32, `createSeededRng`), `rules.ts` (reine Abfragen und Prüfungen), `validate.ts` (Aktion prüfen, `getLegalActions`, deutsche Fehlermeldungen), `game.ts` (`createGame`, `applyAction`), `invariants.ts`, `save.ts`.

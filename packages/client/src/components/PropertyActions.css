@@ -1,0 +1,18 @@
+.property-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) max(10px, calc(var(--u) * 0.16));
+  border-top: var(--line-thick) solid var(--color-ink);
+}
+
+.property-actions .button {
+  justify-content: flex-start;
+  padding: var(--space-1) var(--space-3);
+  font-size: 14px;
+}
+
+.property-actions__reason {
+  font-size: 13px;
+  line-height: 1.35;
+}

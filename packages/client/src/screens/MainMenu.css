@@ -1,0 +1,155 @@
+/* Hauptmenü: links Logo, rechts die Linientafel. Auf dem Handy untereinander. */
+.menu {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 560px);
+  gap: var(--space-8);
+  align-items: center;
+  max-width: 1200px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: var(--space-7) var(--space-6);
+}
+
+.menu__logo {
+  font-size: clamp(56px, 9vw, 120px);
+}
+
+.menu__claim {
+  margin-top: var(--space-4);
+  font-family: var(--font-display);
+  font-size: clamp(20px, 2.4vw, 28px);
+  font-weight: 600;
+}
+
+.menu__lines {
+  display: flex;
+  flex-direction: column;
+  border: var(--line-thick) solid var(--color-ink);
+  background: var(--color-paper);
+  box-shadow: var(--offset);
+}
+
+.menu__label {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Eine Linie: Nummer im Kreis, Name, Ziel */
+.line {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-4);
+  align-items: center;
+  width: 100%;
+  padding: var(--space-4);
+  border: 0;
+  border-top: var(--line-thin) solid var(--color-ink);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font: inherit;
+  text-align: left;
+}
+
+.menu__label + .line {
+  border-top: 0;
+}
+
+button.line {
+  cursor: pointer;
+  transition:
+    background var(--motion-hover) var(--ease-out),
+    color var(--motion-hover) var(--ease-out);
+}
+
+button.line:hover {
+  background: var(--color-tram);
+  color: var(--color-paper);
+}
+
+button.line:hover .line__number {
+  border-color: var(--color-paper);
+}
+
+button.line:active {
+  background: var(--color-ink);
+}
+
+.line__number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: var(--line-thick) solid var(--color-ink);
+  border-radius: 50%;
+  background: var(--color-tram);
+  color: var(--color-paper);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.line__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.line__text strong {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+
+.line__text span {
+  font-size: 15px;
+}
+
+.line__arrow {
+  font-size: 28px;
+  transform: scaleX(-1);
+  --icon-stroke: currentColor;
+  --icon-line: 2.4;
+}
+
+/* Noch nicht in Betrieb: vertiefte Fläche, Nummer hohl */
+.line--off {
+  background: var(--color-paper-dark);
+}
+
+.line--off .line__number {
+  background: var(--color-paper-dark);
+  color: var(--color-ink);
+}
+
+.line__status {
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+}
+
+@media (max-width: 899px) {
+  .menu {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+    align-content: start;
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .line {
+    grid-template-columns: auto 1fr;
+  }
+
+  .line__arrow {
+    display: none;
+  }
+
+  .line__status {
+    grid-column: 2;
+    text-align: left;
+  }
+}

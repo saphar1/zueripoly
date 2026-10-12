@@ -1,0 +1,52 @@
+.log {
+  border: var(--line-thick) solid var(--color-ink);
+  background: var(--color-paper);
+}
+
+.log__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: var(--line-thick) solid var(--color-ink);
+}
+
+.log__head h2 {
+  font-size: 20px;
+}
+
+.log__head span {
+  font-size: 13px;
+}
+
+.log__list {
+  max-height: 340px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.log__row {
+  display: grid;
+  grid-template-columns: 3em 1fr;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-4);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Neuer Zug: feine Linie darüber, wie eine neue Zeile im Fahrplan */
+.log__row--turn {
+  border-top: var(--line-thin) solid var(--color-ink);
+}
+
+.log__row:first-child {
+  border-top: 0;
+}
+
+.log__turn {
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-align: right;
+}

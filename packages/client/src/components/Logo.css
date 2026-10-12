@@ -1,0 +1,23 @@
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.2em;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+
+/* Liniennummern-Kreis: Tram-Blau, Buchstabe in Papier */
+.logo__badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.42em;
+  height: 1.42em;
+  border-radius: 50%;
+  background: var(--color-tram);
+  color: var(--color-paper);
+  font-size: 0.65em;
+  letter-spacing: 0;
+}

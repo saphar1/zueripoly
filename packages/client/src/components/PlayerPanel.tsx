@@ -202,7 +202,7 @@ export function PlayerList({ state, linkedPlayer = null, focusSpace = null, onPl
           key={player.id}
           player={player}
           state={state}
-          active={player.id === current?.id}
+          active={state.winner === null && !player.bankrupt && player.id === current?.id}
           linked={player.id === linkedPlayer}
           focusSpace={focusSpace}
           onPlayerHover={onPlayerHover}

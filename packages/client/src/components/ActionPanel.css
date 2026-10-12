@@ -1,0 +1,106 @@
+/* Tafel für Entscheidungen: Kopf wie eine Haltestellenanzeige, darunter Frage und Knöpfe. */
+.tafel {
+  border: var(--line-thick) solid var(--color-ink);
+  background: var(--color-paper);
+  box-shadow: var(--offset);
+}
+
+.tafel__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-ink);
+  color: var(--color-paper);
+  --token-size: 44px;
+}
+
+.tafel__head .token {
+  box-shadow: none;
+}
+
+.tafel__head > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.tafel__label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.tafel__name {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.tafel__clock {
+  padding: 2px var(--space-2);
+  border: var(--line-thick) solid var(--color-paper);
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.tafel__clock--urgent {
+  border-color: var(--color-signal);
+  background: var(--color-signal);
+}
+
+.tafel__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.tafel__prompt {
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.tafel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.tafel__hint {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.tafel__error {
+  padding: var(--space-2) var(--space-3);
+  border: var(--line-thick) solid var(--color-signal);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Gebot: Betrag gross in der Mitte, Knöpfe für Schritte */
+.bid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.bid .button {
+  min-width: 52px;
+  padding-inline: var(--space-2);
+}
+
+.bid__amount {
+  min-width: 6.5em;
+  padding: var(--space-1) var(--space-2);
+  border-bottom: var(--line-thick) solid var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.tafel--end .tafel__head {
+  background: var(--color-tram);
+}
