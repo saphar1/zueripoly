@@ -15,6 +15,7 @@ import {
   getOwnedSpaces,
   getWaitingFor,
   isFreeOfBuildings,
+  removePlayer,
   serializeGame,
   TOKENS,
   validateAction,
@@ -37,6 +38,7 @@ export interface GameSummary {
   bankruptcies: number;
   hotels: number;
   timeouts: number;
+  removed: number;
 }
 
 function chance(rng: Rng, p: number): boolean {
@@ -152,7 +154,11 @@ function chooseAction(state: GameState, playerId: PlayerId, rng: Rng): Action {
   return { type: "endTurn" };
 }
 
-export function playRandomGame(seed: number): GameSummary {
+/**
+ * Eine Zufallspartie. `removeChance`: Wahrscheinlichkeit pro Schritt, dass ein zufälliger Spieler
+ * von aussen aus dem Spiel genommen wird (online: Host entscheidet bei Abwesenheit).
+ */
+export function playRandomGame(seed: number, removeChance = 0): GameSummary {
   const gameRng: SeededRng = createSeededRng(seed * 7919 + 1);
   const policy = createSeededRng(seed);
   const playerCount = 2 + (seed % 5);
@@ -160,7 +166,7 @@ export function playRandomGame(seed: number): GameSummary {
   const options = { startMoney: [500, 800, 1000, 1500][seed % 4] ?? 1500, jackpot: seed % 3 === 0 };
   let state = createGame({ players, options }, gameRng);
   const events: GameEvent[] = [...state.log];
-  const summary: GameSummary = { finished: false, steps: 0, trades: 0, bankruptcies: 0, hotels: 0, timeouts: 0 };
+  const summary: GameSummary = { finished: false, steps: 0, trades: 0, bankruptcies: 0, hotels: 0, timeouts: 0, removed: 0 };
 
   for (let step = 0; step < MAX_STEPS && state.winner === null; step++) {
     const waiting = getWaitingFor(state);
@@ -174,6 +180,18 @@ export function playRandomGame(seed: number): GameSummary {
       if (others.join() !== allowed.join()) {
         throw new Error(`Seed ${seed}, Schritt ${step}: ${p.id} hätte Aktionen ${others.join()}, wartet wird auf ${waiting}.`);
       }
+    }
+
+    if (removeChance > 0 && chance(policy, removeChance)) {
+      const victim = pick(policy, getActivePlayers(state));
+      const removed = victim && removePlayer(state, victim.id);
+      if (!removed || !removed.ok) throw new Error(`Seed ${seed}, Schritt ${step}: Entfernen abgelehnt.`);
+      state = removed.state;
+      events.push(...removed.events);
+      summary.steps = step + 1;
+      const problems = checkInvariants(state);
+      if (problems.length > 0) throw new Error(`Seed ${seed}, Schritt ${step} nach Entfernen von ${victim.id}: ${problems.join(" | ")}`);
+      continue;
     }
 
     let actor = waiting;
@@ -209,22 +227,25 @@ export function playRandomGame(seed: number): GameSummary {
   summary.bankruptcies = events.filter((e) => e.type === "bankrupt").length;
   summary.hotels = events.filter((e) => e.type === "houseBuilt" && e.level === 5).length;
   summary.timeouts = events.filter((e) => e.type === "timeout").length;
+  summary.removed = events.filter((e) => e.type === "playerRemoved").length;
   return summary;
 }
 
 /** Spielt die Partien `from` bis `to` (Seeds) und prüft, dass sie sinnvoll verlaufen. */
-export function playRandomGames(from: number, to: number): void {
+export function playRandomGames(from: number, to: number, removeChance = 0): void {
   const results: GameSummary[] = [];
-  for (let seed = from; seed <= to; seed++) results.push(playRandomGame(seed));
+  for (let seed = from; seed <= to; seed++) results.push(playRandomGame(seed, removeChance));
   const games = results.length;
   const finished = results.filter((r) => r.finished).length;
   const total = (key: keyof Omit<GameSummary, "finished">) => results.reduce((sum, r) => sum + r[key], 0);
   console.log(
     `Zufallspartien ${from}–${to}: ${finished}/${games} mit Gewinner, ${total("steps")} Aktionen, ` +
-      `${total("trades")} Handel, ${total("bankruptcies")} Bankrotte, ${total("hotels")} Hotels, ${total("timeouts")} Zeitabläufe`,
+      `${total("trades")} Handel, ${total("bankruptcies")} Bankrotte, ${total("hotels")} Hotels, ${total("timeouts")} Zeitabläufe` +
+      (removeChance > 0 ? `, ${total("removed")} entfernt` : ""),
   );
   // Die meisten Partien sollen mit einem Gewinner enden (sonst hängt etwas im Ablauf).
   expect(finished).toBeGreaterThan(games * 0.8);
   expect(total("trades")).toBeGreaterThan(0);
   expect(total("hotels")).toBeGreaterThan(0);
+  if (removeChance > 0) expect(total("removed")).toBeGreaterThan(0);
 }

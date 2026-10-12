@@ -19,6 +19,7 @@ Die Regeln selbst stehen in [regeln.md](regeln.md), Felder und Karten in [brett.
 | `validateGameConfig(config)` | Lobby prüfen (2–6 Spieler, Figuren, Optionen). Gibt Fehlertext oder `null`. |
 | `createGame(config, rng)` | Neues Spiel: Startreihenfolge auswürfeln, Stapel mischen. |
 | `applyAction(state, playerId, action, rng)` | Aktion ausführen (prüft vorher alles). |
+| `removePlayer(state, playerId)` | Eingriff von aussen (online: Host bei Abwesenheit): Spieler scheidet aus, Besitz an die Bank, Felder werden versteigert. Kein Spielzug, gibt ein `ActionResult` zurück. |
 | `getWaitingFor(state)` | Auf wen das Spiel wartet (oder `null` bei Spielende). |
 | `getLegalActions(state, playerId)` | Gültige Aktionen (Gebote nur mit Mindestbetrag, Handel nicht). |
 | `canProposeTrade(state, playerId)` | Darf der Spieler jetzt ein Handelsangebot machen? |
@@ -48,6 +49,16 @@ Das Spiel wartet immer auf **genau einen** Spieler (`getWaitingFor`). Vorrang vo
    - `postRoll`: verwalten, handeln, `endTurn`.
 
 «Verwalten» heisst bauen, Gebäude verkaufen, belasten, Hypothek zurückzahlen.
+
+## Spieler aus dem Spiel nehmen
+
+`removePlayer(state, playerId)` geht jederzeit, auch wenn das Spiel gerade nicht auf diesen Spieler wartet. Reihenfolge:
+1. Ereignis `playerRemoved`.
+2. Ein offenes Angebot von ihm wird zurückgezogen, eines an ihn gilt als abgelehnt.
+3. Ein Hypothekenentscheid von ihm verfällt (die Felder gehen ohnehin an die Bank).
+4. In einer Versteigerung scheidet er aus; war er Höchstbietender, gilt sein Gebot nicht mehr (die anderen bieten ab 10 CHF weiter).
+5. Bankrott an die Bank (wie `goBankrupt`): Gebäude zurück, Bargeld an die Bank (nie in den Jackpot), Felder werden versteigert, Freikarten unter den Stapel. Schulden von ihm und an ihn verfallen.
+6. Danach wie nach jeder Aktion: Versteigerungen starten, Zug weitergeben, Gewinner feststellen.
 
 ## Zeitlimit
 

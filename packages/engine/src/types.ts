@@ -375,6 +375,8 @@ export type GameEvent =
   | { type: "mortgageDecisionRequired"; player: PlayerId; spaces: SpaceIndex[] }
   | { type: "mortgagesResolved"; player: PlayerId; lifted: SpaceIndex[]; kept: SpaceIndex[] }
   | { type: "bankrupt"; player: PlayerId; creditor: Creditor }
+  /** Von aussen aus dem Spiel genommen (online: Host entscheidet bei Abwesenheit). Danach folgt `bankrupt` an die Bank. */
+  | { type: "playerRemoved"; player: PlayerId }
   | { type: "turnEnded"; player: PlayerId }
   | { type: "timeout"; player: PlayerId }
   | { type: "gameWon"; player: PlayerId };

@@ -181,6 +181,8 @@ export function formatEvent(state: GameState, event: GameEvent): string | null {
       return event.creditor === BANK
         ? `${who(event.player)} ist bankrott. Der Besitz geht an die Bank.`
         : `${who(event.player)} ist bankrott. Der Besitz geht an ${who(event.creditor)}.`;
+    case "playerRemoved":
+      return `${who(event.player)} wird aus dem Spiel genommen. Der Besitz geht an die Bank.`;
     case "turnEnded":
       return null;
     case "timeout":
@@ -228,9 +230,13 @@ function formatMoney(state: GameState, event: Extract<GameEvent, { type: "moneyT
 /** Würfelwurf und Zug in einer Zeile zusammenfassen, Unwichtiges weglassen. */
 export function formatEvents(state: GameState, events: readonly GameEvent[]): string[] {
   const lines: string[] = [];
+  const removed = new Set<PlayerId>();
   for (let i = 0; i < events.length; i++) {
     const event = events[i]!;
     const next = events[i + 1];
+    if (event.type === "playerRemoved") removed.add(event.player);
+    // Nach «aus dem Spiel genommen» sagt der Bankrott nichts Neues.
+    if (event.type === "bankrupt" && removed.has(event.player)) continue;
     if (event.type === "diceRolled" && event.purpose === "move" && next?.type === "moved" && next.player === event.player) {
       const [a, b] = event.dice;
       lines.push(`${nameOf(state, event.player)} würfelt ${a} + ${b}${a === b ? " (Pasch)" : ""}. Nächster Halt: ${getSpace(next.to).name}.`);

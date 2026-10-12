@@ -20,6 +20,7 @@ import {
   checkSellBuilding,
   countBuildings,
   DEFAULT_OPTIONS,
+  findPlayer,
   getActivePlayers,
   getCurrentPlayer,
   getOwnedSpaces,
@@ -68,7 +69,7 @@ import {
   type TradeSide,
   type TurnState,
 } from "./types";
-import { validateAction } from "./validate";
+import { makeError, validateAction } from "./validate";
 
 /** So viele Protokolleinträge bleiben im Spielzustand. Alle neuen Einträge liefert `applyAction` zusätzlich zurück. */
 export const LOG_LIMIT = 200;
@@ -827,6 +828,62 @@ function goBankrupt(ctx: Ctx, player: PlayerState, creditor: Creditor, reason: D
   player.inJail = false;
   player.jailTurns = 0;
   s.debts = s.debts.filter((d) => d.debtor !== player.id && d.creditor !== player.id);
+}
+
+// ---------------------------------------------------------------------------
+// Spieler aus dem Spiel nehmen (Eingriff von aussen, kein Spielzug)
+// ---------------------------------------------------------------------------
+
+/** Beim Entfernen wird nie gewürfelt oder gemischt. */
+const NO_RANDOM: Rng = {
+  nextInt(): number {
+    throw new Error("Interner Fehler: Beim Entfernen eines Spielers wird nicht gewürfelt.");
+  },
+};
+
+/**
+ * Nimmt einen Spieler aus dem Spiel, auch wenn das Spiel gerade nicht auf ihn wartet
+ * (online: Der Host entscheidet so, wenn jemand nicht zurückkommt).
+ * Sein offenes Handelsangebot verfällt, er scheidet aus einer Versteigerung aus (war er Höchstbietender,
+ * gilt sein Gebot nicht mehr), ein Hypothekenentscheid von ihm verfällt. Danach geht er bankrott an die Bank:
+ * Gebäude zurück, Bargeld an die Bank, seine Felder werden versteigert, Schulden von und an ihn verfallen.
+ */
+export function removePlayer(state: GameState, playerId: PlayerId): ActionResult {
+  if (state.winner !== null) return { ok: false, error: makeError("gameOver") };
+  const target = findPlayer(state, playerId);
+  if (!target) return { ok: false, error: makeError("unknownPlayer") };
+  if (target.bankrupt) return { ok: false, error: makeError("playerOut") };
+
+  const ctx: Ctx = { s: cloneState(state), rng: NO_RANDOM, events: [] };
+  const s = ctx.s;
+  const player = getPlayer(s, playerId);
+  emit(ctx, { type: "playerRemoved", player: player.id });
+
+  if (s.trade && (s.trade.from === player.id || s.trade.to === player.id)) {
+    closeTrade(ctx, s.trade.from === player.id ? "tradeCancelled" : "tradeRejected");
+  }
+  if (s.mortgageDecision?.player === player.id) s.mortgageDecision = null;
+
+  const auction = s.auction;
+  if (auction) {
+    const seat = auction.bidders.indexOf(player.id);
+    if (seat >= 0) {
+      auction.bidders.splice(seat, 1);
+      if (seat < auction.next) auction.next -= 1;
+      if (auction.next >= auction.bidders.length) auction.next = 0;
+    }
+    if (auction.highestBidder === player.id) {
+      auction.highestBid = 0;
+      auction.highestBidder = null;
+    }
+    checkAuctionEnd(ctx);
+  }
+
+  // «rent» als Grund: Das Geld geht an die Bank, nie in den Jackpot.
+  goBankrupt(ctx, player, BANK, "rent");
+  settle(ctx);
+  ctx.s.log = [...state.log, ...ctx.events].slice(-LOG_LIMIT);
+  return { ok: true, state: ctx.s, events: ctx.events };
 }
 
 // ---------------------------------------------------------------------------
