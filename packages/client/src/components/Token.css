@@ -62,3 +62,34 @@
   background: var(--color-paper);
   box-shadow: var(--offset-small);
 }
+
+/* Figur zieht: kurzer Hüpfer pro Feld (Dauer aus --motion-step) */
+.token--moving {
+  animation: token-hop var(--motion-step) var(--ease-out);
+}
+
+@keyframes token-hop {
+  0% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(-38%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* Hervorgehobener Spieler: Figur über dem Papierschleier, Ring in Tram-Blau */
+.token--marked {
+  position: relative;
+  z-index: 5;
+  outline: 3px solid var(--color-tram);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .token--moving {
+    animation: none;
+  }
+}

@@ -104,10 +104,22 @@ export function TokenFigure({ token }: { token: TokenId }) {
   );
 }
 
+interface TokenProps {
+  token: TokenId;
+  label?: string;
+  /** Figur zieht gerade: hüpft beim Erscheinen auf einem Feld. */
+  moving?: boolean;
+  /** Figur gehört zum hervorgehobenen Spieler: liegt über dem Papierschleier. */
+  marked?: boolean;
+}
+
 /** Figur auf runder Papierscheibe mit Tintenrand, wie ein Spielstein. */
-export function Token({ token, label }: { token: TokenId; label?: string }) {
+export function Token({ token, label, moving = false, marked = false }: TokenProps) {
+  const classes = ["token", `token--${token}`];
+  if (moving) classes.push("token--moving");
+  if (marked) classes.push("token--marked");
   return (
-    <span className={`token token--${token}`} role="img" aria-label={label ?? TOKEN_NAMES[token]}>
+    <span className={classes.join(" ")} role="img" aria-label={label ?? TOKEN_NAMES[token]}>
       <TokenFigure token={token} />
     </span>
   );

@@ -1,7 +1,9 @@
 // Brettmitte: Logo, Zürichsee, Haltestellentafel mit dem letzten Zug, Würfel, Kartenstapel, Vorrat.
-import type { GameState } from "@zueripoly/engine";
+import type { ReactNode } from "react";
+import type { DeckId, Dice as DicePair, GameState } from "@zueripoly/engine";
 import { DECK_NAMES } from "@zueripoly/engine";
 import { Dice } from "./Dice";
+import { DeckPattern } from "./EventCard";
 import { Sign, type SignMessage } from "./Sign";
 import "./BoardCenter.css";
 
@@ -24,15 +26,24 @@ function Lake() {
   );
 }
 
-/** Kartenstapel: Rückseite mit Linienmuster (wie ein Liniennetz), harter Versatz als Stapelkante. */
-function Deck({ deck }: { deck: "event" | "community" }) {
-  return (
-    <div className={`deck deck--${deck}`}>
-      <svg className="deck__lines" viewBox="0 0 120 56" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <path d="M-4 10 H42 L66 34 H124 M-4 20 H38 L62 44 H124 M-4 30 H34 L58 54 H124" />
-      </svg>
+/** Kartenstapel: Rückseite mit Linienmuster, harter Versatz als Stapelkante. Mit `onSelect` ein Knopf. */
+function Deck({ deck, onSelect }: { deck: DeckId; onSelect?: (deck: DeckId) => void }) {
+  const content = (
+    <>
+      <DeckPattern className="deck__lines" />
       <span className="deck__name">{DECK_NAMES[deck]}</span>
-    </div>
+    </>
+  );
+  if (!onSelect) return <div className={`deck deck--${deck}`}>{content}</div>;
+  return (
+    <button
+      type="button"
+      className={`deck deck--${deck} deck--button`}
+      onClick={() => onSelect(deck)}
+      aria-label={`${DECK_NAMES[deck]} ziehen`}
+    >
+      {content}
+    </button>
   );
 }
 
@@ -55,9 +66,20 @@ function Stock({ houses, hotels }: { houses: number; hotels: number }) {
   );
 }
 
-/** `message`: was die Tafel zeigt (kommt später aus dem Protokoll). */
-export function BoardCenter({ state, message }: { state: GameState; message: SignMessage | null }) {
-  const dice = state.turn.dice;
+interface BoardCenterProps {
+  state: GameState;
+  /** Was die Tafel zeigt (kommt später aus dem Protokoll). */
+  message: SignMessage | null;
+  /** Augen während des Rollens; sonst der letzte Wurf aus dem Zustand. */
+  rollingDice?: DicePair | null;
+  /** Besitzkarte oder gezogene Karte, liegt über dem See. */
+  overlay?: ReactNode;
+  onRoll?: () => void;
+  onDeckSelect?: (deck: DeckId) => void;
+}
+
+export function BoardCenter({ state, message, rollingDice = null, overlay, onRoll, onDeckSelect }: BoardCenterProps) {
+  const dice = rollingDice ?? state.turn.dice;
   return (
     <div className="center">
       <Lake />
@@ -70,14 +92,15 @@ export function BoardCenter({ state, message }: { state: GameState; message: Sig
       <div className="center__move">
         {message && <Sign {...message} />}
         <div className="center__aside">
-          {dice && <Dice dice={dice} />}
+          {dice && <Dice dice={dice} rolling={rollingDice !== null} onRoll={onRoll} />}
           <Stock houses={state.bank.houses} hotels={state.bank.hotels} />
         </div>
       </div>
       <div className="center__decks">
-        <Deck deck="event" />
-        <Deck deck="community" />
+        <Deck deck="event" onSelect={onDeckSelect} />
+        <Deck deck="community" onSelect={onDeckSelect} />
       </div>
+      {overlay && <div className="center__overlay">{overlay}</div>}
     </div>
   );
 }

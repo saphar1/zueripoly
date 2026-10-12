@@ -10,12 +10,23 @@
   --board-size: min(calc(100vh - 2 * var(--space-5) - 4px), calc(100vw - 520px - 3 * var(--space-6)));
 }
 
-.draft__sign {
+.draft__below {
   display: none;
 }
 
 .draft__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
   min-width: 0;
+}
+
+.draft__hint {
+  max-width: 62ch;
+  padding: var(--space-3) var(--space-4);
+  border: var(--line-thin) solid var(--color-ink);
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 /* Handy und schmale Fenster: eine Spalte, Brett oben in voller Breite. */
@@ -27,10 +38,20 @@
     --board-size: calc(100vw - 2 * var(--space-4) - 4px);
   }
 
-  .draft__sign {
-    display: block;
+  .draft__below {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
     margin-top: var(--space-5);
-    /* Die Tafel rechnet in Feldbreiten; ausserhalb des Bretts eine feste Grösse. */
+    /* Tafel und Besitzkarte rechnen in Feldbreiten; ausserhalb des Bretts eine feste Grösse. */
     --u: 46px;
+  }
+
+  .draft__below .deed-card {
+    width: auto;
+  }
+
+  .draft__hint {
+    order: -1;
   }
 }

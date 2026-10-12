@@ -1,0 +1,48 @@
+.money {
+  position: relative;
+  display: inline-block;
+}
+
+/* Differenz erscheint kurz unter dem Betrag und verschwindet wieder */
+.money__delta {
+  position: absolute;
+  top: calc(100% + 2px);
+  right: 0;
+  padding: 1px var(--space-2);
+  border: var(--line-thick) solid var(--color-ink);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  white-space: nowrap;
+  animation: money-delta 1800ms var(--ease-out) forwards;
+}
+
+.money__delta--minus {
+  border-color: var(--color-signal);
+}
+
+@keyframes money-delta {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .money__delta {
+    animation: none;
+  }
+}

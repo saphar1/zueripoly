@@ -22,11 +22,26 @@ export function Die({ value }: { value: number }) {
   );
 }
 
-export function Dice({ dice }: { dice: DicePair }) {
-  return (
-    <div className="dice">
+interface DiceProps {
+  dice: DicePair;
+  /** Würfel rollen gerade (Augen wechseln, Würfel wackeln). */
+  rolling?: boolean;
+  /** Wenn gesetzt, sind die Würfel ein Knopf. */
+  onRoll?: () => void;
+}
+
+export function Dice({ dice, rolling = false, onRoll }: DiceProps) {
+  const className = `dice${rolling ? " dice--rolling" : ""}`;
+  const faces = (
+    <>
       <Die value={dice[0]} />
       <Die value={dice[1]} />
-    </div>
+    </>
+  );
+  if (!onRoll) return <div className={className}>{faces}</div>;
+  return (
+    <button type="button" className={`${className} dice--button`} onClick={onRoll} aria-label="Würfeln" aria-busy={rolling}>
+      {faces}
+    </button>
   );
 }

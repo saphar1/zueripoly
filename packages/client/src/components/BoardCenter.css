@@ -119,6 +119,34 @@
     8px 8px 0 var(--color-ink);
 }
 
+/* Stapel als Knopf: oberste Karte hebt sich an, beim Drücken sinkt sie ein */
+.deck--button {
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform var(--motion-hover) var(--ease-out),
+    box-shadow var(--motion-hover) var(--ease-out);
+}
+
+.deck--button:hover {
+  transform: translate(-3px, -3px);
+  box-shadow:
+    2px 2px 0 var(--color-paper),
+    4px 4px 0 var(--color-ink),
+    6px 6px 0 var(--color-paper),
+    8px 8px 0 var(--color-ink),
+    11px 11px 0 var(--color-ink);
+}
+
+.deck--button:active {
+  transform: translate(2px, 2px);
+  box-shadow:
+    2px 2px 0 var(--color-paper),
+    4px 4px 0 var(--color-ink);
+}
+
 .deck--event {
   background: var(--color-tram);
 }
@@ -188,9 +216,29 @@
   font-weight: 700;
 }
 
+/* Besitzkarte oder gezogene Karte: liegt unten rechts über dem See */
+.center > .center__overlay {
+  position: absolute;
+  right: calc(var(--u) * 0.3);
+  bottom: calc(var(--u) * 0.3);
+  z-index: 7;
+  animation: overlay-in calc(var(--motion-hover) * 1.5) var(--ease-out);
+}
+
+/* Wird wie eine Karte aufs Brett gelegt: kommt aus dem Versatz in die Endlage */
+@keyframes overlay-in {
+  from {
+    transform: translate(6px, 6px);
+  }
+  to {
+    transform: none;
+  }
+}
+
 /* Kleines Brett (Handy): nur Logo, Würfel und See. Die Tafel steht dann unter dem Brett. */
 @container board (max-width: 560px) {
   .center .sign,
+  .center__overlay,
   .center__decks,
   .center__stock,
   .center__lake-name {

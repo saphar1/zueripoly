@@ -25,6 +25,9 @@ npm test           # Engine-Tests (Vitest), inkl. 300 Zufallspartien (~12 s)
 npm run typecheck  # TypeScript in allen Paketen
 npm run dev        # Server und Client gleichzeitig
 npm run build      # Client bauen
+npm run dev -w @zueripoly/client                        # nur Client; Designentwurf: http://localhost:5173/entwurf.html
+npm run screenshots -w @zueripoly/client                # Playwright: Desktop 1440×900 + Handy 390×844 nach screenshots/
+npm run screenshots -w @zueripoly/client -- --details   # zusätzlich Brett-Viertel (2×) und Interaktionszustände
 ```
 
 ## Namenskonventionen
@@ -65,6 +68,17 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 ## Stand und Entscheidungen
 - **Phase 1 abgeschlossen**: Workspace, Gerüste, Doku. Details in `PLAN.md`.
 - **Phase 2 abgeschlossen**: Engine mit allen Regeln, 108 Tests, 300 Zufallspartien. Details in `docs/engine.md`.
+- **Phase 3, Teil 1 (Design) fertig und freigegeben** (2026-10-12). Teil 2 (spielbare Oberfläche) offen, Reihenfolge in `PLAN.md`.
+
+### Client (Phase 3, Teil 1)
+- Entwurfsseite `entwurf.html` → `src/entwurf.tsx` → `screens/DesignDraft.tsx` mit Beispielzustand (`demo/demo-state.ts`) und Bewegungs-Demo ohne Spielregeln (`demo/use-demo.ts`). Bleibt als Stilreferenz bestehen.
+- Komponenten in `src/components/`: `PascalCase.tsx` plus gleichnamige `.css` mit BEM-Klassen (`.tile__bar`). Farben nur über Tokens (`styles/tokens.css` = Kopie aus `docs/design.md`, Änderungen zuerst dort). Spielerfarben: `--player-<token>` und Schriftfarbe darauf `--player-<token>-on`.
+- Brett: Grösse kommt von aussen (`--board-size`), alles darin rechnet in `--u` (eine Feldbreite, über Container-Einheiten). `@container board (max-width: 560px)` = Handy-Übersicht ohne Feldnamen; dort stehen Tafel und Besitzkarte unter dem Brett.
+- Felder sind reine Anzeige (`Tile`, `CornerTile`); Hover, Fokus, Klick behandelt die Zelle `board__cell` in `Board.tsx`. Hover nur bei `pointerType === "mouse"`, auf Touch wählt Antippen aus.
+- Bewegung: Dauern nur aus den Tokens `--motion-*`; JavaScript liest sie mit `motionMs()` (`src/motion.ts`). Bei `prefers-reduced-motion` sind alle 1 ms, Abläufe springen dann direkt ans Ziel.
+- Texte: `format.ts` (`formatChf` mit ’, `hyphenate` = weiche Trennstellen für lange Feldnamen), `space-text.ts` (Feldbeschreibung, Feldregeln, Hinweis bei Ankunft).
+- Wiederverwendbar für Teil 2: `Board` (Props für Hover, Auswahl, Hervorhebung, ziehende Figur, Overlay), `PlayerList`, `Sign`, `DeedCard`, `EventCard`, `Money`, `Dice`, `.button` / `.button--primary` (in `styles/base.css`).
+- Schriften lokal über Fontsource: Bricolage `standard.css` (Gewicht + Breite 75–100 %), Familjen `wght.css`.
 
 ### Engine (Phase 2)
 - Dateien: `types.ts` (alle Typen), `board.ts` (Felder, Konstanten), `cards.ts`, `random.ts` (Mulberry32, `createSeededRng`), `rules.ts` (reine Abfragen und Prüfungen), `validate.ts` (Aktion prüfen, `getLegalActions`, deutsche Fehlermeldungen), `game.ts` (`createGame`, `applyAction`), `invariants.ts`, `save.ts`.
@@ -88,3 +102,4 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 ## Bekannte Probleme
 - Zufallspartien können ewig dauern (Häusermangel-Patt: alle 32 Häuser verbaut, kein Hotel möglich). Der Test bricht nach 6000 Aktionen ab und verlangt nur, dass über 80 % mit Gewinner enden. Für echte Spieler (und die Bots in Phase 4) ist das kein Fehler der Engine.
 - Ohne Zeitlimit kann ein menschlicher Schuldner das Spiel blockieren, wenn er weder Geld auftreibt noch handelt (er darf nur Bankrott erklären, wenn nichts mehr reicht). Online fängt das Zeitlimit oder (Phase 5) die Bot-Übernahme ab.
+- Ist Port 5173 belegt (z. B. ein alter Dev-Server), nimmt Vite den nächsten freien Port (5174 …); die Adresse steht im Terminal. Die Startseite `/` zeigt bis Teil 2 nur das Gerüst, der Entwurf liegt unter `/entwurf.html`.

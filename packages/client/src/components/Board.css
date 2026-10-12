@@ -14,3 +14,64 @@
   background: var(--color-ink);
   box-shadow: var(--offset);
 }
+
+/* Zelle um jedes Feld: Zeiger, Fokus, Auswahl. Das Feld füllt die Zelle. */
+.board__cell {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  transition:
+    transform var(--motion-hover) var(--ease-out),
+    box-shadow var(--motion-hover) var(--ease-out);
+}
+
+.board__cell > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.board__cell[role="button"] {
+  cursor: pointer;
+}
+
+/* Unter dem Zeiger oder ausgewählt: hebt sich wie ein Kartonteil an */
+.board__cell--focus,
+.board__cell--selected {
+  z-index: 4;
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 var(--color-ink);
+}
+
+/* Beim Drücken sinkt das Feld ins Papier */
+.board__cell[role="button"]:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+
+/* Rahmen: Auswahl in Tram-Blau, Felder des hervorgehobenen Spielers in dessen Farbe */
+.board__cell--marked::before,
+.board__cell--selected::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  border: 3px solid var(--mark, var(--color-tram));
+  pointer-events: none;
+}
+
+.board__cell--selected::before {
+  border-color: var(--color-tram);
+}
+
+/* Alle anderen Felder liegen unter einem Papierschleier */
+.board__cell--veiled::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: var(--color-paper);
+  opacity: 0.68;
+  pointer-events: none;
+}

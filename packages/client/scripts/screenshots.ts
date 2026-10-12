@@ -1,6 +1,6 @@
 // Screenshots des Designentwurfs (Desktop und Handy) mit Playwright.
 // Start: npm run screenshots -w @zueripoly/client  →  Bilder im Ordner screenshots/ (Projektwurzel).
-// Mit «-- --details» zusätzlich das Brett in vier Vierteln, doppelt aufgelöst (für die Detailprüfung).
+// Mit «-- --details» zusätzlich das Brett in vier Vierteln, doppelt aufgelöst, und die Interaktionszustände.
 // Startet dafür selbst einen Vite-Server und beendet ihn danach wieder.
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -44,6 +44,38 @@ async function saveBoardQuarters(browser: Browser, url: string) {
   await context.close();
 }
 
+/** Interaktionszustände des Entwurfs: Zeiger auf Feld und Spieler, gezogene Karte, nach dem Würfeln. */
+async function saveStates(browser: Browser, url: string) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: "de-CH" });
+  const tab = await context.newPage();
+  await tab.goto(url, { waitUntil: "networkidle" });
+  await tab.evaluate(() => document.fonts.ready);
+  const shot = async (label: string) => {
+    const file = path.join(outDir, `${name}-zustand-${label}.png`);
+    await tab.screenshot({ path: file });
+    console.log(`Gespeichert: ${file}`);
+  };
+
+  await tab.getByRole("button", { name: /^Langstrasse,/ }).hover();
+  await tab.waitForTimeout(300);
+  await shot("feld");
+
+  await tab.getByRole("article", { name: "Ben" }).hover();
+  await tab.waitForTimeout(300);
+  await shot("spieler");
+
+  await tab.mouse.move(5, 5);
+  await tab.getByRole("button", { name: "Ereigniskarte ziehen" }).click();
+  await tab.waitForTimeout(900);
+  await shot("karte");
+
+  await tab.keyboard.press("Escape");
+  await tab.getByRole("button", { name: "Würfeln" }).click();
+  await tab.waitForTimeout(3500);
+  await shot("gewuerfelt");
+  await context.close();
+}
+
 const server = await createServer({ root: clientRoot, logLevel: "warn", server: { port: 5199 } });
 await server.listen();
 const base = server.resolvedUrls?.local[0] ?? "http://localhost:5199/";
@@ -74,7 +106,10 @@ try {
     console.log(`Gespeichert: ${file}`);
     await context.close();
   }
-  if (details) await saveBoardQuarters(browser, new URL(page, base).href);
+  if (details) {
+    await saveBoardQuarters(browser, new URL(page, base).href);
+    await saveStates(browser, new URL(page, base).href);
+  }
 } finally {
   await browser.close();
   await server.close();

@@ -26,8 +26,42 @@
 }
 
 .panel {
+  position: relative;
   border: var(--line-thick) solid var(--color-ink);
   background: var(--color-paper);
+  transition:
+    transform var(--motion-hover) var(--ease-out),
+    box-shadow var(--motion-hover) var(--ease-out);
+}
+
+/* Linienfarbe des Spielers als Balken links, wenn das Panel verknüpft ist */
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: -2px auto -2px -2px;
+  z-index: 1;
+  width: 10px;
+  border: var(--line-thick) solid var(--color-ink);
+  background: var(--player);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--motion-hover) var(--ease-out);
+}
+
+.panel--linked::before {
+  transform: scaleX(1);
+}
+
+/* Verknüpft oder unter dem Zeiger: hebt sich an */
+.panel--linked,
+.panel[tabindex]:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--offset);
+}
+
+.panel--active.panel--linked,
+.panel--active[tabindex]:hover {
+  box-shadow: 6px 6px 0 var(--color-ink);
 }
 
 .panel__head {
@@ -185,6 +219,18 @@
   flex: 1;
   height: 18px;
   background: var(--color-paper-dark);
+}
+
+/* Kästchen unter dem Zeiger oder Feld unter dem Zeiger: hebt sich an */
+.deed {
+  transition: transform var(--motion-hover) var(--ease-out);
+}
+
+.deed--owned:hover,
+.deed--owned.deed--focus {
+  z-index: 1;
+  transform: translateY(-4px);
+  box-shadow: 0 4px 0 var(--color-ink);
 }
 
 .deed--owned {

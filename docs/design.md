@@ -65,6 +65,9 @@ Regeln:
 - Karten haben klare 2-px-Ränder und leichten Versatz, wie gestanzte Kartonkarten.
 - **Bewegung mit Sinn:** Würfel rollen (0,6 s), Figur hüpft Feld für Feld (0,15 s je Feld), Karte dreht sich um (0,5 s), Geld «fliesst» als Zahl, die hoch- oder runterzählt (0,6 s). **Keine Dauer-Animationen** aus reiner Dekoration.
 - `prefers-reduced-motion`: Alle Bewegungen werden zu kurzen Übergängen (Sprung statt Flug, Einblenden statt Drehen).
+- **Hover und Fokus (0,12 s):** Was man anklicken oder antippen kann, hebt sich unter dem Zeiger wie ein Kartonteil an (2 px nach oben links, harter Versatz wächst). Beim Drücken sinkt es ins Papier (Versatz 0). Tastaturfokus: 3 px Tram-Blau mit 2 px Abstand, nie ein Leuchtrand.
+- **Verknüpfte Hervorhebung:** Zeiger auf einem Feld markiert das Panel des Besitzers und zeigt die Besitzkarte in der Brettmitte. Zeiger auf einem Spielerpanel markiert dessen Felder auf dem Brett; alle anderen Felder liegen unter einem Papierschleier.
+- Auf Touch-Geräten gibt es kein Hover: Antippen wählt ein Feld aus (nochmals antippen oder Esc hebt die Auswahl auf).
 - Ton: kurze, dezente Geräusche (Würfel, Kauf, Geld, Karte). Stummschalter immer sichtbar, Standard: **an**, Lautstärke gering. Wird zu Beginn nicht automatisch abgespielt (Browser erlaubt Ton erst nach Klick).
 
 ## 6. Komponentenliste
@@ -169,6 +172,7 @@ Dieser Block wird in Phase 3 nach `packages/client/src/styles/tokens.css` kopier
   --motion-step: 150ms;
   --motion-card: 500ms;
   --motion-count: 600ms;
+  --motion-hover: 120ms;
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
@@ -178,6 +182,7 @@ Dieser Block wird in Phase 3 nach `packages/client/src/styles/tokens.css` kopier
     --motion-step: 1ms;
     --motion-card: 1ms;
     --motion-count: 1ms;
+    --motion-hover: 1ms;
   }
 }
 ```

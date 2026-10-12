@@ -65,3 +65,46 @@ p {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* Knöpfe: Karton mit hartem Versatz. Anheben beim Zeigen, Eindrücken beim Klicken. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: var(--line-thick) solid var(--color-ink);
+  border-radius: var(--radius);
+  background: var(--color-paper);
+  box-shadow: var(--offset-small);
+  color: var(--color-ink);
+  font-family: var(--font-text);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    transform var(--motion-hover) var(--ease-out),
+    box-shadow var(--motion-hover) var(--ease-out);
+}
+
+.button:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--offset);
+}
+
+.button:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.button--primary {
+  background: var(--color-tram);
+  color: var(--color-paper);
+}
+
+/* Tastaturfokus überall gleich: Tram-Blau, nie ein Leuchtrand */
+:focus-visible {
+  outline: 3px solid var(--color-tram);
+  outline-offset: 2px;
+}

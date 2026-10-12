@@ -70,6 +70,10 @@ export function createDemoState(): GameState {
     }
   }
   state.bank = { houses: TOTAL_HOUSES - houses, hotels: TOTAL_HOTELS - hotels };
+  // Gehaltene Freikarten liegen nicht mehr im Stapel.
+  const held = new Set(state.players.flatMap((p) => p.jailCards));
+  state.decks.event = state.decks.event.filter((id) => !held.has(id));
+  state.decks.community = state.decks.community.filter((id) => !held.has(id));
   return state;
 }
 

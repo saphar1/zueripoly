@@ -1,6 +1,6 @@
 // Spielerpanel im Stil einer Fahrplanzeile: Figur, Name, Kontostand, Besitzstreifen, Zustand.
-import type { CSSProperties } from "react";
-import type { ColorGroup, GameState, PlayerState, SpaceIndex } from "@zueripoly/engine";
+import type { CSSProperties, PointerEvent } from "react";
+import type { ColorGroup, GameState, PlayerId, PlayerState, SpaceIndex } from "@zueripoly/engine";
 import {
   COLOR_GROUPS,
   GROUP_STREETS,
@@ -11,8 +11,8 @@ import {
   countBuildings,
   getSpace,
 } from "@zueripoly/engine";
-import { formatChf } from "../format";
 import { Icon } from "./Icon";
+import { Money } from "./Money";
 import { Token } from "./Token";
 import "./PlayerPanel.css";
 
@@ -37,7 +37,21 @@ function plural(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
 }
 
-function DeedStrip({ player, state }: { player: PlayerState; state: GameState }) {
+/** Nur echte Mauszeiger lösen Hover aus; auf Touch-Geräten gibt es kein Hover. */
+function onMouse(handler: () => void) {
+  return (event: PointerEvent) => {
+    if (event.pointerType === "mouse") handler();
+  };
+}
+
+interface DeedStripProps {
+  player: PlayerState;
+  state: GameState;
+  focusSpace: SpaceIndex | null;
+  onSpaceHover?: (index: SpaceIndex | null) => void;
+}
+
+function DeedStrip({ player, state, focusSpace, onSpaceHover }: DeedStripProps) {
   return (
     <div className="deeds" aria-hidden="true">
       {DEED_GROUPS.map((group) => {
@@ -52,11 +66,16 @@ function DeedStrip({ player, state }: { player: PlayerState; state: GameState })
             {group.spaces.map((index) => {
               const property = state.properties[index];
               const mine = property?.owner === player.id;
+              const classes = ["deed"];
+              if (mine) classes.push("deed--owned");
+              if (mine && property?.mortgaged) classes.push("deed--mortgaged");
+              if (index === focusSpace) classes.push("deed--focus");
               return (
                 <span
                   key={index}
-                  className={`deed${mine ? " deed--owned" : ""}${mine && property?.mortgaged ? " deed--mortgaged" : ""}`}
-                  title={getSpace(index).name}
+                  className={classes.join(" ")}
+                  onPointerEnter={onMouse(() => onSpaceHover?.(index))}
+                  onPointerLeave={onMouse(() => onSpaceHover?.(null))}
                 />
               );
             })}
@@ -79,13 +98,43 @@ function describeOwnership(player: PlayerState, state: GameState): string {
   return parts.join(" · ");
 }
 
-export function PlayerPanel({ player, state, active }: { player: PlayerState; state: GameState; active: boolean }) {
+interface PlayerPanelProps {
+  player: PlayerState;
+  state: GameState;
+  active: boolean;
+  /** Verknüpft: der Spieler besitzt das Feld unter dem Zeiger, oder sein Panel ist unter dem Zeiger. */
+  linked?: boolean;
+  focusSpace?: SpaceIndex | null;
+  onPlayerHover?: (id: PlayerId | null) => void;
+  onSpaceHover?: (index: SpaceIndex | null) => void;
+}
+
+export function PlayerPanel({
+  player,
+  state,
+  active,
+  linked = false,
+  focusSpace = null,
+  onPlayerHover,
+  onSpaceHover,
+}: PlayerPanelProps) {
   const classes = ["panel"];
   if (active) classes.push("panel--active");
   if (player.bankrupt) classes.push("panel--bankrupt");
+  if (linked) classes.push("panel--linked");
+  const interactive = Boolean(onPlayerHover) && !player.bankrupt;
 
   return (
-    <article className={classes.join(" ")} aria-label={player.name}>
+    <article
+      className={classes.join(" ")}
+      aria-label={player.name}
+      style={{ "--player": `var(--player-${player.token})` } as CSSProperties}
+      tabIndex={interactive ? 0 : undefined}
+      onPointerEnter={interactive ? onMouse(() => onPlayerHover?.(player.id)) : undefined}
+      onPointerLeave={interactive ? onMouse(() => onPlayerHover?.(null)) : undefined}
+      onFocus={interactive ? () => onPlayerHover?.(player.id) : undefined}
+      onBlur={interactive ? () => onPlayerHover?.(null) : undefined}
+    >
       <header className="panel__head">
         <Token token={player.token} />
         <div className="panel__who">
@@ -118,11 +167,11 @@ export function PlayerPanel({ player, state, active }: { player: PlayerState; st
             )}
           </p>
         </div>
-        {!player.bankrupt && <p className="panel__money num">{formatChf(player.money)}</p>}
+        {!player.bankrupt && <Money amount={player.money} className="panel__money" />}
       </header>
       {!player.bankrupt && (
         <div className="panel__deeds">
-          <DeedStrip player={player} state={state} />
+          <DeedStrip player={player} state={state} focusSpace={focusSpace} onSpaceHover={onSpaceHover} />
           <p className="panel__summary">{describeOwnership(player, state)}</p>
         </div>
       )}
@@ -130,8 +179,17 @@ export function PlayerPanel({ player, state, active }: { player: PlayerState; st
   );
 }
 
+interface PlayerListProps {
+  state: GameState;
+  /** Spieler, dessen Panel markiert ist (Besitzer des Feldes unter dem Zeiger oder Panel unter dem Zeiger). */
+  linkedPlayer?: PlayerId | null;
+  focusSpace?: SpaceIndex | null;
+  onPlayerHover?: (id: PlayerId | null) => void;
+  onSpaceHover?: (index: SpaceIndex | null) => void;
+}
+
 /** Alle Spielerpanels mit Kopfzeile wie ein Fahrplan. */
-export function PlayerList({ state }: { state: GameState }) {
+export function PlayerList({ state, linkedPlayer = null, focusSpace = null, onPlayerHover, onSpaceHover }: PlayerListProps) {
   const current = state.players[state.current];
   return (
     <section className="players" aria-label="Spieler">
@@ -140,7 +198,16 @@ export function PlayerList({ state }: { state: GameState }) {
         <span className="num">Zug {state.turnNumber}</span>
       </header>
       {state.players.map((player) => (
-        <PlayerPanel key={player.id} player={player} state={state} active={player.id === current?.id} />
+        <PlayerPanel
+          key={player.id}
+          player={player}
+          state={state}
+          active={player.id === current?.id}
+          linked={player.id === linkedPlayer}
+          focusSpace={focusSpace}
+          onPlayerHover={onPlayerHover}
+          onSpaceHover={onSpaceHover}
+        />
       ))}
     </section>
   );

@@ -1,9 +1,9 @@
-// Ein normales Feld am Brettrand (keine Ecke).
+// Ein normales Feld am Brettrand (keine Ecke). Reine Anzeige; Zeiger und Klick behandelt das Brett.
 // Der Inhalt (`tile__face`) ist immer gleich aufgebaut: Balken innen, Name, Fuss aussen.
 // Je nach Seite wird er gedreht, damit der Balken zur Brettmitte zeigt.
 import type { CSSProperties } from "react";
-import type { PlayerState, PropertyState, Space } from "@zueripoly/engine";
-import { GROUP_NAMES, HOTEL_LEVEL, TOKEN_NAMES } from "@zueripoly/engine";
+import type { PlayerId, PlayerState, PropertyState, Space } from "@zueripoly/engine";
+import { HOTEL_LEVEL, TOKEN_NAMES } from "@zueripoly/engine";
 import type { Side } from "../board-layout";
 import { formatChf, hyphenate } from "../format";
 import { Icon, type IconName } from "./Icon";
@@ -16,7 +16,8 @@ interface TileProps {
   property: PropertyState | null;
   owner: PlayerState | null;
   visitors: PlayerState[];
-  style: CSSProperties;
+  movingPlayer: PlayerId | null;
+  markedPlayer: PlayerId | null;
 }
 
 const SPACE_ICONS: Partial<Record<Space["kind"], IconName>> = {
@@ -42,19 +43,7 @@ function Buildings({ level }: { level: number }) {
   );
 }
 
-function describe(space: Space, property: PropertyState | null, owner: PlayerState | null): string {
-  const parts: string[] = [space.name];
-  if (space.kind === "street") parts.push(GROUP_NAMES[space.group]);
-  if (space.kind === "tax") parts.push(`zahle ${formatChf(space.amount)}`);
-  if ("price" in space && !owner) parts.push(formatChf(space.price));
-  if (owner) parts.push(`gehört ${owner.name}`);
-  if (property?.mortgaged) parts.push("mit Hypothek belastet");
-  if (property && property.houses === HOTEL_LEVEL) parts.push("Hotel");
-  else if (property && property.houses > 0) parts.push(`${property.houses} ${property.houses === 1 ? "Haus" : "Häuser"}`);
-  return parts.join(", ");
-}
-
-export function Tile({ space, side, property, owner, visitors, style }: TileProps) {
+export function Tile({ space, side, property, owner, visitors, movingPlayer, markedPlayer }: TileProps) {
   const icon = iconFor(space);
   const barColor =
     space.kind === "street"
@@ -66,12 +55,7 @@ export function Tile({ space, side, property, owner, visitors, style }: TileProp
           : null;
 
   return (
-    <div
-      className={`tile tile--${side} tile--${space.kind}${property?.mortgaged ? " tile--mortgaged" : ""}`}
-      style={style}
-      role="img"
-      aria-label={describe(space, property, owner)}
-    >
+    <div className={`tile tile--${side} tile--${space.kind}${property?.mortgaged ? " tile--mortgaged" : ""}`}>
       <div className="tile__face">
         {barColor && (
           <div className="tile__bar" style={{ "--bar": barColor } as CSSProperties}>
@@ -96,7 +80,13 @@ export function Tile({ space, side, property, owner, visitors, style }: TileProp
       {visitors.length > 0 && (
         <div className="tile__tokens">
           {visitors.map((p) => (
-            <Token key={p.id} token={p.token} label={`${p.name} (${TOKEN_NAMES[p.token]})`} />
+            <Token
+              key={p.id}
+              token={p.token}
+              label={`${p.name} (${TOKEN_NAMES[p.token]})`}
+              moving={p.id === movingPlayer}
+              marked={p.id === markedPlayer}
+            />
           ))}
         </div>
       )}

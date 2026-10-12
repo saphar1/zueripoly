@@ -1,0 +1,117 @@
+/* Karte mit zwei Seiten im selben Rasterfeld; das Innere dreht sich um die Y-Achse. */
+.event-card {
+  width: calc(var(--u) * 3.6);
+  min-width: 240px;
+  perspective: 900px;
+}
+
+.event-card__inner {
+  display: grid;
+  transform-style: preserve-3d;
+  transition: transform var(--motion-card) var(--ease-out);
+}
+
+.event-card--open .event-card__inner {
+  transform: rotateY(180deg);
+}
+
+.event-card__face {
+  grid-area: 1 / 1;
+  border: var(--line-thick) solid var(--color-ink);
+  box-shadow: var(--offset);
+  backface-visibility: hidden;
+}
+
+.event-card__back {
+  position: relative;
+  min-height: calc(var(--u) * 2.2);
+}
+
+.event-card--event .event-card__back,
+.event-card--event .event-card__deck {
+  background: var(--color-tram);
+}
+
+.event-card--community .event-card__back,
+.event-card--community .event-card__deck {
+  background: var(--color-ink);
+}
+
+.event-card__pattern {
+  position: absolute;
+  inset: 0 0 auto;
+  width: 100%;
+  height: 66%;
+}
+
+.event-card__pattern path {
+  fill: none;
+  stroke: var(--color-paper);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.event-card__back-name {
+  position: absolute;
+  left: var(--space-3);
+  bottom: var(--space-2);
+  color: var(--color-paper);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.event-card__front {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-paper);
+  transform: rotateY(180deg);
+}
+
+.event-card__deck {
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-paper);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.event-card__text {
+  flex: 1;
+  padding: var(--space-3);
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.event-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3) var(--space-3);
+}
+
+.event-card__id {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.event-card__foot .button {
+  padding: var(--space-1) var(--space-3);
+  font-size: 14px;
+}
+
+/* Reduzierte Bewegung: nicht drehen, Vorderseite direkt zeigen */
+@media (prefers-reduced-motion: reduce) {
+  .event-card__inner,
+  .event-card--open .event-card__inner,
+  .event-card__front {
+    transform: none;
+  }
+
+  .event-card__back {
+    display: none;
+  }
+}

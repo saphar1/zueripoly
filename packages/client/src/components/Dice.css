@@ -20,3 +20,63 @@
 .die__pip {
   fill: var(--color-ink);
 }
+
+/* Würfel als Knopf: heben sich unter dem Zeiger an, sinken beim Drücken ein */
+.dice--button {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.dice--button .die {
+  transition: transform var(--motion-hover) var(--ease-out), filter var(--motion-hover) var(--ease-out);
+}
+
+.dice--button:hover .die {
+  transform: translate(-2px, -2px);
+  filter: drop-shadow(5px 5px 0 var(--color-ink));
+}
+
+.dice--button:active .die {
+  transform: translate(2px, 2px);
+  filter: drop-shadow(1px 1px 0 var(--color-ink));
+}
+
+.dice--button:focus-visible {
+  outline: 3px solid var(--color-tram);
+  outline-offset: 4px;
+}
+
+/* Rollen: jeder Würfel wackelt leicht versetzt (Dauer aus --motion-dice) */
+.dice--rolling .die {
+  animation: die-roll var(--motion-dice) linear;
+}
+
+.dice--rolling .die + .die {
+  animation-direction: reverse;
+}
+
+@keyframes die-roll {
+  0% {
+    transform: rotate(0) translateY(0);
+  }
+  20% {
+    transform: rotate(-14deg) translateY(-12%);
+  }
+  45% {
+    transform: rotate(10deg) translateY(0);
+  }
+  70% {
+    transform: rotate(-6deg) translateY(-5%);
+  }
+  100% {
+    transform: rotate(0) translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dice--rolling .die {
+    animation: none;
+  }
+}

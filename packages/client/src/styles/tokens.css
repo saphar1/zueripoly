@@ -60,6 +60,7 @@
   --motion-step: 150ms;
   --motion-card: 500ms;
   --motion-count: 600ms;
+  --motion-hover: 120ms;
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
@@ -69,5 +70,6 @@
     --motion-step: 1ms;
     --motion-card: 1ms;
     --motion-count: 1ms;
+    --motion-hover: 1ms;
   }
 }

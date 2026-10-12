@@ -1,6 +1,6 @@
 // Die vier Eckfelder: Start, Gefängnis, Ferien am Zürichsee, Gehe ins Gefängnis.
-import type { CSSProperties } from "react";
-import type { PlayerState, Space } from "@zueripoly/engine";
+// Reine Anzeige; Zeiger und Klick behandelt das Brett.
+import type { PlayerId, PlayerState, Space } from "@zueripoly/engine";
 import { START_SALARY, TOKEN_NAMES } from "@zueripoly/engine";
 import { formatChf } from "../format";
 import { Icon } from "./Icon";
@@ -15,67 +15,78 @@ interface CornerTileProps {
   prisoners: PlayerState[];
   /** Jackpot-Topf, wenn die Option aktiv ist, sonst `null`. */
   jackpot: number | null;
-  style: CSSProperties;
+  movingPlayer: PlayerId | null;
+  markedPlayer: PlayerId | null;
 }
 
-function Tokens({ players, className }: { players: PlayerState[]; className: string }) {
+interface TokensProps {
+  players: PlayerState[];
+  className: string;
+  movingPlayer: PlayerId | null;
+  markedPlayer: PlayerId | null;
+}
+
+function Tokens({ players, className, movingPlayer, markedPlayer }: TokensProps) {
   if (players.length === 0) return null;
   return (
     <div className={className}>
       {players.map((p) => (
-        <Token key={p.id} token={p.token} label={`${p.name} (${TOKEN_NAMES[p.token]})`} />
+        <Token
+          key={p.id}
+          token={p.token}
+          label={`${p.name} (${TOKEN_NAMES[p.token]})`}
+          moving={p.id === movingPlayer}
+          marked={p.id === markedPlayer}
+        />
       ))}
     </div>
   );
 }
 
-export function CornerTile({ space, visitors, prisoners, jackpot, style }: CornerTileProps) {
+export function CornerTile({ space, visitors, prisoners, jackpot, movingPlayer, markedPlayer }: CornerTileProps) {
+  const marks = { movingPlayer, markedPlayer };
   switch (space.kind) {
     case "start":
       return (
-        <div className="corner corner--start" style={style} role="img" aria-label={`Start: ${formatChf(START_SALARY)} beim Vorbeiziehen`}>
+        <div className="corner corner--start">
           <Icon name="arrow" className="corner__arrow" />
           <span className="corner__title">Start</span>
           <span className="corner__badge num">+{formatChf(START_SALARY)}</span>
-          <Tokens players={visitors} className="corner__tokens" />
+          <Tokens players={visitors} className="corner__tokens" {...marks} />
         </div>
       );
     case "jail":
       return (
-        <div className="corner corner--jail" style={style} role="img" aria-label="Gefängnis, aussen nur zu Besuch">
+        <div className="corner corner--jail">
           <div className="jail__cell">
             <span className="jail__label">Gefängnis</span>
-            <Tokens players={prisoners} className="jail__tokens" />
+            <Tokens players={prisoners} className="jail__tokens" {...marks} />
             <svg className="jail__bars" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-              <path d="M25 0 V100 M50 0 V100 M75 0 V100" />
+              <path d="M20 0 V100 M40 0 V100 M60 0 V100 M80 0 V100" />
             </svg>
           </div>
           <span className="jail__visit">Nur zu Besuch</span>
-          <Tokens players={visitors} className="jail__visitors" />
+          <Tokens players={visitors} className="jail__visitors" {...marks} />
         </div>
       );
     case "vacation":
       return (
-        <div
-          className="corner corner--vacation"
-          style={style}
-          role="img"
-          aria-label={`Ferien am Zürichsee${jackpot !== null ? `, Topf ${formatChf(jackpot)}` : ""}`}
-        >
+        <div className="corner corner--vacation">
           <span className="corner__title">Ferien</span>
           <span className="corner__sub">am Zürichsee</span>
           {jackpot !== null && <span className="corner__pot num">Topf {formatChf(jackpot)}</span>}
           <div className="vacation__lake">
             <Icon name="waves" />
           </div>
-          <Tokens players={visitors} className="corner__tokens" />
+          <Tokens players={visitors} className="corner__tokens" {...marks} />
         </div>
       );
     case "goToJail":
       return (
-        <div className="corner corner--gotojail" style={style} role="img" aria-label="Gehe ins Gefängnis">
+        <div className="corner corner--gotojail">
           <span className="corner__title">Gehe ins Gefängnis</span>
           <Icon name="arrowDiagonal" className="corner__arrow" />
+          <Tokens players={visitors} className="corner__tokens" {...marks} />
         </div>
       );
     default:
