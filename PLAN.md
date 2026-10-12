@@ -60,7 +60,7 @@ Teil 2: spielbare Oberfläche
 - [x] Zoom und Verschieben auf dem Handy (`BoardViewport`: zwei Finger, Knöpfe −/+, Tasten + − 0; ab ca. 160 % Feldnamen)
 - [x] Abschluss: Screenshots Desktop und Handy geprüft, Doku, Commit «Phase 3»
 
-## Phase 4: Computergegner  ← nächste Phase
+## Phase 4: Computergegner  ✓ abgeschlossen
 Vorarbeit: `docs/engine.md` (Ablauf, `getWaitingFor`, `getLegalActions`, `canProposeTrade`) und im Client `game/use-local-game.ts` (dort klinken sich die Bots ein: Ist der wartende Spieler ein Bot, wählt `bot.ts` die Aktion, der Hook führt sie mit kurzer Pause aus). `PlayerConfig.bot` («easy» / «clever») gibt es in der Engine schon.
 - [x] `bot.ts`: Entscheidungsschnittstelle (Zustand → Aktion), `bot-eval.ts`, `bot-trade.ts`, Doku `docs/bots.md`
 - [x] Stufe «einfach»
@@ -68,9 +68,13 @@ Vorarbeit: `docs/engine.md` (Ablauf, `getWaitingFor`, `getLegalActions`, `canPro
 - [x] Bot-gegen-Bot-Tests (200 Partien in `npm test`, alle enden; Liga: `npm run bots -w @zueripoly/engine`)
 - [x] Solo-Modus im Client (1–5 Bots, Stufe je Bot, Denkpause `game/use-bot-turns.ts`, Tafel und Protokoll)
 - [x] Durchspiel-Test `--solo --bots 3` ohne Fehler
-- [ ] Offen: Handy-Ansicht der Solo-Lobby/Spielansicht prüfen, `CLAUDE.md` nachführen, Abschluss-Commit «Phase 4: Computergegner»
+- [x] Handy-Ansicht (375×812) der Solo-Lobby und Spielansicht geprüft, Build und lokaler Durchspiel-Test grün
+- [x] Abschluss: Doku, Commit «Phase 4»
 
-## Phase 5: Server und Online
+**Ergebnis Bot-Liga** (200 Partien je Paarung, alle beendet): clever gegen einfach 88 % Siege für clever, 1 clever gegen 3 einfach 79 % (gleich stark wären 25 %). Tabelle in `docs/bots.md`.
+
+## Phase 5: Server und Online  ← nächste Phase
+Vorarbeit: `docs/engine.md`, `docs/bots.md`, `packages/server/src/index.ts` (Gerüst). Der Server hält `GameState` + Spiel-Zufallsquelle (`SeededRng`, Stand mit `getState()` speicherbar) und eine eigene `botRng`; er prüft jede Aktion mit `applyAction` und schickt Zustand + Ereignisse an alle. Bots (auch Übernahme nach 5 Min. Abwesenheit, `chooseBotAction(..., level)`) und Zeitlimit (`timeout`) laufen auf dem Server, mit derselben Denkpause wie im Client. Spielstände mit `serializeGame` / `deserializeGame` im Ordner `saves/`.
 - [ ] Räume, Raumcodes
 - [ ] WebSocket-Protokoll (Aktionen rein, Zustand raus)
 - [ ] Lobby mit Namen und Figurenwahl

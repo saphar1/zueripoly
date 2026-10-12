@@ -15,13 +15,13 @@ Alle Texte im Spiel und in der Doku: **Deutsch, Schweizer Schreibweise** (immer 
   - `packages/client`: Vite + React. Zeigt nur an und schickt Aktionen. Importiert die Engine für Solo und Lokal.
 - Dieselbe Engine läuft für Solo, Lokal und Online. Zustand ist ein Wert, Aktionen sind Funktionen `(Zustand, Aktion) → neuer Zustand`; Zufall (Würfel, Mischen) kommt über eine übergebene, seedbare Zufallsquelle.
 - Umgebung: **Windows 11, PowerShell, Node 24, npm 11, Git.** Skripte müssen unter Windows laufen (keine reinen Bash-Befehle in npm-Skripten, keine `rm -rf`, `cp` usw.).
-- Hauptquellen der Wahrheit: `docs/regeln.md`, `docs/brett.md`, `docs/design.md`. Engine-Schnittstelle: `docs/engine.md`.
+- Hauptquellen der Wahrheit: `docs/regeln.md`, `docs/brett.md`, `docs/design.md`. Engine-Schnittstelle: `docs/engine.md`. Computergegner: `docs/bots.md`.
 
 ## Befehle
 Im Projektordner `C:\Users\sapir\zueripoly`:
 ```powershell
 npm install        # Abhängigkeiten
-npm test           # Engine-Tests (Vitest), inkl. 300 Zufallspartien (~12 s)
+npm test           # Engine-Tests (Vitest), inkl. 300 Zufallspartien und 200 Bot-Partien (~15–25 s)
 npm run typecheck  # TypeScript in allen Paketen
 npm run dev        # Server und Client gleichzeitig
 npm run build      # Client bauen
@@ -30,6 +30,8 @@ npm run screenshots -w @zueripoly/client                # Playwright: Desktop 14
 npm run screenshots -w @zueripoly/client -- --details   # zusätzlich Brett-Viertel (2×) und Interaktionszustände
 npm run playtest -w @zueripoly/client                   # Durchspiel-Test der Oberfläche (Playwright klickt zufällig)
 npm run playtest -w @zueripoly/client -- --money 500    # kurze Partie bis zum Gewinner (wenig Startkapital)
+npm run playtest -w @zueripoly/client -- --solo --bots 3 # Solo: klickt nur für «Anna», Bots ziehen selbst (Bilder solo-*.png)
+npm run bots -w @zueripoly/engine                       # Bot-Liga: Siegquoten je Paarung (optional -- --games 500 --check)
 ```
 
 ## Namenskonventionen
@@ -71,6 +73,21 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 - **Phase 1 abgeschlossen**: Workspace, Gerüste, Doku. Details in `PLAN.md`.
 - **Phase 2 abgeschlossen**: Engine mit allen Regeln, 108 Tests, 300 Zufallspartien. Details in `docs/engine.md`.
 - **Phase 3 abgeschlossen**: Design freigegeben (2026-10-12), lokal spielbar von Anfang bis Gewinner (Menü, Lobby, Spiel mit allen Entscheidungen, Handel, Zoom auf dem Handy). Durchspiel-Test der Oberfläche: `npm run playtest -w @zueripoly/client`.
+- **Phase 4 abgeschlossen**: Computergegner «einfach» und «clever», Solomodus mit 1–5 Bots. 200 Bot-Partien in `npm test` (alle enden, clever schlägt einfach im Zweikampf in rund 90 %). Details in `docs/bots.md`.
+
+### Computergegner (Phase 4)
+- Engine: `bot.ts` (Entscheide je Lage, `BOT_NAMES`, `BOT_LEVEL_NAMES`), `bot-eval.ts` (Bewertung `positionValue`, `cashReserve`, `propertyWorth`, `patience`, `fairRatio`, kleine Helfer, `eventsThisTurn`), `bot-trade.ts` (Angebote prüfen und machen, Handel auf einer Kopie durchspielen). `bot-eval` wird nicht aus `index.ts` exportiert (intern).
+- `chooseBotAction(state, playerId, rng, level?)` nur für den wartenden Spieler (sonst Fehler). Ausführen immer über `applyAction`, nie Abkürzungen.
+- Fair: Bots lesen nie `state.decks` und bekommen nie die Spiel-Zufallsquelle, sondern eine eigene (`botRng`). Die Stufe der anderen Bots ist öffentlich (steht im Spielerpanel) und darf genutzt werden.
+- Gedächtnis nur über `state.log` (Ereignisse seit dem letzten `turnStarted`): höchstens 1 Handelsangebot pro Zug, Verwaltungsschritte pro Zug begrenzt (clever 15, einfach 4), kürzlich abgelehnte Angebote nicht wiederholen.
+- Damit jede Partie endet: Kompromissbereitschaft ab etwa 40 Runden (`patience`), Umbau bei Häusermangel (`rebuildForHotels`: Häuser einer schwächeren Gruppe verkaufen, stärkste Gruppe bis zum Hotel ausbauen).
+- Erkenntnisse aus der Bot-Liga: Bauen entscheidet (clever darf für Häuser bis auf 30 % der Reserve gehen); im Zweikampf zahlt clever kein Geld für Felder (der Gegner baut sonst damit); Bargeld für den Ausbau eigener Gruppen zählt in der Bewertung mehr.
+- Tests: `tests/bot.test.ts` (Einzelfälle, Fairness), `tests/bot-sim.ts` (Simulationsschleife ohne Vitest, auch für `scripts/bot-league.ts`), `tests/bot-games-a.test.ts` (100 gemischte Partien), `tests/bot-games-b.test.ts` (100 Zweikämpfe, clever ≥ 70 %). Wer die Bot-Logik ändert, prüft danach `npm run bots -w @zueripoly/engine`.
+- Client: `game/use-bot-turns.ts` lässt Bots nach einer Denkpause ziehen (1 s, Folgeschritte 0,5 s, nach Karte 2 s, ohne Menschen 0,15 s). Die Pause ist Lesezeit, keine Animation, darum unabhängig von `prefers-reduced-motion`. Nur im Entwicklungsmodus: `?botpause=<ms>` (Durchspiel-Test). Wird eine Bot-Aktion abgelehnt, schickt der Hook `timeout` und warnt in der Konsole.
+- `act` aus `use-local-game.ts` gibt `true`/`false` zurück. `GameSession` hat `botRng`. In `GameScreen` ruhen Verwalten, Würfelklick und Zeitlimit, solange ein Bot dran ist (`human`).
+- Tafel bei Bots: `botStatus` in `ActionPanel.tsx` (ein Satz zur Lage mit Namen, Kopf «Am Zug · Computer, clever»), `aria-busy` ist dann `true` (der Durchspiel-Test wartet darauf). Bot-Angebote an Menschen ohne «zieht zurück»; eigenes Angebot an einen Bot kann man zurückziehen.
+- Lobby: Prop `mode: "local" | "solo"`, `Seat.bot`; Solo: du + 1–5 Bots mit zufälligem Namen aus `BOT_NAMES`, Stufe als `.segments`. Namen müssen eindeutig sein (Prüfung in der Lobby). `App.tsx` merkt sich die letzten Einstellungen je Modus.
+- Spielerpanel: Chip `chip--bot` «Computer · einfach/clever». Protokoll: `tradeProposed` nennt den Inhalt («Ueli bietet Anna den Letzigrund und 120 CHF für Höngg.»).
 
 ### Client (Phase 3, Teil 1)
 - Entwurfsseite `entwurf.html` → `src/entwurf.tsx` → `screens/DesignDraft.tsx` mit Beispielzustand (`demo/demo-state.ts`) und Bewegungs-Demo ohne Spielregeln (`demo/use-demo.ts`). Bleibt als Stilreferenz bestehen.
@@ -113,9 +130,12 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 - Regelabweichungen vom Original: siehe `docs/regeln.md`, Abschnitt 16.
 
 ## Bekannte Probleme
-- Zufallspartien können ewig dauern (Häusermangel-Patt: alle 32 Häuser verbaut, kein Hotel möglich). Der Test bricht nach 6000 Aktionen ab und verlangt nur, dass über 80 % mit Gewinner enden. Für echte Spieler (und die Bots in Phase 4) ist das kein Fehler der Engine.
+- Zufallspartien können ewig dauern (Häusermangel-Patt: alle 32 Häuser verbaut, kein Hotel möglich). Der Test bricht nach 6000 Aktionen ab und verlangt nur, dass über 80 % mit Gewinner enden. Die Bots lösen das Patt selbst (Umbau zum Hotel), ihre Partien enden alle.
 - Ohne Zeitlimit kann ein menschlicher Schuldner das Spiel blockieren, wenn er weder Geld auftreibt noch handelt (er darf nur Bankrott erklären, wenn nichts mehr reicht). Online fängt das Zeitlimit oder (Phase 5) die Bot-Übernahme ab.
 - Ist Port 5173 belegt (z. B. ein alter Dev-Server), nimmt Vite den nächsten freien Port (5174 …); die Adresse steht im Terminal.
 - Neu laden im Browser beendet die Partie (Spielstand speichern kommt in Phase 6). Noch keine Töne und kein Stummschalter (Phase 6).
 - Jedes der 40 Felder ist ein eigener Tab-Halt; für Tastatur-Spielende ist das viel. Später eventuell Pfeiltasten-Navigation über das Brett.
 - Der Durchspiel-Test mit 1500 CHF Startkapital endet oft ohne Gewinner (die Zufallsstrategie belastet zu viel). Mit `--money 500` endet er meist nach 500–800 Schritten mit Gewinner.
+- Solo mit 5 Bots: Zwischen zwei eigenen Zügen vergehen leicht 20–30 s (Denkpause pro Bot-Schritt). Eine Tempo-Einstellung gibt es noch nicht (Idee für Phase 6).
+- Während Würfel und Figur noch laufen, zeigt die Tafel schon den nächsten Entscheid (bei Bots den Satz zur nächsten Lage). Gilt auch für Menschen (Knöpfe dann gesperrt).
+- «clever» ist für Anfänger stark (handelt geschickt, nutzt aus, dass «einfach» nur Listenpreise rechnet). Wer gewinnen lernen will, beginnt mit «einfach».
