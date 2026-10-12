@@ -1,5 +1,5 @@
 // Öffentliche Schnittstelle der Engine. Reine Spiellogik: keine UI, kein Netzwerk, keine Node-/DOM-APIs.
-export const ENGINE_VERSION = "0.2.0";
+export const ENGINE_VERSION = "0.3.0";
 
 export * from "./types";
 export * from "./board";

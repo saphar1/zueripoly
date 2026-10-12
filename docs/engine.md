@@ -53,6 +53,14 @@ Das Spiel wartet immer auf **genau einen** Spieler (`getWaitingFor`). Vorrang vo
 
 Die Uhr läuft ausserhalb der Engine (Server oder Client). Ist die Zeit um, schickt sie für den wartenden Spieler `timeout`. Die Engine macht dann **einen** Standardschritt (würfeln, nicht kaufen, passen, ablehnen, belastet lassen, Geld auftreiben oder Bankrott, Zug beenden). Ist danach immer noch derselbe Spieler dran, wird erneut `timeout` geschickt.
 
+## Computergegner
+
+`chooseBotAction(state, playerId, rng, level?)` schlägt für den wartenden Spieler genau eine Aktion vor; ausgeführt wird sie wie bei Menschen mit `applyAction`.
+- `rng` ist eine **eigene** Zufallsquelle für die Bots (nie die des Spiels). `level` («easy» / «clever») überschreibt `PlayerState.bot`, z. B. wenn ein Bot für einen Menschen einspringt.
+- Bots lesen nur öffentliches Wissen (nie `state.decks`) und merken sich nichts ausserhalb des Spielstands (Gedächtnis = Protokoll des laufenden Zuges).
+- `BOT_NAMES` (Zürcher Vornamen für die Lobby), `BOT_LEVEL_NAMES` («einfach», «clever»).
+- Verhalten, Fairness und Schleifenschutz: [bots.md](bots.md).
+
 ## Tests
 
-`npm test` führt die Regeltests und 300 Zufallspartien aus. In den Zufallspartien werden nach jeder Aktion die Invarianten geprüft (Gebäudevorrat 32/12, Besitz, Karten, kein negatives Geld, wer am Zug ist) und am Ende das ganze Geld-Protokoll nachgerechnet.
+`npm test` führt die Regeltests, 300 Zufallspartien und 200 Bot-Partien aus (siehe [bots.md](bots.md)). In den Zufallspartien werden nach jeder Aktion die Invarianten geprüft (Gebäudevorrat 32/12, Besitz, Karten, kein negatives Geld, wer am Zug ist) und am Ende das ganze Geld-Protokoll nachgerechnet.

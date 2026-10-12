@@ -123,7 +123,7 @@ Ein Spieler ist bankrott, wenn er eine Schuld nicht bezahlen kann, auch nach Ver
 - Belastete Felder: siehe Abschnitt 11. Der Anbieter entscheidet beim Angebot, welche erhaltenen belasteten Felder er sofort ablöst, der Empfänger beim Annehmen.
 - Ein Handel darf **keine Schuld** erzeugen: Jede Seite muss nach dem Tausch Zins und Ablösung bar bezahlen können, sonst ist das Angebot ungültig.
 - Es gibt immer höchstens **ein offenes Angebot**. Solange es offen ist, wartet das Spiel auf die Antwort.
-- Computergegner prüfen Angebote nach ihrer Logik (Phase 4).
+- Computergegner prüfen Angebote nach ihrer Logik (siehe `docs/bots.md`).
 - Es gibt **keine** versteckten Absprachen: Gegenleistungen wie «Ich zahle dir künftig keine Miete» sind keine Spielregel und werden nicht umgesetzt.
 
 ## 14. Optionen in der Lobby
