@@ -1,0 +1,64 @@
+/* Rahmen ums Brett. --board-fit (von aussen) = Grösse, in der das ganze Brett passt. */
+.viewport {
+  position: relative;
+}
+
+.viewport__scroll {
+  --board-size: calc(var(--board-fit, 800px) * var(--zoom, 1));
+}
+
+/* Kleiner Bildschirm: der Rahmen bleibt so gross wie das ganze Brett und scrollt beim Zoomen. */
+.viewport--zoomable .viewport__scroll {
+  width: calc(var(--board-fit) + 10px);
+  height: calc(var(--board-fit) + 10px);
+  padding: 0 6px 6px 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  /* Ein Finger verschiebt (Browser), zwei Finger zoomen (eigene Logik). */
+  touch-action: pan-x pan-y;
+}
+
+.viewport__controls {
+  position: absolute;
+  right: var(--space-3);
+  bottom: var(--space-3);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  border: var(--line-thick) solid var(--color-ink);
+  background: var(--color-paper);
+  box-shadow: var(--offset-small);
+}
+
+.viewport__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.viewport__button:active {
+  background: var(--color-paper-dark);
+}
+
+.viewport__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.viewport__level {
+  min-width: 4.2em;
+  padding: 0 var(--space-1);
+  border-inline: var(--line-thin) solid var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 40px;
+  text-align: center;
+}

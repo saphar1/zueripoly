@@ -1,0 +1,159 @@
+/* Handels-Tafel: Partnerwahl, darunter zwei Spalten wie ein Fahrschein mit zwei Abschnitten. */
+.trade {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.trade__partners {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  --token-size: 28px;
+}
+
+.trade__partner {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
+  border: var(--line-thick) solid var(--color-ink);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.trade__partner .token {
+  border-width: 1.5px;
+  box-shadow: none;
+}
+
+.trade__partner[aria-checked="true"] {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+
+.trade__sides {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: var(--line-thick) solid var(--color-ink);
+}
+
+.trade-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-3);
+  border: 0;
+}
+
+.trade-side + .trade-side {
+  border-left: var(--line-thick) solid var(--color-ink);
+}
+
+.trade-side__title {
+  float: left;
+  width: 100%;
+  margin-bottom: var(--space-2);
+  padding: 0;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.trade-side__empty {
+  font-size: 14px;
+}
+
+.trade-side__spaces {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Ein Feld zum Ankreuzen: Farbbalken links, Name, Hinweis */
+.trade-space {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  padding: 2px var(--space-2) 2px 0;
+  border-left: 8px solid var(--bar);
+  padding-left: var(--space-2);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.trade-space input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-tram);
+}
+
+.trade-space__name {
+  font-weight: 600;
+}
+
+.trade-space__note {
+  font-size: 12px;
+}
+
+.trade-space--blocked {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.trade-space__lift {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  margin: 2px 0 var(--space-1) var(--space-5);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.trade-money {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.trade-money input {
+  width: 7em;
+  padding: var(--space-1) var(--space-2);
+  border: var(--line-thick) solid var(--color-ink);
+  border-radius: var(--radius);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.trade-money__max {
+  font-size: 12px;
+  font-weight: 400;
+}
+
+@media (max-width: 599px) {
+  .trade__sides {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .trade-side + .trade-side {
+    border-top: var(--line-thick) solid var(--color-ink);
+    border-left: 0;
+  }
+}

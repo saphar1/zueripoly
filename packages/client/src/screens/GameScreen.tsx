@@ -5,6 +5,7 @@ import type { Action, PlayerId, SpaceIndex } from "@zueripoly/engine";
 import { getLegalActions, getWaitingFor } from "@zueripoly/engine";
 import { ActionPanel } from "../components/ActionPanel";
 import { Board } from "../components/Board";
+import { BoardViewport } from "../components/BoardViewport";
 import { DeedCard } from "../components/DeedCard";
 import { EventCard } from "../components/EventCard";
 import { GameLog } from "../components/GameLog";
@@ -96,19 +97,21 @@ export function GameScreen({ session, onNewGame, onMenu }: GameScreenProps) {
   return (
     <main className="game">
       <div className="game__board">
-        <Board
-          state={view}
-          message={game.message}
-          focusSpace={focusSpace}
-          selectedSpace={selected}
-          highlightPlayer={hoveredPlayer}
-          movingPlayer={game.movingPlayer}
-          rollingDice={game.rollingDice}
-          overlay={overlay}
-          onSpaceHover={setHovered}
-          onSpaceSelect={(index) => setSelected((current) => (current === index ? null : index))}
-          onRoll={canRoll ? () => actNow({ type: "rollDice" }) : undefined}
-        />
+        <BoardViewport>
+          <Board
+            state={view}
+            message={game.message}
+            focusSpace={focusSpace}
+            selectedSpace={selected}
+            highlightPlayer={hoveredPlayer}
+            movingPlayer={game.movingPlayer}
+            rollingDice={game.rollingDice}
+            overlay={overlay}
+            onSpaceHover={setHovered}
+            onSpaceSelect={(index) => setSelected((current) => (current === index ? null : index))}
+            onRoll={canRoll ? () => actNow({ type: "rollDice" }) : undefined}
+          />
+        </BoardViewport>
       </div>
 
       <div className="game__panel">
@@ -117,7 +120,10 @@ export function GameScreen({ session, onNewGame, onMenu }: GameScreenProps) {
           busy={game.busy}
           error={game.error}
           secondsLeft={secondsLeft}
-          onAct={actNow}
+          onAct={(action, as) => {
+            const who = as ?? waiting;
+            if (who) act(who, action);
+          }}
           onNewGame={onNewGame}
           onMenu={onMenu}
         />

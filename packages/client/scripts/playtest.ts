@@ -61,6 +61,24 @@ async function manage(page: Page, prefer: RegExp, only = false): Promise<boolean
   return false;
 }
 
+/** Ein zufälliges Handelsangebot zusammenstellen und senden (oder abbrechen, wenn es nicht gültig ist). */
+async function trade(page: Page): Promise<boolean> {
+  await page.getByRole("button", { name: "Handeln" }).click();
+  const boxes = page.locator(".trade-side input[type=checkbox]:not(:disabled)");
+  const n = await boxes.count();
+  for (let k = 0; k < Math.min(n, 1 + Math.floor(Math.random() * 2)); k++) {
+    await boxes.nth(Math.floor(Math.random() * n)).click();
+  }
+  if (Math.random() < 0.5) await page.locator(".trade-money input").first().fill(String(10 * Math.floor(Math.random() * 10)));
+  const send = page.getByRole("button", { name: "Angebot senden" });
+  if (await send.isEnabled()) {
+    await send.click();
+    return true;
+  }
+  await page.getByRole("button", { name: "Abbrechen" }).click();
+  return false;
+}
+
 const server = await createServer({ root: clientRoot, logLevel: "warn", server: { port: 5198 } });
 await server.listen();
 const base = server.resolvedUrls?.local[0] ?? "http://localhost:5198/";
@@ -85,6 +103,7 @@ try {
   await page.getByRole("button", { name: "Losfahren" }).click();
 
   let steps = 0;
+  let trades = 0;
   let result = "kein Gewinner";
   while (steps < MAX_STEPS) {
     const state = await ready(page);
@@ -96,6 +115,11 @@ try {
     if (state === "manage") {
       // Schulden, aber Bankrott noch nicht erlaubt: Geld auftreiben.
       if (!(await manage(page, /verkaufen|Hypothek aufnehmen/))) throw new Error("Schulden, aber keine Aktion möglich.");
+      continue;
+    }
+    // Ab und zu handeln.
+    if (Math.random() < 0.05 && (await page.getByRole("button", { name: "Handeln" }).count()) > 0) {
+      if (await trade(page)) trades++;
       continue;
     }
     // Oft bauen (falls möglich), selten auslösen: so endet eine Partie schneller.
@@ -119,7 +143,7 @@ try {
   }
 
   await page.screenshot({ path: path.join(outDir, "playtest-ende.png") });
-  console.log(`Schritte: ${steps}, Ergebnis: ${result}`);
+  console.log(`Schritte: ${steps}, Handelsangebote: ${trades}, Ergebnis: ${result}`);
   const logLines = await page.locator(".log__text").count();
   console.log(`Protokollzeilen sichtbar: ${logLines}`);
   await context.close();

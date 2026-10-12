@@ -1,12 +1,13 @@
 // Tafel für Entscheidungen (design.md: keine Pop-ups, sondern eine Tafel neben dem Brett).
 // Zeigt, auf wen das Spiel wartet und was diese Person jetzt tun kann. Angeboten wird nur, was die Engine erlaubt.
 import { useEffect, useState, type ReactNode } from "react";
-import type { Action, GameState, PlayerState, TradeSide } from "@zueripoly/engine";
+import type { Action, GameState, PlayerId, PlayerState, SpaceIndex, TradeOffer, TradeSide } from "@zueripoly/engine";
 import {
   BANK,
   BID_STEP,
   JAIL_FINE,
   MAX_JAIL_ROLLS,
+  canProposeTrade,
   getLegalActions,
   getPropertySpace,
   getSpace,
@@ -19,6 +20,7 @@ import {
 import { formatChf } from "../format";
 import { spaceNom } from "../game-text";
 import { Token } from "./Token";
+import { TradeComposer } from "./TradeComposer";
 import "./ActionPanel.css";
 
 interface ActionPanelProps {
@@ -27,7 +29,8 @@ interface ActionPanelProps {
   error: string | null;
   /** Restzeit in Sekunden, wenn ein Zeitlimit läuft. */
   secondsLeft: number | null;
-  onAct: (action: Action) => void;
+  /** Aktion für den wartenden Spieler (oder mit `as` für jemand anderen, z. B. Angebot zurückziehen). */
+  onAct: (action: Action, as?: PlayerId) => void;
   onNewGame: () => void;
   onMenu: () => void;
 }
@@ -121,8 +124,72 @@ function Auction({ state, bidder, disabled, onAct }: { state: GameState; bidder:
   );
 }
 
+interface TradeOfferViewProps {
+  state: GameState;
+  offer: TradeOffer;
+  legal: Action[];
+  disabled: boolean;
+  onAct: (action: Action, as?: PlayerId) => void;
+}
+
+/** Offenes Angebot: Empfänger nimmt an (belastete Felder wahlweise sofort auslösen) oder lehnt ab. */
+function TradeOfferView({ state, offer, legal, disabled, onAct }: TradeOfferViewProps) {
+  const [lift, setLift] = useState<SpaceIndex[]>([]);
+  const mortgaged = offer.give.spaces.filter((i) => state.properties[i]?.mortgaged);
+  const accept: Action = { type: "acceptTrade", lift };
+  const acceptError = validateAction(state, offer.to, accept);
+  const canReject = legal.some((a) => a.type === "rejectTrade");
+  return (
+    <>
+      <table className="offer">
+        <tbody>
+          <tr>
+            <th scope="row">{nameOf(state, offer.from)} gibt</th>
+            <td>{describeSide(offer.give)}</td>
+          </tr>
+          <tr>
+            <th scope="row">und möchte</th>
+            <td>{describeSide(offer.take)}</td>
+          </tr>
+        </tbody>
+      </table>
+      {mortgaged.map((index) => {
+        const space = getPropertySpace(index);
+        return (
+          <label key={index} className="offer__lift">
+            <input
+              type="checkbox"
+              checked={lift.includes(index)}
+              onChange={() => setLift(lift.includes(index) ? lift.filter((i) => i !== index) : [...lift, index])}
+            />
+            {space.name} ist belastet: sofort auslösen ({formatChf(unmortgageCost(space))}), sonst Zins {formatChf(mortgageInterest(space))}
+          </label>
+        );
+      })}
+      <div className="tafel__actions">
+        <button type="button" className="button button--primary" disabled={disabled || acceptError !== null} onClick={() => onAct(accept)}>
+          Annehmen
+        </button>
+        {canReject && (
+          <button type="button" className="button" disabled={disabled} onClick={() => onAct({ type: "rejectTrade" })}>
+            Ablehnen
+          </button>
+        )}
+        <button type="button" className="button" disabled={disabled} onClick={() => onAct({ type: "cancelTrade" }, offer.from)}>
+          {nameOf(state, offer.from)} zieht zurück
+        </button>
+      </div>
+      {acceptError && <p className="tafel__hint">{acceptError.message}</p>}
+    </>
+  );
+}
+
 export function ActionPanel({ state, busy, error, secondsLeft, onAct, onNewGame, onMenu }: ActionPanelProps) {
   const waitingId = getWaitingFor(state);
+  const [composing, setComposing] = useState(false);
+  // Neuer Entscheid (anderer Spieler, Angebot verschickt): Handels-Tafel schliessen.
+  useEffect(() => setComposing(false), [waitingId, state.trade]);
+  const tradeAllowed = waitingId !== null && canProposeTrade(state, waitingId) && state.players.filter((p) => !p.bankrupt).length > 1;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
 
   if (winner) {
@@ -159,27 +226,12 @@ export function ActionPanel({ state, busy, error, secondsLeft, onAct, onNewGame,
   let label = "Am Zug";
   let body: ReactNode;
 
-  if (state.trade) {
-    const offer = state.trade;
+  if (composing && tradeAllowed) {
+    label = "Handel";
+    body = <TradeComposer state={state} from={player} disabled={disabled} onSend={(a) => onAct(a)} onCancel={() => setComposing(false)} />;
+  } else if (state.trade) {
     label = "Handelsangebot";
-    body = (
-      <>
-        <p className="tafel__prompt">
-          {nameOf(state, offer.from)} bietet <strong>{describeSide(offer.give)}</strong> und möchte dafür{" "}
-          <strong>{describeSide(offer.take)}</strong>.
-        </p>
-        <ChoiceButtons
-          legal={legal}
-          disabled={disabled}
-          onAct={onAct}
-          choices={[
-            { action: { type: "acceptTrade", lift: [] }, label: "Annehmen", primary: true },
-            { action: { type: "rejectTrade" }, label: "Ablehnen" },
-          ]}
-        />
-      </>
-    );
-  } else if (state.mortgageDecision) {
+    body = <TradeOfferView state={state} offer={state.trade} legal={legal} disabled={disabled} onAct={onAct} />;  } else if (state.mortgageDecision) {
     const spaces = state.mortgageDecision.spaces.map((i) => getPropertySpace(i));
     const liftAll = spaces.reduce((sum, s) => sum + unmortgageCost(s), 0);
     const interest = spaces.reduce((sum, s) => sum + mortgageInterest(s), 0);
@@ -299,6 +351,13 @@ export function ActionPanel({ state, busy, error, secondsLeft, onAct, onNewGame,
       </header>
       <div className="tafel__body">
         {body}
+        {tradeAllowed && !composing && (
+          <div className="tafel__more">
+            <button type="button" className="button" disabled={disabled} onClick={() => setComposing(true)}>
+              Handeln
+            </button>
+          </div>
+        )}
         {error && <p className="tafel__error">{error}</p>}
       </div>
     </section>

@@ -104,3 +104,53 @@
 .tafel--end .tafel__head {
   background: var(--color-tram);
 }
+
+.tafel__more {
+  display: flex;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: var(--line-thin) solid var(--color-ink);
+}
+
+/* Angebot: zwei Zeilen wie im Fahrplan */
+.offer {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.offer th,
+.offer td {
+  padding: var(--space-2) 0;
+  border-top: var(--line-thin) solid var(--color-ink);
+  text-align: left;
+  vertical-align: top;
+}
+
+.offer tr:first-child th,
+.offer tr:first-child td {
+  border-top: 0;
+}
+
+.offer th {
+  width: 9em;
+  padding-right: var(--space-3);
+  font-weight: 500;
+}
+
+.offer td {
+  font-weight: 700;
+}
+
+.offer__lift {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.offer__lift input {
+  margin-top: 2px;
+  accent-color: var(--color-tram);
+}

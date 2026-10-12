@@ -11,7 +11,8 @@
   justify-content: center;
   min-height: 100vh;
   padding: var(--space-5);
-  --board-size: min(calc(100vh - 2 * var(--space-5) - 4px), calc(100vw - 520px - 3 * var(--space-6)));
+  /* Grösse, in der das ganze Brett passt (der Zoom-Rahmen rechnet daraus --board-size). */
+  --board-fit: min(calc(100vh - 2 * var(--space-5) - 4px), calc(100vw - 520px - 3 * var(--space-6)));
 }
 
 .game__board {
@@ -66,7 +67,7 @@
       "below"
       "side";
     padding: var(--space-4);
-    --board-size: calc(100vw - 2 * var(--space-4) - 4px);
+    --board-fit: calc(100vw - 2 * var(--space-4) - 10px);
   }
 
   .game__board {

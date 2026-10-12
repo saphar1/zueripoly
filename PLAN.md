@@ -37,7 +37,7 @@ Legende: `[x]` erledigt, `[ ]` offen.
 ## Phase 3: Design und lokale Oberfläche  ← läuft (Teil 1 Design fertig, Teil 2 spielbare Oberfläche offen)
 Vorarbeit: `docs/design.md` und `docs/engine.md` lesen. Die Oberfläche nutzt `getWaitingFor`, `getLegalActions`, `applyAction` und formt Protokoll-Ereignisse in deutsche Sätze.
 
-**Stand:** Designentwurf am 2026-10-12 **freigegeben**. Lokal spielbar von Anfang bis Gewinner: `npm run dev -w @zueripoly/client`, dann `http://localhost:5173/`. Entwurf bleibt als Stilreferenz unter `/entwurf.html`. Offen: Handel vorschlagen, Zoom auf dem Handy, Abschluss.
+**Stand:** Designentwurf am 2026-10-12 **freigegeben**. Lokal spielbar von Anfang bis Gewinner: `npm run dev -w @zueripoly/client`, dann `http://localhost:5173/`. Entwurf bleibt als Stilreferenz unter `/entwurf.html`. Offen: Abschluss der Phase.
 
 Teil 1: Design
 - [x] Statischer Entwurf: Brett und Spielerpanel, gezeigt und freigegeben
@@ -56,8 +56,8 @@ Teil 2: spielbare Oberfläche
 - [x] Bewegungen: Würfel rollen, Figur hüpft, Karte dreht, Geld zählt (reduzierte Bewegung: springen)
 - [x] Zeitlimit (`game/use-turn-timer.ts`, schickt `timeout`)
 - [x] Durchspiel-Test der Oberfläche (`npm run playtest -w @zueripoly/client`): Partie bis zum Gewinner ohne Fehler
-- [ ] Handelsangebot erstellen (Tafel mit zwei Spalten: Gib / Bekomme)
-- [ ] Zoom und Verschieben auf dem Handy
+- [x] Handelsangebot erstellen (`TradeComposer`: Partner, zwei Spalten «Du gibst / Du bekommst», Geld, Freikarten, belastete Felder auslösen), Angebot annehmen mit Auslösen, zurückziehen
+- [x] Zoom und Verschieben auf dem Handy (`BoardViewport`: zwei Finger, Knöpfe −/+, Tasten + − 0; ab ca. 160 % Feldnamen)
 - [ ] Abschluss: Screenshots Desktop und Handy prüfen, Doku, Commit «Phase 3»
 
 ## Phase 4: Computergegner
