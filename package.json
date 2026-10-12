@@ -8,7 +8,7 @@
     "packages/*"
   ],
   "scripts": {
-    "test": "npm run test -w @zueripoly/engine",
+    "test": "npm run test -w @zueripoly/engine && npm run test -w @zueripoly/server",
     "typecheck": "npm run typecheck -w @zueripoly/engine && npm run typecheck -w @zueripoly/server && npm run typecheck -w @zueripoly/client",
     "dev": "concurrently -n server,client -c blue,green \"npm run dev -w @zueripoly/server\" \"npm run dev -w @zueripoly/client\"",
     "build": "npm run build -w @zueripoly/client"

@@ -3,9 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./src/server.ts",
+    "./protocol": "./src/protocol.ts"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
+    "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
@@ -14,6 +19,8 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "tsx": "^4.19.0"
+    "socket.io-client": "^4.8.4",
+    "tsx": "^4.19.0",
+    "vitest": "^3.2.7"
   }
 }
