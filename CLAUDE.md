@@ -70,7 +70,7 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 ## Stand und Entscheidungen
 - **Phase 1 abgeschlossen**: Workspace, Gerüste, Doku. Details in `PLAN.md`.
 - **Phase 2 abgeschlossen**: Engine mit allen Regeln, 108 Tests, 300 Zufallspartien. Details in `docs/engine.md`.
-- **Phase 3, Teil 1 (Design) fertig und freigegeben** (2026-10-12). **Teil 2: lokal spielbar** bis zum Gewinner; offen sind Handel vorschlagen und Zoom (siehe `PLAN.md`).
+- **Phase 3 abgeschlossen**: Design freigegeben (2026-10-12), lokal spielbar von Anfang bis Gewinner (Menü, Lobby, Spiel mit allen Entscheidungen, Handel, Zoom auf dem Handy). Durchspiel-Test der Oberfläche: `npm run playtest -w @zueripoly/client`.
 
 ### Client (Phase 3, Teil 1)
 - Entwurfsseite `entwurf.html` → `src/entwurf.tsx` → `screens/DesignDraft.tsx` mit Beispielzustand (`demo/demo-state.ts`) und Bewegungs-Demo ohne Spielregeln (`demo/use-demo.ts`). Bleibt als Stilreferenz bestehen.
@@ -88,6 +88,10 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 - Wer entscheidet, sagt immer `getWaitingFor`; die Tafel (`components/ActionPanel.tsx`) bietet nur an, was `getLegalActions` erlaubt (Vergleich der ganzen Aktion, nicht nur `type`). Verwalten (bauen, verkaufen, belasten, auslösen) läuft über die angeklickte Besitzkarte (`PropertyActions`).
 - Texte zu Ereignissen: `game-text.ts` (`formatEvent`, `formatEvents` fasst Wurf + Zug zusammen). Feldnamen mit Artikel über die Tabelle `GENDER` («die Enge», «das Seefeld», «Höngg» ohne Artikel). Keine Pronomen für Spieler, immer den Namen.
 - Die Tafel hat `aria-busy`, solange eine Bewegung läuft (nutzt auch der Durchspiel-Test).
+- Handel: `components/TradeComposer.tsx` (Angebot erstellen, prüft laufend mit `validateAction`), offene Angebote in `ActionPanel` (`TradeOfferView`: annehmen mit Auslösen, ablehnen, zurückziehen). Die Tafel kann mit `onAct(action, as)` auch für jemand anderen handeln (Anbieter zieht zurück).
+- Zoom: `components/BoardViewport.tsx` nur unter 900 px Breite. Der Rahmen bekommt `--board-fit` (ganzes Brett passt) und setzt `--board-size = --board-fit × Zoom`. Zwei Finger zoomen (`touch-action: pan-x pan-y`), ein Finger verschiebt.
+- Haltestellentafel: nach jeder Bewegung neu (`signFor`); ohne Bewegung wird nur der Hinweis nachgeführt (Kauf, Versteigerung, Bankrott …).
+- Durchspiel-Test `scripts/playtest.ts`: läuft mit `reducedMotion: "reduce"`, klickt meist den Hauptknopf, baut oft, handelt ab und zu, treibt bei Schulden Geld auf. Optionen `--steps`, `--players`, `--money`, `--snapshot`.
 
 ### Engine (Phase 2)
 - Dateien: `types.ts` (alle Typen), `board.ts` (Felder, Konstanten), `cards.ts`, `random.ts` (Mulberry32, `createSeededRng`), `rules.ts` (reine Abfragen und Prüfungen), `validate.ts` (Aktion prüfen, `getLegalActions`, deutsche Fehlermeldungen), `game.ts` (`createGame`, `applyAction`), `invariants.ts`, `save.ts`.
@@ -105,10 +109,13 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 - Preise und Mieten wie im Original, in CHF (`docs/brett.md`).
 - Bots: regelbasiert, zwei Stufen (einfach, clever), keine Simulation.
 - Server zuerst nur lokal / Heimnetz, Spielstände als JSON-Dateien (Ordner `saves/`, in `.gitignore`). Hosting später optional.
-- Git: Branch `main`, ein Commit pro Phase.
+- Git: Branch `main`. Zwischenstände innerhalb einer Phase als «Phase X (Zwischenstand): …» (auf Wunsch des Entwicklers), der Abschluss als eigener Commit «Phase X: …». Der Ordner `.claude/` wird nicht committet.
 - Regelabweichungen vom Original: siehe `docs/regeln.md`, Abschnitt 16.
 
 ## Bekannte Probleme
 - Zufallspartien können ewig dauern (Häusermangel-Patt: alle 32 Häuser verbaut, kein Hotel möglich). Der Test bricht nach 6000 Aktionen ab und verlangt nur, dass über 80 % mit Gewinner enden. Für echte Spieler (und die Bots in Phase 4) ist das kein Fehler der Engine.
 - Ohne Zeitlimit kann ein menschlicher Schuldner das Spiel blockieren, wenn er weder Geld auftreibt noch handelt (er darf nur Bankrott erklären, wenn nichts mehr reicht). Online fängt das Zeitlimit oder (Phase 5) die Bot-Übernahme ab.
-- Ist Port 5173 belegt (z. B. ein alter Dev-Server), nimmt Vite den nächsten freien Port (5174 …); die Adresse steht im Terminal. Die Startseite `/` zeigt bis Teil 2 nur das Gerüst, der Entwurf liegt unter `/entwurf.html`.
+- Ist Port 5173 belegt (z. B. ein alter Dev-Server), nimmt Vite den nächsten freien Port (5174 …); die Adresse steht im Terminal.
+- Neu laden im Browser beendet die Partie (Spielstand speichern kommt in Phase 6). Noch keine Töne und kein Stummschalter (Phase 6).
+- Jedes der 40 Felder ist ein eigener Tab-Halt; für Tastatur-Spielende ist das viel. Später eventuell Pfeiltasten-Navigation über das Brett.
+- Der Durchspiel-Test mit 1500 CHF Startkapital endet oft ohne Gewinner (die Zufallsstrategie belastet zu viel). Mit `--money 500` endet er meist nach 500–800 Schritten mit Gewinner.

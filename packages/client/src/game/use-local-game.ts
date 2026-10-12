@@ -27,6 +27,17 @@ export interface LogEntry {
 
 const LOG_KEEP = 300;
 
+/** Ereignisse ohne Bewegung, die den Hinweis auf der Haltestellentafel ersetzen. */
+const FOLLOW_UP: readonly GameEvent["type"][] = [
+  "propertyBought",
+  "auctionWon",
+  "auctionUnsold",
+  "leftJail",
+  "debtOpened",
+  "bankrupt",
+  "gameWon",
+];
+
 /** Nur für die Augen, die beim Rollen aufflackern. Nie die Spiel-Zufallsquelle verbrauchen. */
 const FLICKER: Rng = { nextInt: (max) => Math.floor(Math.random() * max) };
 
@@ -186,6 +197,12 @@ export function useLocalGame(session: GameSession) {
     setView(next);
     const sign = signFor(next, events);
     if (sign) setMessage(sign);
+    else {
+      // Ohne Bewegung: Tafel nachführen, wenn am Halt etwas entschieden wurde (Kauf, Versteigerung, Bankrott …).
+      const decided = events.filter((e) => FOLLOW_UP.includes(e.type));
+      const lines = formatEvents(next, decided).slice(0, 2);
+      if (lines.length > 0) setMessage((current) => (current ? { ...current, note: lines.join(" ") } : current));
+    }
     const entries = toEntries(next, events, previous.turnNumber, nextLogId.current);
     nextLogId.current += entries.length;
     setLog((current) => [...current, ...entries].slice(-LOG_KEEP));

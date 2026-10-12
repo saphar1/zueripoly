@@ -1,7 +1,7 @@
 // Durchspiel-Test der Oberfläche: Playwright startet ein lokales Spiel und klickt zufällig auf das,
 // was die Tafel anbietet (dazu ab und zu Bauen/Belasten über die Besitzkarte), bis jemand gewinnt
 // oder die Höchstzahl an Schritten erreicht ist. Meldet Fehler und Stellen, an denen nichts mehr geht.
-// Start: npm run playtest -w @zueripoly/client   (optional: -- --steps 3000 --players 4 --money 500)
+// Start: npm run playtest -w @zueripoly/client   (optional: -- --steps 3000 --players 4 --money 500 --snapshot 150)
 // Strategie: meist der Hauptknopf (kaufen, würfeln, Zug beenden), oft bauen, belasten nur bei Schulden.
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,6 +18,8 @@ const option = (name: string, fallback: number) => {
 const MAX_STEPS = option("steps", 2500);
 const PLAYERS = ["Anna", "Ben", "Clara", "Dario", "Elif", "Fabio"].slice(0, option("players", 3));
 const START_MONEY = option("money", 1500);
+/** Bei diesem Schritt ein Bild mitten aus der Partie speichern (0 = keins). */
+const SNAPSHOT = option("snapshot", 0);
 
 /** Wartet, bis die Oberfläche wieder bereit ist: freie Knöpfe auf der Tafel, Spielende oder Geld auftreiben. */
 async function ready(page: Page): Promise<"buttons" | "end" | "manage"> {
@@ -112,6 +114,7 @@ try {
       break;
     }
     steps++;
+    if (steps === SNAPSHOT) await page.screenshot({ path: path.join(outDir, "playtest-mitten.png") });
     if (state === "manage") {
       // Schulden, aber Bankrott noch nicht erlaubt: Geld auftreiben.
       if (!(await manage(page, /verkaufen|Hypothek aufnehmen/))) throw new Error("Schulden, aber keine Aktion möglich.");

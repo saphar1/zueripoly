@@ -79,7 +79,7 @@
 .seat__name input::placeholder {
   color: var(--color-ink);
   font-weight: 400;
-  opacity: 0.55;
+  opacity: 0.7;
 }
 
 .seat__tokens {

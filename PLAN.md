@@ -34,10 +34,10 @@ Legende: `[x]` erledigt, `[ ]` offen.
 - [x] Zufallsspiele: 300 komplette Partien mit zufälligen gültigen Aktionen (Invarianten nach jeder Aktion, Geld-Protokoll am Ende): `invariants.ts`
 - [x] Abschluss der Phase gemäss `CLAUDE.md`
 
-## Phase 3: Design und lokale Oberfläche  ← läuft (Teil 1 Design fertig, Teil 2 spielbare Oberfläche offen)
+## Phase 3: Design und lokale Oberfläche  ✓ abgeschlossen
 Vorarbeit: `docs/design.md` und `docs/engine.md` lesen. Die Oberfläche nutzt `getWaitingFor`, `getLegalActions`, `applyAction` und formt Protokoll-Ereignisse in deutsche Sätze.
 
-**Stand:** Designentwurf am 2026-10-12 **freigegeben**. Lokal spielbar von Anfang bis Gewinner: `npm run dev -w @zueripoly/client`, dann `http://localhost:5173/`. Entwurf bleibt als Stilreferenz unter `/entwurf.html`. Offen: Abschluss der Phase.
+**Stand:** Designentwurf am 2026-10-12 freigegeben. Lokal spielbar von Anfang bis Gewinner: `npm run dev -w @zueripoly/client`, dann `http://localhost:5173/`. Entwurf bleibt als Stilreferenz unter `/entwurf.html`.
 
 Teil 1: Design
 - [x] Statischer Entwurf: Brett und Spielerpanel, gezeigt und freigegeben
@@ -58,9 +58,10 @@ Teil 2: spielbare Oberfläche
 - [x] Durchspiel-Test der Oberfläche (`npm run playtest -w @zueripoly/client`): Partie bis zum Gewinner ohne Fehler
 - [x] Handelsangebot erstellen (`TradeComposer`: Partner, zwei Spalten «Du gibst / Du bekommst», Geld, Freikarten, belastete Felder auslösen), Angebot annehmen mit Auslösen, zurückziehen
 - [x] Zoom und Verschieben auf dem Handy (`BoardViewport`: zwei Finger, Knöpfe −/+, Tasten + − 0; ab ca. 160 % Feldnamen)
-- [ ] Abschluss: Screenshots Desktop und Handy prüfen, Doku, Commit «Phase 3»
+- [x] Abschluss: Screenshots Desktop und Handy geprüft, Doku, Commit «Phase 3»
 
-## Phase 4: Computergegner
+## Phase 4: Computergegner  ← nächste Phase
+Vorarbeit: `docs/engine.md` (Ablauf, `getWaitingFor`, `getLegalActions`, `canProposeTrade`) und im Client `game/use-local-game.ts` (dort klinken sich die Bots ein: Ist der wartende Spieler ein Bot, wählt `bot.ts` die Aktion, der Hook führt sie mit kurzer Pause aus). `PlayerConfig.bot` («easy» / «clever») gibt es in der Engine schon.
 - [ ] `bot.ts`: Entscheidungsschnittstelle (Zustand → Aktion)
 - [ ] Stufe «einfach»
 - [ ] Stufe «clever» (Farbgruppen, Geldreserve, Bauen, Handel, Auktionen)
