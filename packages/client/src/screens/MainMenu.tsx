@@ -12,10 +12,10 @@ interface Line {
   since?: string;
 }
 
-export function MainMenu({ onLocal }: { onLocal: () => void }) {
+export function MainMenu({ onLocal, onSolo }: { onLocal: () => void; onSolo: () => void }) {
   const lines: Line[] = [
     { number: 1, title: "Lokal spielen", detail: "2 bis 6 Personen an einem Gerät", onSelect: onLocal },
-    { number: 2, title: "Solo gegen den Computer", detail: "Gegner einfach oder clever", since: "Phase 4" },
+    { number: 2, title: "Solo gegen den Computer", detail: "1 bis 5 Gegner, einfach oder clever", onSelect: onSolo },
     { number: 3, title: "Online mit Freunden", detail: "Mit Raumcode im Heimnetz", since: "Phase 5" },
     { number: 4, title: "Spielstand fortsetzen", detail: "Gespeicherte Partie laden", since: "Phase 6" },
   ];

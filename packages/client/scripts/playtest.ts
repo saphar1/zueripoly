@@ -2,6 +2,7 @@
 // was die Tafel anbietet (dazu ab und zu Bauen/Belasten über die Besitzkarte), bis jemand gewinnt
 // oder die Höchstzahl an Schritten erreicht ist. Meldet Fehler und Stellen, an denen nichts mehr geht.
 // Start: npm run playtest -w @zueripoly/client   (optional: -- --steps 3000 --players 4 --money 500 --snapshot 150)
+// Solo: -- --solo --bots 3 (Computergegner abwechselnd einfach/clever; geklickt wird nur für «Anna»).
 // Strategie: meist der Hauptknopf (kaufen, würfeln, Zug beenden), oft bauen, belasten nur bei Schulden.
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,13 +17,18 @@ const option = (name: string, fallback: number) => {
   return i >= 0 ? Number(args[i + 1]) : fallback;
 };
 const MAX_STEPS = option("steps", 2500);
+const SOLO = args.includes("--solo");
+const BOTS = Math.min(5, Math.max(1, option("bots", 3)));
 const PLAYERS = ["Anna", "Ben", "Clara", "Dario", "Elif", "Fabio"].slice(0, option("players", 3));
+/** Kurze Denkpause der Bots im Test (nur im Entwicklungsmodus wirksam). */
+const BOT_PAUSE = 30;
 const START_MONEY = option("money", 1500);
 /** Bei diesem Schritt ein Bild mitten aus der Partie speichern (0 = keins). */
 const SNAPSHOT = option("snapshot", 0);
 
 /** Wartet, bis die Oberfläche wieder bereit ist: freie Knöpfe auf der Tafel, Spielende oder Geld auftreiben. */
 async function ready(page: Page): Promise<"buttons" | "end" | "manage"> {
+  // Solo: Ist «Anna» bankrott, spielen die Bots allein zu Ende; das kann dauern.
   const handle = await page.waitForFunction(
     () => {
       if (document.querySelector(".tafel--end")) return "end";
@@ -31,7 +37,7 @@ async function ready(page: Page): Promise<"buttons" | "end" | "manage"> {
       return document.querySelector(".tafel") ? "manage" : false;
     },
     null,
-    { timeout: 15000 },
+    { timeout: SOLO ? 600_000 : 15_000, polling: 50 },
   );
   return (await handle.jsonValue()) as "buttons" | "end" | "manage";
 }
@@ -97,18 +103,54 @@ try {
   });
 
   await page.goto(base, { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: /Lokal spielen/ }).click();
-  for (let i = 1; i < PLAYERS.length - 1; i++) await page.getByRole("button", { name: "Weitere Person dazu" }).click();
-  for (const [i, name] of PLAYERS.entries()) await page.getByPlaceholder(`Name Spieler ${i + 1}`).fill(name);
+  if (SOLO) {
+    await page.getByRole("button", { name: /Solo gegen den Computer/ }).click();
+    await page.getByPlaceholder("Dein Name").fill("Anna");
+    // Standard sind 2 Gegner: dazu oder weg, dann abwechselnd einfach / clever.
+    for (let n = 2; n < BOTS; n++) await page.getByRole("button", { name: "Weiteren Computergegner dazu" }).click();
+    for (let n = 2; n > BOTS; n--) await page.locator(".seat__remove").last().click();
+    const levels = page.locator(".seat--bot .segments");
+    for (let i = 0; i < BOTS; i++) await levels.nth(i).getByRole("radio", { name: i % 2 === 0 ? "Einfach" : "Clever" }).click();
+    await page.screenshot({ path: path.join(outDir, "solo-lobby.png"), fullPage: true });
+  } else {
+    await page.getByRole("button", { name: /Lokal spielen/ }).click();
+    for (let i = 1; i < PLAYERS.length - 1; i++) await page.getByRole("button", { name: "Weitere Person dazu" }).click();
+    for (const [i, name] of PLAYERS.entries()) await page.getByPlaceholder(`Name Spieler ${i + 1}`).fill(name);
+  }
   for (let money = 1500; money > START_MONEY; money -= 100) await page.getByRole("button", { name: "−100", exact: true }).click();
   for (let money = 1500; money < START_MONEY; money += 100) await page.getByRole("button", { name: "+100", exact: true }).click();
   await page.getByRole("button", { name: "Losfahren" }).click();
 
+  if (SOLO) {
+    // Erste Bot-Tafel mit normaler Denkpause festhalten, danach im Test schnell weiter.
+    for (let i = 0; i < 30; i++) {
+      const turn = await page.waitForFunction(
+        () => {
+          if (document.querySelector(".tafel__label")?.textContent?.includes("Computer")) return "bot";
+          const idle = !document.querySelector('.tafel[aria-busy="true"]');
+          return idle && document.querySelector(".tafel .tafel__actions .button:not(:disabled)") ? "anna" : false;
+        },
+        null,
+        { timeout: 20_000, polling: 50 },
+      );
+      if ((await turn.jsonValue()) === "bot") break;
+      await page.locator(".tafel .tafel__actions .button:not(:disabled)").first().click();
+    }
+    await page.screenshot({ path: path.join(outDir, "solo-bot-am-zug.png") });
+    await page.evaluate((pause) => history.replaceState(null, "", `?botpause=${pause}`), BOT_PAUSE);
+  }
+
   let steps = 0;
   let trades = 0;
+  let offers = 0;
   let result = "kein Gewinner";
   while (steps < MAX_STEPS) {
     const state = await ready(page);
+    // Solo: Angebot eines Computergegners an Anna (Bild beim ersten Mal).
+    if (SOLO && state === "buttons" && (await page.locator(".tafel__label", { hasText: "Handelsangebot" }).count()) > 0) {
+      if (offers === 0) await page.screenshot({ path: path.join(outDir, "solo-angebot.png") });
+      offers++;
+    }
     if (state === "end") {
       result = (await page.locator(".tafel__name").innerText()).trim();
       break;
@@ -149,6 +191,11 @@ try {
   console.log(`Schritte: ${steps}, Handelsangebote: ${trades}, Ergebnis: ${result}`);
   const logLines = await page.locator(".log__text").count();
   console.log(`Protokollzeilen sichtbar: ${logLines}`);
+  if (SOLO) {
+    const texts = await page.locator(".log__text").allInnerTexts();
+    const anna = texts.filter((t) => t.startsWith("Anna")).length;
+    console.log(`Solo: ${BOTS} Computergegner, ${offers} Angebote von Bots an Anna, ${texts.length - anna} von ${texts.length} sichtbaren Zeilen ohne Anna am Satzanfang.`);
+  }
   await context.close();
 } catch (error) {
   exitCode = 1;

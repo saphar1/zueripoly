@@ -2,6 +2,7 @@
 import type { CSSProperties, PointerEvent } from "react";
 import type { ColorGroup, GameState, PlayerId, PlayerState, SpaceIndex } from "@zueripoly/engine";
 import {
+  BOT_LEVEL_NAMES,
   COLOR_GROUPS,
   GROUP_STREETS,
   JAIL_INDEX,
@@ -140,6 +141,7 @@ export function PlayerPanel({
         <div className="panel__who">
           <div className="panel__title">
             <h2 className="panel__name">{player.name}</h2>
+            {player.bot && <span className="chip chip--bot">Computer · {BOT_LEVEL_NAMES[player.bot]}</span>}
             {active && <span className="chip chip--turn">Am Zug</span>}
             {player.inJail && (
               <span className="chip chip--jail">

@@ -62,11 +62,13 @@ Teil 2: spielbare Oberfläche
 
 ## Phase 4: Computergegner  ← nächste Phase
 Vorarbeit: `docs/engine.md` (Ablauf, `getWaitingFor`, `getLegalActions`, `canProposeTrade`) und im Client `game/use-local-game.ts` (dort klinken sich die Bots ein: Ist der wartende Spieler ein Bot, wählt `bot.ts` die Aktion, der Hook führt sie mit kurzer Pause aus). `PlayerConfig.bot` («easy» / «clever») gibt es in der Engine schon.
-- [ ] `bot.ts`: Entscheidungsschnittstelle (Zustand → Aktion)
-- [ ] Stufe «einfach»
-- [ ] Stufe «clever» (Farbgruppen, Geldreserve, Bauen, Handel, Auktionen)
-- [ ] Solo-Modus im Client (1–5 Bots)
-- [ ] Bot-gegen-Bot-Tests (kein Hängen, beendet Partien)
+- [x] `bot.ts`: Entscheidungsschnittstelle (Zustand → Aktion), `bot-eval.ts`, `bot-trade.ts`, Doku `docs/bots.md`
+- [x] Stufe «einfach»
+- [x] Stufe «clever» (Farbgruppen, Geldreserve, Bauen, Handel, Auktionen, Umbau bei Häusermangel)
+- [x] Bot-gegen-Bot-Tests (200 Partien in `npm test`, alle enden; Liga: `npm run bots -w @zueripoly/engine`)
+- [x] Solo-Modus im Client (1–5 Bots, Stufe je Bot, Denkpause `game/use-bot-turns.ts`, Tafel und Protokoll)
+- [x] Durchspiel-Test `--solo --bots 3` ohne Fehler
+- [ ] Offen: Handy-Ansicht der Solo-Lobby/Spielansicht prüfen, `CLAUDE.md` nachführen, Abschluss-Commit «Phase 4: Computergegner»
 
 ## Phase 5: Server und Online
 - [ ] Räume, Raumcodes

@@ -17,6 +17,8 @@ import { landingNote } from "../space-text";
 export interface GameSession {
   initial: GameState;
   rng: SeededRng;
+  /** Eigene Zufallsquelle der Computergegner (nie die des Spiels). */
+  botRng: Rng;
 }
 
 export interface LogEntry {
@@ -210,15 +212,18 @@ export function useLocalGame(session: GameSession) {
     setBusy(false);
   }, []);
 
-  /** Aktion für einen Spieler ausführen. Ungültige Aktionen ändern nichts und zeigen den Grund. */
+  /**
+   * Aktion für einen Spieler ausführen. Ungültige Aktionen ändern nichts und zeigen den Grund.
+   * Gibt zurück, ob die Aktion ausgeführt wurde.
+   */
   const act = useCallback(
-    (playerId: PlayerId, action: Action) => {
-      if (busyRef.current) return;
+    (playerId: PlayerId, action: Action): boolean => {
+      if (busyRef.current) return false;
       const previous = truth.current;
       const result = applyAction(previous, playerId, action, rng.current);
       if (!result.ok) {
         setError(result.error.message);
-        return;
+        return false;
       }
       setError(null);
       setCard(null);
@@ -227,6 +232,7 @@ export function useLocalGame(session: GameSession) {
       busyRef.current = true;
       setBusy(true);
       void play(previous, result.events, result.state);
+      return true;
     },
     [play],
   );

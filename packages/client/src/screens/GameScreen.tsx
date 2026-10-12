@@ -12,6 +12,7 @@ import { GameLog } from "../components/GameLog";
 import { PlayerList } from "../components/PlayerPanel";
 import { PropertyActions } from "../components/PropertyActions";
 import { Sign } from "../components/Sign";
+import { useBotTurns } from "../game/use-bot-turns";
 import { type GameSession, useLocalGame } from "../game/use-local-game";
 import { useTurnTimer } from "../game/use-turn-timer";
 import { ownerOf } from "../space-text";
@@ -49,6 +50,9 @@ export function GameScreen({ session, onNewGame, onMenu }: GameScreenProps) {
   const game = useLocalGame(session);
   const { state, view, act, dismissCard } = game;
   const waiting = getWaitingFor(state);
+  // Ist ein Computergegner dran, entscheidet er selbst; die Bedienelemente für Menschen ruhen so lange.
+  const botWaiting = useBotTurns(game, session.botRng);
+  const human = waiting !== null && botWaiting === null;
 
   const [hovered, setHovered] = useState<SpaceIndex | null>(null);
   const [selected, setSelected] = useState<SpaceIndex | null>(null);
@@ -58,13 +62,14 @@ export function GameScreen({ session, onNewGame, onMenu }: GameScreenProps) {
 
   const actNow = useCallback(
     (action: Action) => {
-      if (waiting) act(waiting, action);
+      if (waiting && human) act(waiting, action);
     },
-    [act, waiting],
+    [act, waiting, human],
   );
 
-  const secondsLeft = useTurnTimer(state.options.turnTimeLimit, state, game.busy || state.winner !== null, () => {
-    if (waiting) act(waiting, { type: "timeout" });
+  // Das Zeitlimit gilt nur für Menschen (docs/regeln.md, Abschnitt 14).
+  const secondsLeft = useTurnTimer(state.options.turnTimeLimit, state, game.busy || state.winner !== null || !human, () => {
+    if (waiting && human) act(waiting, { type: "timeout" });
   });
 
   // Esc hebt Auswahl und gezogene Karte auf.
@@ -78,11 +83,11 @@ export function GameScreen({ session, onNewGame, onMenu }: GameScreenProps) {
     return () => window.removeEventListener("keydown", onKey);
   }, [dismissCard]);
 
-  const canRoll = waiting !== null && !game.busy && getLegalActions(state, waiting).some((a) => a.type === "rollDice");
+  const canRoll = human && !game.busy && getLegalActions(state, waiting).some((a) => a.type === "rollDice");
 
   const deedCard = (index: SpaceIndex) => (
     <DeedCard state={view} index={index}>
-      {index === selected && waiting && !game.busy && (
+      {index === selected && human && !game.busy && (
         <PropertyActions state={state} actor={waiting} index={index} disabled={game.busy} onAct={actNow} />
       )}
     </DeedCard>
@@ -119,7 +124,7 @@ export function GameScreen({ session, onNewGame, onMenu }: GameScreenProps) {
           state={state}
           busy={game.busy}
           error={game.error}
-          secondsLeft={secondsLeft}
+          secondsLeft={human ? secondsLeft : null}
           onAct={(action, as) => {
             const who = as ?? waiting;
             if (who) act(who, action);

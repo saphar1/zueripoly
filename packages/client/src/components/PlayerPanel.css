@@ -179,6 +179,14 @@
   --icon-fill: var(--color-paper-dark);
 }
 
+/* Computergegner: wie ein Liniensignet, Tinte auf Papier */
+.chip--bot {
+  border-color: var(--color-ink);
+  background: var(--color-paper-dark);
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
 .chip--bankrupt {
   border-color: var(--color-signal);
   background: var(--color-paper);

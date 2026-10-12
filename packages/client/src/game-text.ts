@@ -1,5 +1,5 @@
 // Protokoll-Ereignisse der Engine als deutsche Sätze (de-CH). Kurz, trocken, mit etwas Zürcher Witz.
-import type { CardId, GameEvent, GameState, MoneyParty, PlayerId, SpaceIndex } from "@zueripoly/engine";
+import type { CardId, GameEvent, GameState, MoneyParty, PlayerId, SpaceIndex, TradeSide } from "@zueripoly/engine";
 import { BANK, DECK_NAMES, HOTEL_LEVEL, JACKPOT, MAX_JAIL_ROLLS, getCard, getSpace } from "@zueripoly/engine";
 import { formatChf } from "./format";
 
@@ -62,6 +62,15 @@ function buildingsText(level: number): string {
 
 function cardText(card: CardId): string {
   return getCard(card).text;
+}
+
+/** Eine Seite eines Handelsangebots: «den Letzigrund, Höngg und 120 CHF». */
+function tradeSide(side: TradeSide): string {
+  const parts = side.spaces.map((i) => spaceAcc(i));
+  if (side.money > 0) parts.push(formatChf(side.money));
+  if (side.jailCards.length > 0) parts.push(side.jailCards.length === 1 ? "eine Freikarte" : `${side.jailCards.length} Freikarten`);
+  if (parts.length === 0) return "nichts";
+  return parts.length === 1 ? parts[0]! : `${parts.slice(0, -1).join(", ")} und ${parts[parts.length - 1]}`;
 }
 
 // --- Einzelne Ereignisse -----------------------------------------------------------------
@@ -143,8 +152,10 @@ export function formatEvent(state: GameState, event: GameEvent): string | null {
       return `${who(event.player)} löst ${spaceAcc(event.space)} aus.`;
     case "debtOpened":
       return `${who(event.debtor)} schuldet ${event.creditor === BANK ? "der Bank" : who(event.creditor)} ${formatChf(event.amount)} und muss Geld auftreiben.`;
-    case "tradeProposed":
-      return `${who(event.offer.from)} macht ${who(event.offer.to)} ein Handelsangebot.`;
+    case "tradeProposed": {
+      const { from, to, give, take } = event.offer;
+      return `${who(from)} bietet ${who(to)} ${tradeSide(give)} für ${tradeSide(take)}.`;
+    }
     case "tradeAccepted":
       return `${who(event.offer.to)} nimmt das Angebot von ${who(event.offer.from)} an.`;
     case "tradeRejected":

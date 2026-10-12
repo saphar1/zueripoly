@@ -5,6 +5,7 @@ import type { Action, GameState, PlayerId, PlayerState, SpaceIndex, TradeOffer, 
 import {
   BANK,
   BID_STEP,
+  BOT_LEVEL_NAMES,
   JAIL_FINE,
   MAX_JAIL_ROLLS,
   canProposeTrade,
@@ -45,6 +46,10 @@ interface Choice {
 function nameOf(state: GameState, id: string): string {
   if (id === BANK) return "der Bank";
   return state.players.find((p) => p.id === id)?.name ?? id;
+}
+
+function isBot(state: GameState, id: PlayerId): boolean {
+  return Boolean(state.players.find((p) => p.id === id)?.bot);
 }
 
 function describeSide(side: TradeSide): string {
@@ -141,18 +146,7 @@ function TradeOfferView({ state, offer, legal, disabled, onAct }: TradeOfferView
   const canReject = legal.some((a) => a.type === "rejectTrade");
   return (
     <>
-      <table className="offer">
-        <tbody>
-          <tr>
-            <th scope="row">{nameOf(state, offer.from)} gibt</th>
-            <td>{describeSide(offer.give)}</td>
-          </tr>
-          <tr>
-            <th scope="row">und möchte</th>
-            <td>{describeSide(offer.take)}</td>
-          </tr>
-        </tbody>
-      </table>
+      <OfferTable state={state} offer={offer} />
       {mortgaged.map((index) => {
         const space = getPropertySpace(index);
         return (
@@ -175,13 +169,111 @@ function TradeOfferView({ state, offer, legal, disabled, onAct }: TradeOfferView
             Ablehnen
           </button>
         )}
-        <button type="button" className="button" disabled={disabled} onClick={() => onAct({ type: "cancelTrade" }, offer.from)}>
-          {nameOf(state, offer.from)} zieht zurück
-        </button>
+        {!isBot(state, offer.from) && (
+          <button type="button" className="button" disabled={disabled} onClick={() => onAct({ type: "cancelTrade" }, offer.from)}>
+            {nameOf(state, offer.from)} zieht zurück
+          </button>
+        )}
       </div>
       {acceptError && <p className="tafel__hint">{acceptError.message}</p>}
     </>
   );
+}
+
+function OfferTable({ state, offer }: { state: GameState; offer: TradeOffer }) {
+  return (
+    <table className="offer">
+      <tbody>
+        <tr>
+          <th scope="row">{nameOf(state, offer.from)} gibt</th>
+          <td>{describeSide(offer.give)}</td>
+        </tr>
+        <tr>
+          <th scope="row">und möchte</th>
+          <td>{describeSide(offer.take)}</td>
+        </tr>
+      </tbody>
+    </table>
+  );
+}
+
+interface BotStatusProps {
+  state: GameState;
+  bot: PlayerState;
+  disabled: boolean;
+  onAct: (action: Action, as?: PlayerId) => void;
+}
+
+/** Ein Computergegner ist dran: keine Knöpfe, nur ein Satz zur Lage (immer mit Namen). */
+function botStatus({ state, bot, disabled, onAct }: BotStatusProps): { label: string; body: ReactNode } {
+  const name = bot.name;
+  if (state.trade) {
+    const offer = state.trade;
+    return {
+      label: "Handelsangebot",
+      body: (
+        <>
+          <OfferTable state={state} offer={offer} />
+          <p className="tafel__prompt">{name} prüft das Angebot.</p>
+          {!isBot(state, offer.from) && (
+            <div className="tafel__actions">
+              <button type="button" className="button" disabled={disabled} onClick={() => onAct({ type: "cancelTrade" }, offer.from)}>
+                Angebot zurückziehen
+              </button>
+            </div>
+          )}
+        </>
+      ),
+    };
+  }
+  if (state.mortgageDecision) {
+    return { label: "Hypotheken", body: <p className="tafel__prompt">{name} entscheidet, welche übernommenen Felder ausgelöst werden.</p> };
+  }
+  const debt = state.debts[0];
+  if (debt) {
+    return {
+      label: "Schulden",
+      body: (
+        <p className="tafel__prompt">
+          {name} schuldet {nameOf(state, debt.creditor)} <strong>{formatChf(debt.amount)}</strong> und treibt Geld auf. Es fehlen{" "}
+          {formatChf(Math.max(0, debt.amount - bot.money))}.
+        </p>
+      ),
+    };
+  }
+  if (state.auction) {
+    const auction = state.auction;
+    return {
+      label: "Bietet jetzt",
+      body: (
+        <p className="tafel__prompt">
+          Versteigerung: <strong>{spaceNom(auction.space)}</strong> (Listenpreis {formatChf(getPropertySpace(auction.space).price)}).{" "}
+          {auction.highestBidder ? `Höchstgebot: ${formatChf(auction.highestBid)} von ${nameOf(state, auction.highestBidder)}.` : "Noch kein Gebot."}{" "}
+          {name} bietet oder passt.
+        </p>
+      ),
+    };
+  }
+  if (state.turn.phase === "buy" && state.turn.pendingBuy !== null) {
+    const space = getPropertySpace(state.turn.pendingBuy);
+    return {
+      label: "Am Zug",
+      body: (
+        <p className="tafel__prompt">
+          {name} entscheidet: <strong>{space.name}</strong> kaufen für {formatChf(space.price)}?
+        </p>
+      ),
+    };
+  }
+  if (state.turn.phase === "preRoll") {
+    const text = bot.inJail
+      ? `${name} sitzt im Gefängnis und entscheidet: Kaution, Freikarte oder auf einen Pasch würfeln.`
+      : state.turn.doublesCount > 0
+        ? `Pasch! ${name} würfelt nochmals.`
+        : `${name} würfelt gleich.`;
+    return { label: "Am Zug", body: <p className="tafel__prompt">{text}</p> };
+  }
+  return { label: "Am Zug", body: <p className="tafel__prompt">{name} verwaltet den Besitz und beendet dann den Zug.</p> };
 }
 
 export function ActionPanel({ state, busy, error, secondsLeft, onAct, onNewGame, onMenu }: ActionPanelProps) {
@@ -189,7 +281,9 @@ export function ActionPanel({ state, busy, error, secondsLeft, onAct, onNewGame,
   const [composing, setComposing] = useState(false);
   // Neuer Entscheid (anderer Spieler, Angebot verschickt): Handels-Tafel schliessen.
   useEffect(() => setComposing(false), [waitingId, state.trade]);
-  const tradeAllowed = waitingId !== null && canProposeTrade(state, waitingId) && state.players.filter((p) => !p.bankrupt).length > 1;
+  const botTurn = waitingId !== null && isBot(state, waitingId);
+  const tradeAllowed =
+    waitingId !== null && !botTurn && canProposeTrade(state, waitingId) && state.players.filter((p) => !p.bankrupt).length > 1;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
 
   if (winner) {
@@ -226,7 +320,10 @@ export function ActionPanel({ state, busy, error, secondsLeft, onAct, onNewGame,
   let label = "Am Zug";
   let body: ReactNode;
 
-  if (composing && tradeAllowed) {
+  if (botTurn) {
+    ({ label, body } = botStatus({ state, bot: player, disabled, onAct }));
+    if (player.bot) label = `${label} · Computer, ${BOT_LEVEL_NAMES[player.bot]}`;
+  } else if (composing && tradeAllowed) {
     label = "Handel";
     body = <TradeComposer state={state} from={player} disabled={disabled} onSend={(a) => onAct(a)} onCancel={() => setComposing(false)} />;
   } else if (state.trade) {
@@ -336,7 +433,7 @@ export function ActionPanel({ state, busy, error, secondsLeft, onAct, onNewGame,
 
   const urgent = secondsLeft !== null && secondsLeft <= 10;
   return (
-    <section className="tafel" aria-live="polite" aria-busy={busy} aria-label={`${label}: ${player.name}`}>
+    <section className="tafel" aria-live="polite" aria-busy={busy || botTurn} aria-label={`${label}: ${player.name}`}>
       <header className="tafel__head">
         <Token token={player.token} />
         <div>
