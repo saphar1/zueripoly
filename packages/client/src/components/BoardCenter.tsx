@@ -1,4 +1,5 @@
-// Brettmitte: Logo, Zürichsee, Haltestellentafel mit dem letzten Zug, Würfel, Kartenstapel, Vorrat.
+// Brettmitte: Haltestellentafel mit dem letzten Zug und Würfel im Mittelpunkt; Logo, Zürichsee
+// und Kartenstapel treten zurück. Der Vorrat der Bank erscheint nur, wenn er knapp wird.
 import type { ReactNode } from "react";
 import type { DeckId, Dice as DicePair, GameState } from "@zueripoly/engine";
 import { DECK_NAMES } from "@zueripoly/engine";
@@ -48,23 +49,20 @@ function Deck({ deck, onSelect }: { deck: DeckId; onSelect?: (deck: DeckId) => v
   );
 }
 
-/** Vorrat der Bank, wie eine kleine Fahrplantabelle. */
+/** Ab hier wird der Vorrat der Bank knapp und als Hinweis gezeigt (sonst spielt er keine Rolle). */
+const SCARCE_HOUSES = 8;
+const SCARCE_HOTELS = 2;
+
+function scarce(count: number, one: string, many: string, limit: number): string | null {
+  if (count > limit) return null;
+  return count === 0 ? `keine ${many} mehr` : `nur noch ${count} ${count === 1 ? one : many}`;
+}
+
+/** Vorrat der Bank: nur ein Hinweis, wenn Häuser oder Hotels knapp werden. */
 function Stock({ houses, hotels }: { houses: number; hotels: number }) {
-  return (
-    <div className="center__stock">
-      <p className="center__stock-title">Vorrat der Bank</p>
-      <dl>
-        <div>
-          <dt>Häuser</dt>
-          <dd className="num">{houses}</dd>
-        </div>
-        <div>
-          <dt>Hotels</dt>
-          <dd className="num">{hotels}</dd>
-        </div>
-      </dl>
-    </div>
-  );
+  const parts = [scarce(houses, "Haus", "Häuser", SCARCE_HOUSES), scarce(hotels, "Hotel", "Hotels", SCARCE_HOTELS)].filter(Boolean);
+  if (parts.length === 0) return null;
+  return <p className="center__stock">Bank: {parts.join(" · ")}</p>;
 }
 
 interface BoardCenterProps {

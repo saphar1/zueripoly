@@ -163,14 +163,21 @@
   white-space: nowrap;
 }
 
-/* Eigentümerzeichen: Kreis in Spielerfarbe */
+/* Eigentümerzeichen: Kreis in Spielerfarbe, ersetzt den Preis, sobald das Feld gekauft ist */
 .tile__owner {
   flex: none;
-  width: calc(var(--u) * 0.18);
-  height: calc(var(--u) * 0.18);
-  border: 1.5px solid var(--color-ink);
+  width: calc(var(--u) * 0.26);
+  height: calc(var(--u) * 0.26);
+  border: var(--line-thick) solid var(--color-ink);
   border-radius: 50%;
   background: var(--owner);
+}
+
+/* Belastet: Ring statt Kreis (Rand in Spielerfarbe, Mitte Papier, aussen Tinte) */
+.tile__owner--mortgaged {
+  border: calc(var(--u) * 0.06) solid var(--owner);
+  outline: 1.5px solid var(--color-ink);
+  background: var(--color-paper);
 }
 
 /* Figuren auf dem Feld: aufrecht, zwischen Name und Preis (Name bleibt lesbar), bei mehreren überlappend */
@@ -247,6 +254,11 @@
     width: calc(var(--u) * 0.44);
     height: calc(var(--u) * 0.44);
     border-width: 1px;
+  }
+
+  .tile__owner--mortgaged {
+    border-width: calc(var(--u) * 0.1);
+    outline-width: 1px;
   }
 
   /* Ohne Namen ist Platz: Figuren grösser und mittig */

@@ -108,6 +108,7 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 - Handel: `components/TradeComposer.tsx` (Angebot erstellen, prüft laufend mit `validateAction`), offene Angebote in `ActionPanel` (`TradeOfferView`: annehmen mit Auslösen, ablehnen, zurückziehen). Die Tafel kann mit `onAct(action, as)` auch für jemand anderen handeln (Anbieter zieht zurück).
 - Zoom: `components/BoardViewport.tsx` nur unter 900 px Breite. Der Rahmen bekommt `--board-fit` (ganzes Brett passt) und setzt `--board-size = --board-fit × Zoom`. Zwei Finger zoomen (`touch-action: pan-x pan-y`), ein Finger verschiebt.
 - Haltestellentafel: nach jeder Bewegung neu (`signFor`); ohne Bewegung wird nur der Hinweis nachgeführt (Kauf, Versteigerung, Bankrott …).
+- Übersichtliches Spielfeld (nach Phase 4): Felder zeigen den Preis nur, solange sie frei sind; gekauft = Besitzerkreis, belastet = Ring (`tile__owner--mortgaged`) + schraffierter Balken, kein Text. Brettmitte: Tafel + Würfel im Mittelpunkt, Logo und Kartenstapel klein, Bankvorrat nur als Hinweis bei Knappheit (`SCARCE_HOUSES`/`SCARCE_HOTELS` in `BoardCenter.tsx`). Neue Elemente auf dem Brett nur, wenn sie für den nächsten Entscheid nötig sind.
 - Durchspiel-Test `scripts/playtest.ts`: läuft mit `reducedMotion: "reduce"`, klickt meist den Hauptknopf, baut oft, handelt ab und zu, treibt bei Schulden Geld auf. Optionen `--steps`, `--players`, `--money`, `--snapshot`.
 
 ### Engine (Phase 2)

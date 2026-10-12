@@ -66,10 +66,13 @@ export function Tile({ space, side, property, owner, visitors, movingPlayer, mar
           {icon && <Icon name={icon} className={`tile__icon tile__icon--${space.kind}`} />}
           <span className="tile__name">{hyphenate(space.name)}</span>
         </div>
+        {/* Fuss: Preis, solange das Feld frei ist; danach nur der Besitzerkreis (belastet: Ring). */}
         <div className="tile__foot">
-          {owner && <span className="tile__owner" style={{ "--owner": `var(--player-${owner.token})` } as CSSProperties} />}
-          {property?.mortgaged ? (
-            <span className="tile__price">Hypothek</span>
+          {owner ? (
+            <span
+              className={`tile__owner${property?.mortgaged ? " tile__owner--mortgaged" : ""}`}
+              style={{ "--owner": `var(--player-${owner.token})` } as CSSProperties}
+            />
           ) : space.kind === "tax" ? (
             <span className="tile__price num">−{formatChf(space.amount)}</span>
           ) : "price" in space ? (

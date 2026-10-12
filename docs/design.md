@@ -72,9 +72,9 @@ Regeln:
 
 ## 6. Komponentenliste
 1. **Brett** (`Board`): 11×11-Raster, vier Seiten mit Feldern, vier Ecken; Zoom (Pinch, Rad, Tasten +/−) und Verschieben auf dem Handy.
-2. **Feld** (`Tile`): Farbbalken oben (Seite zum Inneren), gedrehter Name an den Seiten, Preis unten, Eigentümerzeichen (Spielerkreis).
+2. **Feld** (`Tile`): Farbbalken oben (Seite zum Inneren), gedrehter Name an den Seiten. Unten der Preis, solange das Feld frei ist; danach nur noch das Eigentümerzeichen (Spielerkreis). Belastet: Ring statt Kreis und schraffierter Farbbalken (kein Text).
 3. **Eckfeld** (`CornerTile`): Start, Gefängnis, Ferien, Gehe ins Gefängnis.
-4. **Mitte** (`BoardCenter`): Logo, Zürichsee-Fläche, Würfelbereich, Kartenstapel.
+4. **Mitte** (`BoardCenter`): Haltestellentafel und Würfel im Mittelpunkt; kleines Logo, Zürichsee-Fläche, kleine Kartenstapel treten zurück. Der Vorrat der Bank erscheint nur als Hinweis, wenn er knapp wird (≤ 8 Häuser oder ≤ 2 Hotels).
 5. **Figur** (`Token`): sechs SVG-Figuren mit einheitlicher 3-px-Linie.
 6. **Würfel** (`Dice`): SVG, Augen als Kreise, Rollanimation.
 7. **Spielerpanel** (`PlayerPanel`): Name, Figur, Kontostand, Besitz als Farbstreifen, Zustand (am Zug, Gefängnis, bankrott).
