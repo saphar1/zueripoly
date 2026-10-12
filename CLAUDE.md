@@ -21,16 +21,20 @@ Alle Texte im Spiel und in der Doku: **Deutsch, Schweizer Schreibweise** (immer 
 Im Projektordner `C:\Users\sapir\zueripoly`:
 ```powershell
 npm install        # Abhängigkeiten
-npm test           # Engine-Tests (Vitest), inkl. 300 Zufallspartien und 200 Bot-Partien (~15–25 s)
+npm test           # Engine-Tests (Vitest, 300 Zufallspartien, 200 Bot-Partien) und Server-Tests (simulierte Clients), ~30 s
 npm run typecheck  # TypeScript in allen Paketen
-npm run dev        # Server und Client gleichzeitig
+npm run dev        # Spielserver (Port 3001) und Client (Vite, http://localhost:5173) gleichzeitig; Online braucht beides
 npm run build      # Client bauen
+npm run test -w @zueripoly/server                       # nur Server-Tests (~10 s)
+npm run dev -w @zueripoly/server                        # nur Spielserver (startet bei Codeänderungen neu, Räume sind dann weg)
 npm run dev -w @zueripoly/client                        # nur Client; Designentwurf: http://localhost:5173/entwurf.html
 npm run screenshots -w @zueripoly/client                # Playwright: Desktop 1440×900 + Handy 390×844 nach screenshots/
 npm run screenshots -w @zueripoly/client -- --details   # zusätzlich Brett-Viertel (2×) und Interaktionszustände
 npm run playtest -w @zueripoly/client                   # Durchspiel-Test der Oberfläche (Playwright klickt zufällig)
 npm run playtest -w @zueripoly/client -- --money 500    # kurze Partie bis zum Gewinner (wenig Startkapital)
 npm run playtest -w @zueripoly/client -- --solo --bots 3 # Solo: klickt nur für «Anna», Bots ziehen selbst (Bilder solo-*.png)
+npm run playtest -w @zueripoly/client -- --online       # Online: eigener Server, 3 Browserfenster spielen bis zum Gewinner, Ben lädt neu
+npm run screenshots -w @zueripoly/client -- --online    # Online-Bildschirme Desktop + Handy (online-*.png)
 npm run bots -w @zueripoly/engine                       # Bot-Liga: Siegquoten je Paarung (optional -- --games 500 --check)
 ```
 
@@ -74,6 +78,20 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 - **Phase 2 abgeschlossen**: Engine mit allen Regeln, 108 Tests, 300 Zufallspartien. Details in `docs/engine.md`.
 - **Phase 3 abgeschlossen**: Design freigegeben (2026-10-12), lokal spielbar von Anfang bis Gewinner (Menü, Lobby, Spiel mit allen Entscheidungen, Handel, Zoom auf dem Handy). Durchspiel-Test der Oberfläche: `npm run playtest -w @zueripoly/client`.
 - **Phase 4 abgeschlossen**: Computergegner «einfach» und «clever», Solomodus mit 1–5 Bots. 200 Bot-Partien in `npm test` (alle enden, clever schlägt einfach im Zweikampf in rund 90 %). Details in `docs/bots.md`.
+- **Phase 5, Teil A abgeschlossen**: Spielserver mit Räumen, Lobby, Wiederverbinden und Host-Entscheiden; Online-Spiel im Browser, lokal mit mehreren Fenstern getestet. Details in `docs/online.md`. **Nächster Schritt: Teil B** (Freunde von eigenen Geräten): zuerst Optionen recherchieren und dem Entwickler zur Entscheidung vorlegen, nichts umsetzen ohne sein Okay.
+
+### Server und Online (Phase 5, Teil A)
+- Server `packages/server/src`: `protocol.ts` (Nachrichten, Typen, Konstanten; nur Typen und Konstanten, der Client importiert es als `@zueripoly/server/protocol`), `server.ts` (`startZueriServer`, Socket.IO, jede Anfrage begrenzt und in try/catch), `room-registry.ts` (Räume, Socket → Raum, Aufräumen), `room.ts` (Lobby, Spiel, Bots, Zeitlimit, Anwesenheit, Host), `parse.ts` (Eingänge neu bauen), `room-code.ts`, `rate-limit.ts`, `pace.ts` (Abspielzeit und Denkpausen wie im Client).
+- **Der Server nimmt die Spieler-ID nie aus der Nachricht**, sondern aus der Verbindung, und lässt `applyAction` prüfen. Clients dürfen kein `timeout` schicken. Die Kartenstapel gehen sortiert raus (`publicState`), die Zufallsquellen nie.
+- Anfragen immer mit Antwort `{ ok, … }` / `{ ok: false, error }` (deutsch). Neue Anfrage: in `protocol.ts` (`Requests`, `REQUEST_NAMES`), Prüfung in `parse.ts`, Handler in `server.ts`, Logik in `room.ts`, Test in `packages/server/tests`.
+- Zeiten im Typ `Timing` (`room.ts`): Abwesenheit 60 s, leere Lobby 5 Min., leeres Spiel 10 Min. Tests setzen kurze Werte (`FAST` in `tests/helpers.ts`, Flutbremse dort weit offen; die echte Bremse prüft `robustness.test.ts`).
+- Abwesenheit: nach `absentMs` Störungsmeldung für den Host: warten / Computer spielt weiter (Stufe clever, endet bei Rückkehr) / aus dem Spiel nehmen (`removePlayer` der Engine). Ausdrücklich verlassen = sofort Entscheid, kein Zurück. Host-Wechsel beim Verlassen sofort, beim Trennen nach `absentMs`. Sind alle Menschen getrennt, ruht das Spiel.
+- Engine: `removePlayer(state, playerId)` ist ein Eingriff von aussen (kein Spielzug), Ereignis `playerRemoved`, danach `bankrupt` an die Bank (im Protokoll ausgeblendet).
+- Client: `online/connection.ts` (`OnlineClient`, eine Instanz pro Fenster über `openOnlineClient`/`closeOnlineClient`, sicher gegen StrictMode), `online/seat-storage.ts` (Sitzplatz-Schlüssel in sessionStorage pro Fenster, localStorage für «Zurück in Raum …», alles in try/catch), `online/use-server-clock.ts`. `game/use-online-game.ts` spielt Server-Stände nacheinander ab (Warteschlange; ab 3 wartenden oder bei verstecktem Fenster springen; Lücke in `seq` → `game:sync`).
+- Bildschirme: `App.tsx` → `OnlineStart` (Name, eröffnen, beitreten, `?raum=CODE`) → `OnlineRoom` (Lobby oder Spiel je nach `room.phase`, Meldungen) → `OnlineLobby` / `OnlineGameScreen`. Beim Laden mit Platz im sessionStorage direkt zurück in den Raum.
+- Gemeinsame Spielansicht `screens/GameView.tsx` für Lokal, Solo und Online; Abspielen in `game/use-game-playback.ts` (aus `use-local-game` herausgelöst). `ActionPanel` hat `me` (online eigener Platz; wartet jemand anderes, Satz zur Lage wie bei Bots), `waitingLabel`/`waitingNote` und `endActions` statt fester Knöpfe.
+- Gemeinsame Bausteine: `TokenPicker`, `GameOptionsForm` (ohne `onChange` nur lesen), `.segments` und `.chip` in `styles/base.css`. Neue Chips: `chip--you` («Du»), `chip--away` (gestrichelt rot: getrennt/ausgestiegen), `chip--host`, `chip--ready`, `chip--waiting`. Störungsmeldung `AbsentNotice` (Signalrot), `ConnectionBanner` (fest oben).
+- Vite leitet `/socket.io` an `ZUERIPOLY_SERVER` weiter (Standard `http://localhost:3001`). Playwright-Skripte starten Spielserver und Vite selbst.
 
 ### Computergegner (Phase 4)
 - Engine: `bot.ts` (Entscheide je Lage, `BOT_NAMES`, `BOT_LEVEL_NAMES`), `bot-eval.ts` (Bewertung `positionValue`, `cashReserve`, `propertyWorth`, `patience`, `fairRatio`, kleine Helfer, `eventsThisTurn`), `bot-trade.ts` (Angebote prüfen und machen, Handel auf einer Kopie durchspielen). `bot-eval` wird nicht aus `index.ts` exportiert (intern).
@@ -132,9 +150,13 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 
 ## Bekannte Probleme
 - Zufallspartien können ewig dauern (Häusermangel-Patt: alle 32 Häuser verbaut, kein Hotel möglich). Der Test bricht nach 6000 Aktionen ab und verlangt nur, dass über 80 % mit Gewinner enden. Die Bots lösen das Patt selbst (Umbau zum Hotel), ihre Partien enden alle.
-- Ohne Zeitlimit kann ein menschlicher Schuldner das Spiel blockieren, wenn er weder Geld auftreibt noch handelt (er darf nur Bankrott erklären, wenn nichts mehr reicht). Online fängt das Zeitlimit oder (Phase 5) die Bot-Übernahme ab.
+- Ohne Zeitlimit kann ein menschlicher Schuldner das Spiel blockieren, wenn er weder Geld auftreibt noch handelt (er darf nur Bankrott erklären, wenn nichts mehr reicht). Online fängt das Zeitlimit oder der Host-Entscheid bei Abwesenheit ab; lokal nicht.
+- Online-Räume liegen nur im Speicher des Servers. Startet der Server neu (auch `tsx watch` bei jeder Codeänderung), sind alle Räume weg; die Browser zeigen dann «Den Raum … gibt es nicht mehr». Speichern kommt in Phase 6.
+- Gleicher Platz in zwei Fenstern: Das zuletzt geöffnete gewinnt, das erste wird abgemeldet. Zum Testen mehrerer Spieler einfach neue Fenster oder Tabs öffnen (sessionStorage ist pro Tab).
+- `npm audit` meldet Lücken in Vitest (nur Testwerkzeug, läuft nicht im Spiel). Behebung braucht Vitest 5 (grössere Umstellung), daher vorerst nicht.
+- Das Browserfenster der Claude-App (Vorschau) zeichnet nicht, wenn die App im Hintergrund ist. Oberflächen-Prüfungen deshalb mit den Playwright-Skripten.
 - Ist Port 5173 belegt (z. B. ein alter Dev-Server), nimmt Vite den nächsten freien Port (5174 …); die Adresse steht im Terminal.
-- Neu laden im Browser beendet die Partie (Spielstand speichern kommt in Phase 6). Noch keine Töne und kein Stummschalter (Phase 6).
+- Lokal und Solo: Neu laden im Browser beendet die Partie (Spielstand speichern kommt in Phase 6). Online kommt man nach dem Neuladen auf seinen Platz zurück. Noch keine Töne und kein Stummschalter (Phase 6).
 - Jedes der 40 Felder ist ein eigener Tab-Halt; für Tastatur-Spielende ist das viel. Später eventuell Pfeiltasten-Navigation über das Brett.
 - Der Durchspiel-Test mit 1500 CHF Startkapital endet oft ohne Gewinner (die Zufallsstrategie belastet zu viel). Mit `--money 500` endet er meist nach 500–800 Schritten mit Gewinner.
 - Solo mit 5 Bots: Zwischen zwei eigenen Zügen vergehen leicht 20–30 s (Denkpause pro Bot-Schritt). Eine Tempo-Einstellung gibt es noch nicht (Idee für Phase 6).

@@ -1,0 +1,15 @@
+/* Verbindungshinweis: liegt oben über allem, gestrichelte Signallinie wie eine unterbrochene Strecke. */
+.connection {
+  position: fixed;
+  top: var(--space-2);
+  left: 50%;
+  z-index: 50;
+  width: max-content;
+  max-width: calc(100vw - 2 * var(--space-4));
+  padding: var(--space-2) var(--space-4);
+  border: var(--line-thick) dashed var(--color-signal);
+  background: var(--color-paper);
+  box-shadow: var(--offset-small);
+  font-size: 15px;
+  transform: translateX(-50%);
+}

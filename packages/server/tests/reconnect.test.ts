@@ -48,6 +48,16 @@ describe("Verbindungsabbruch und Wiederverbinden", () => {
     expect(expectError(await ben!.request("lobby:seat", { ready: false }))).toContain("in keinem Raum");
   });
 
+  it("ein Fenster wechselt auf einen anderen Platz im selben Raum: der alte Platz gilt als getrennt", async () => {
+    const server = await startServer();
+    const [anna, ben, clara] = await setupRoom(server.port, ["Anna", "Ben", "Clara"]);
+    const benId = ben!.me;
+    clara!.close();
+    await waitUntil(() => seatOf(anna!, clara!.me)?.connected === false, "Clara getrennt");
+    expect((await ben!.resume(clara!.grant!)).ok).toBe(true);
+    await waitUntil(() => seatOf(anna!, clara!.me)?.connected === true && seatOf(anna!, benId)?.connected === false, "Plätze getauscht");
+  });
+
   it("Wiederverbinden geht auch in der Lobby", async () => {
     const server = await startServer();
     const [anna, ben] = await setupRoom(server.port, ["Anna", "Ben"]);

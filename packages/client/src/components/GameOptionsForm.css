@@ -1,0 +1,132 @@
+/* Spieloptionen der Lobby: Startkapital (Stufen), Schalter, Segmente. */
+.options {
+  display: flex;
+  flex-direction: column;
+  border: var(--line-thick) solid var(--color-ink);
+  background: var(--color-paper);
+}
+
+.options h2 {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-size: 18px;
+}
+
+.option {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: var(--space-2) var(--space-4);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+}
+
+.option + .option {
+  border-top: var(--line-thin) solid var(--color-ink);
+}
+
+.option__label {
+  font-weight: 700;
+}
+
+.option__help {
+  grid-column: 2;
+  max-width: 52ch;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.stepper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.stepper .button {
+  min-width: 56px;
+  padding-inline: var(--space-2);
+}
+
+.stepper__value {
+  min-width: 6.5em;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* Schalter: eckig, Knopf springt nach rechts; An = Tram-Blau */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.toggle__track {
+  display: inline-flex;
+  width: 56px;
+  height: 30px;
+  padding: 3px;
+  border: var(--line-thick) solid var(--color-ink);
+  background: var(--color-paper-dark);
+  transition: background var(--motion-hover) var(--ease-out);
+}
+
+.toggle__knob {
+  width: 20px;
+  height: 20px;
+  background: var(--color-ink);
+  transition: transform var(--motion-hover) var(--ease-out);
+}
+
+.toggle[aria-pressed="true"] .toggle__track {
+  background: var(--color-tram);
+}
+
+.toggle[aria-pressed="true"] .toggle__knob {
+  background: var(--color-paper);
+  transform: translateX(26px);
+}
+
+.options__note {
+  padding: var(--space-3) var(--space-4) 0;
+  font-size: 14px;
+}
+
+/* Nur lesen: Wert statt Bedienelement */
+.options__list {
+  margin: 0;
+}
+
+.option__value {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+@media (max-width: 699px) {
+  .option {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .option__help {
+    grid-column: 1;
+  }
+
+  /* Betrag oben, Knöpfe darunter in einer Reihe */
+  .stepper__value {
+    flex-basis: 100%;
+    order: -1;
+    text-align: left;
+  }
+}

@@ -1,6 +1,7 @@
 // Screenshots des Designentwurfs (Desktop und Handy) mit Playwright.
 // Start: npm run screenshots -w @zueripoly/client  →  Bilder im Ordner screenshots/ (Projektwurzel).
 // Mit «-- --details» zusätzlich das Brett in vier Vierteln, doppelt aufgelöst, und die Interaktionszustände.
+// Mit «-- --online» die Online-Bildschirme (Start, Lobby, Spiel, Störung, Verbindung).
 // Startet dafür selbst einen Vite-Server und beendet ihn danach wieder.
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,6 +11,11 @@ import { createServer } from "vite";
 const clientRoot = fileURLToPath(new URL("..", import.meta.url));
 const outDir = path.resolve(clientRoot, "../../screenshots");
 const args = process.argv.slice(2);
+if (args.includes("--online")) {
+  // Online-Bildschirme: eigener Spielserver, mehrere Fenster (siehe screenshots-online.ts).
+  await import("./screenshots-online");
+  process.exit(process.exitCode ?? 0);
+}
 const details = args.includes("--details");
 const page = args.find((a) => !a.startsWith("--")) ?? "entwurf.html";
 const name = path.basename(page, ".html");

@@ -286,6 +286,13 @@ export class Room {
   resume(socketId: string, key: string): Result<SeatGrant> {
     const seat = this.seats.find((s) => s.key !== null && sameKey(s.key, key));
     if (!seat) return fail("Diesen Platz gibt es nicht mehr. Tritt mit dem Raumcode neu bei.");
+    // Sitzt diese Verbindung schon auf einem anderen Platz im Raum, gilt dieser als getrennt.
+    const other = this.seatBySocket(socketId);
+    if (other && other !== seat) {
+      other.socketId = null;
+      other.awaySince = Date.now();
+      other.askAt = this.phase === "game" ? other.awaySince + this.timing.absentMs : null;
+    }
     const previous = seat.socketId;
     if (previous !== null && previous !== socketId) {
       seat.socketId = null;

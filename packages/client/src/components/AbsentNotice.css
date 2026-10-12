@@ -1,0 +1,41 @@
+/* Störungsanzeige: Signalrot als Rahmen und Kopfband, Text auf Papier (Kontrast). */
+.absent {
+  border: var(--line-thick) solid var(--color-signal);
+  background: var(--color-paper);
+  box-shadow: 4px 4px 0 var(--color-signal);
+}
+
+.absent__head {
+  padding: var(--space-1) var(--space-4);
+  background: var(--color-signal);
+  color: var(--color-paper);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.absent__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.absent__item + .absent__item {
+  border-top: var(--line-thin) solid var(--color-ink);
+}
+
+.absent__text {
+  line-height: 1.4;
+}
+
+.absent__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.absent__help {
+  font-size: 13px;
+  line-height: 1.4;
+}

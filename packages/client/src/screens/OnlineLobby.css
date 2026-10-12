@@ -1,0 +1,153 @@
+/* Online-Lobby: Raumcode als Anzeigetafel, Plätze wie in der Lokal-Lobby mit Zustand je Platz. */
+.room-code {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  border: var(--line-thick) solid var(--color-ink);
+  background: var(--color-paper);
+  box-shadow: var(--offset);
+}
+
+.room-code__plate {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+
+.room-code__label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Gross und gesperrt wie eine Liniennummer, damit man ihn gut vorlesen kann */
+.room-code__value {
+  font-family: var(--font-display);
+  font-size: clamp(44px, 7vw, 64px);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  line-height: 1;
+}
+
+.room-code__share {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4);
+}
+
+.room-code__share > p {
+  max-width: 52ch;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.room-code__link {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.room-code__link input {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border: var(--line-thick) solid var(--color-ink);
+  border-radius: var(--radius);
+  background: var(--color-paper-dark);
+  color: var(--color-ink);
+  font-family: var(--font-text);
+  font-size: 15px;
+}
+
+.room-code__copied {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Plätze: Name und Figur oben, Zustand darunter */
+.online-seat__name {
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.online-seat__token {
+  justify-self: start;
+  --token-size: 40px;
+}
+
+.online-seat__status {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 2 / -1;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.online-seat--mine {
+  background: var(--color-paper-dark);
+}
+
+.chip--host {
+  border-color: var(--color-tram);
+  background: var(--color-tram);
+  color: var(--color-paper);
+}
+
+.chip--ready {
+  border-color: var(--color-ink);
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+.chip--waiting {
+  border-style: dashed;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.online-lobby__seat-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.online-lobby__wait {
+  align-self: center;
+  font-weight: 600;
+}
+
+@media (max-width: 699px) {
+  .room-code {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Fremde Plätze: Figur neben dem Namen statt auf einer eigenen Zeile */
+  .online-seat {
+    grid-template-columns: auto minmax(0, 1fr) auto 36px;
+  }
+
+  .online-seat .seat__remove {
+    grid-row: 1;
+    grid-column: 4;
+  }
+
+  .online-seat__token {
+    --token-size: 36px;
+  }
+
+  .online-seat__status {
+    grid-column: 1 / -1;
+  }
+}

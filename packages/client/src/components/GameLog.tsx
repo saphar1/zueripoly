@@ -1,5 +1,5 @@
 // Spielprotokoll wie ein Fahrplan: links die Zugnummer, rechts der Satz. Neuestes oben.
-import type { LogEntry } from "../game/use-local-game";
+import type { LogEntry } from "../game/use-game-playback";
 import "./GameLog.css";
 
 const SHOWN = 120;

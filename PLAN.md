@@ -73,19 +73,33 @@ Vorarbeit: `docs/engine.md` (Ablauf, `getWaitingFor`, `getLegalActions`, `canPro
 
 **Ergebnis Bot-Liga** (200 Partien je Paarung, alle beendet): clever gegen einfach 88 % Siege für clever, 1 clever gegen 3 einfach 79 % (gleich stark wären 25 %). Tabelle in `docs/bots.md`.
 
-## Phase 5: Server und Online  ← nächste Phase
-Vorarbeit: `docs/engine.md`, `docs/bots.md`, `packages/server/src/index.ts` (Gerüst). Der Server hält `GameState` + Spiel-Zufallsquelle (`SeededRng`, Stand mit `getState()` speicherbar) und eine eigene `botRng`; er prüft jede Aktion mit `applyAction` und schickt Zustand + Ereignisse an alle. Bots (auch Übernahme nach 5 Min. Abwesenheit, `chooseBotAction(..., level)`) und Zeitlimit (`timeout`) laufen auf dem Server, mit derselben Denkpause wie im Client. Spielstände mit `serializeGame` / `deserializeGame` im Ordner `saves/`.
-- [ ] Räume, Raumcodes
-- [ ] WebSocket-Protokoll (Aktionen rein, Zustand raus)
-- [ ] Lobby mit Namen und Figurenwahl
-- [ ] Wiederverbinden
-- [ ] Server speichert Spielstände (JSON)
-- [ ] Zeitlimit serverseitig
-- [ ] Online mit Freunden getestet (lokales Netz)
+## Phase 5: Server und Online  ← Teil A fertig, Teil B als Nächstes
+Vorarbeit: `docs/online.md` (Ablauf, Nachrichten, Grenzen), `docs/engine.md` (`removePlayer`).
+
+Teil A: lokal lauffähig (Server und Client auf einem PC, mehrere Browserfenster) ✓
+- [x] Engine: `removePlayer` (Spieler aus dem Spiel nehmen) mit 13 Tests und 50 Zufallspartien
+- [x] Räume mit 5-stelligem Code ohne verwechselbare Zeichen, Beitreten per Code oder Link `?raum=`, 2–6 Plätze
+- [x] Socket.IO-Protokoll (`protocol.ts`): Anfragen mit Antwort, Zustand und Ereignisse an alle; Server als einzige Wahrheit
+- [x] Lobby: Name, Figur (jede nur einmal), bereit; Host: Optionen, Bots, Plätze entfernen, Start
+- [x] Jede Aktion prüft die Engine für den Platz der Verbindung; Würfel und Mischen nur auf dem Server; Stapelreihenfolge geheim
+- [x] Bots, Vertretung abwesender Spieler und Zeitlimit serverseitig, Denkpausen wie im Client
+- [x] Wiederverbinden mit Sitzplatz-Schlüssel (sessionStorage/localStorage), «Getrennt» je Spieler, Host-Entscheid nach 60 s (warten, Computer, entfernen), Host-Wechsel
+- [x] Robustheit: Eingaben neu gebaut, Namen gesäubert (16 Zeichen), Flutbremse, 16-KB-Grenze, leere Räume aufgeräumt
+- [x] Client: Online-Start, Online-Lobby, Online-Spiel (nur eigener Platz bedienbar, Züge der anderen live), Störungsmeldung, Verbindungshinweis
+- [x] Gemeinsame Spielansicht `GameView` und gemeinsames Abspielen `use-game-playback` für Lokal, Solo und Online
+- [x] Tests: 43 Server-Tests mit simulierten Clients; Online-Durchspiel-Test mit 3 Browserfenstern (mit Neuladen); Screenshots Desktop und Handy
+
+Teil B: Freunde spielen von eigenen Geräten
+- [ ] Optionen recherchieren und vergleichen (gleiches WLAN, Tunnel, Hosting mit Gratisstufe), Empfehlung, Entscheid des Entwicklers abwarten
+- [ ] Server liefert die gebaute Oberfläche selbst aus (eine Adresse für alles)
+- [ ] Gewählte Option einrichten und mit Freunden testen
+- [ ] Abschluss: Doku, Commit «Phase 5: …»
+
+Verschoben auf Phase 6: Spielstände auf dem Server speichern (zusammen mit «Spielstand fortsetzen»).
 
 ## Phase 6: Feinschliff
 - [ ] Animationen (Würfel, Figurenzug, Karte, Geldfluss), `prefers-reduced-motion`
 - [ ] Sounds und Stummschalter
 - [ ] Mobile-Feinschliff
-- [ ] Spielstand speichern und fortsetzen (lokal und online)
-- [ ] Optional: Hosting
+- [ ] Spielstand speichern und fortsetzen (lokal und online; online: Server speichert Räume als JSON in `saves/`)
+- [ ] Hosting verfeinern (je nach Entscheid in Phase 5, Teil B)

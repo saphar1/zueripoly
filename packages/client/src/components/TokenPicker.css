@@ -1,0 +1,37 @@
+/* Figurenwahl: runde Knöpfe, gewählt = Papier mit Rand und Versatz, vergeben = blass. */
+.token-picker {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.token-picker__item {
+  width: 40px;
+  height: 40px;
+  padding: 5px;
+  border: var(--line-thick) solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  transition: transform var(--motion-hover) var(--ease-out);
+}
+
+.token-picker__item:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.token-picker__item[aria-checked="true"] {
+  border-color: var(--color-ink);
+  background: var(--color-paper);
+  box-shadow: var(--offset-small);
+}
+
+/* Schon vergeben: blass und nicht wählbar */
+.token-picker__item:disabled {
+  cursor: not-allowed;
+  opacity: 0.25;
+}
+
+/* Gewählt, aber gesperrt (z. B. während einer Anfrage): bleibt gut sichtbar */
+.token-picker__item[aria-checked="true"]:disabled {
+  opacity: 1;
+}

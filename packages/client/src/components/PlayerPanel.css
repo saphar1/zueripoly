@@ -144,23 +144,6 @@
   box-shadow: none;
 }
 
-/* Zustands-Etiketten */
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: 2px var(--space-2);
-  border: var(--line-thick) solid var(--color-ink);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
-.chip .icon {
-  font-size: 14px;
-}
-
 .chip--turn {
   border-color: var(--color-paper);
   background: var(--color-paper);
@@ -177,14 +160,6 @@
   background: var(--color-paper);
   color: var(--color-ink);
   --icon-fill: var(--color-paper-dark);
-}
-
-/* Computergegner: wie ein Liniensignet, Tinte auf Papier */
-.chip--bot {
-  border-color: var(--color-ink);
-  background: var(--color-paper-dark);
-  color: var(--color-ink);
-  font-weight: 600;
 }
 
 .chip--bankrupt {

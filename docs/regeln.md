@@ -143,7 +143,7 @@ Ein Spieler ist bankrott, wenn er eine Schuld nicht bezahlen kann, auch nach Ver
 - **Karte «Zahle jedem Spieler 50»**: Nur an noch im Spiel befindliche Spieler.
 - **Reparaturen-Karte**: Betrag pro Haus/Hotel des Spielers; ohne Gebäude zahlt er nichts.
 - **Wenn der Stapel durch ist**, wird er (ohne die gehaltenen Freikarten) neu gemischt. In der Praxis laufen die Karten im Kreis unter den Stapel, deshalb ist ein Mischen nur beim Spielstart nötig.
-- **Wiederverbinden** (online): Verliert ein Spieler die Verbindung, wartet das Spiel. Nach 5 Minuten Abwesenheit kann ein Computergegner übernehmen.
+- **Wiederverbinden** (online): Verliert ein Spieler die Verbindung, behält er seinen Platz und wartet das Spiel, wenn er entscheiden muss (mit Zeitlimit handelt der Server nach Ablauf für ihn). Nach 1 Minute Abwesenheit entscheidet der Host: warten, ein Computergegner spielt weiter (bis der Spieler zurück ist) oder der Spieler wird aus dem Spiel genommen. Dann geht sein Besitz wie bei einem Bankrott an die Bank: Gebäude zurück, Bargeld an die Bank, Felder werden versteigert, sein offenes Handelsangebot verfällt, ein Gebot von ihm in einer Versteigerung gilt nicht mehr. Details: [online.md](online.md).
 
 ## 16. Entscheide, die vom Original abweichen
 Diese bewussten Vereinfachungen sind hier festgehalten, damit sie später nicht verwundern:
@@ -157,3 +157,4 @@ Diese bewussten Vereinfachungen sind hier festgehalten, damit sie später nicht 
 8. Nach dem dritten Pasch oder einer Gefängniskarte darf der Spieler vor «Zug beenden» noch verwalten.
 9. Ein Handel darf keine Schuld erzeugen (Abschnitt 13).
 10. Mehrere Schulden aus einer Karte werden der Reihe nach beglichen; geht der Zahler dabei bankrott, verfallen die übrigen (Abschnitt 11).
+11. Online kann der Host einen abwesenden Spieler aus dem Spiel nehmen; sein Besitz geht wie bei einem Bankrott an die Bank (Abschnitt 15, Wiederverbinden).

@@ -4,7 +4,7 @@ Ein Brettspiel rund ums Geld, die Quartiere und die Trams von Zürich. Kaufe Str
 
 Alle Namen, Karten und Grafiken sind eigene Inhalte. Die Spielregeln folgen einem klassischen Immobilien-Brettspiel; dessen Name, Logo und Grafiken werden nicht verwendet.
 
-**Stand:** Phase 3 abgeschlossen: Lokal spielbar an einem Gerät (2 bis 6 Personen), von Anfang bis Gewinner. Computergegner und Online-Spiel folgen. Siehe [PLAN.md](PLAN.md).
+**Stand:** Lokal, Solo gegen Computergegner und Online mit Raumcode spielbar. Online läuft vorerst auf dem eigenen PC (mehrere Browserfenster); das Spielen von anderen Geräten folgt. Siehe [PLAN.md](PLAN.md).
 
 ## Starten
 
@@ -16,7 +16,9 @@ npm test
 npm run dev
 ```
 
-`npm run dev` startet den Server und die Client-Seite (Vite, normalerweise `http://localhost:5173`). Dort «Lokal spielen» wählen, Namen und Figuren eintragen, «Losfahren».
+`npm run dev` startet den Spielserver (Port 3001) und die Client-Seite (Vite, normalerweise `http://localhost:5173`). Dort «Lokal spielen», «Solo gegen den Computer» oder «Online mit Freunden» wählen.
+
+Online ausprobieren: Im ersten Fenster «Online mit Freunden» → Name → «Raum eröffnen». In einem zweiten Fenster (oder Tab) dieselbe Adresse öffnen, «Online mit Freunden» → Name → Raumcode → «Beitreten» → «Ich bin bereit». Dann startet der Host mit «Losfahren». Wie das Online-Spiel funktioniert: [docs/online.md](docs/online.md).
 
 Nur die Oberfläche: `npm run dev -w @zueripoly/client`. Den Designentwurf (Stilreferenz) gibt es unter `http://localhost:5173/entwurf.html`.
 
@@ -27,7 +29,7 @@ Nur die Oberfläche: `npm run dev -w @zueripoly/client`. Den Designentwurf (Stil
 | `packages/engine` | Spiellogik (rein, getestet) |
 | `packages/server` | Online-Server (Socket.IO) |
 | `packages/client` | Oberfläche (Vite + React) |
-| `docs/` | Regeln, Brett, Design |
+| `docs/` | Regeln, Brett, Design, Engine, Bots, Online |
 
 ## Spielanleitung (Kurzfassung)
 

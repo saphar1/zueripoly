@@ -1,6 +1,6 @@
 // Spielerpanel im Stil einer Fahrplanzeile: Figur, Name, Kontostand, Besitzstreifen, Zustand.
 import type { CSSProperties, PointerEvent } from "react";
-import type { ColorGroup, GameState, PlayerId, PlayerState, SpaceIndex } from "@zueripoly/engine";
+import type { BotLevel, ColorGroup, GameState, PlayerId, PlayerState, SpaceIndex } from "@zueripoly/engine";
 import {
   BOT_LEVEL_NAMES,
   COLOR_GROUPS,
@@ -99,10 +99,22 @@ function describeOwnership(player: PlayerState, state: GameState): string {
   return parts.join(" · ");
 }
 
+/** Online: Verbindung und Vertretung eines Platzes (lokal gibt es das nicht). */
+export interface PlayerPresence {
+  /** Das bist du (dieses Fenster). */
+  you: boolean;
+  connected: boolean;
+  /** Hat das Spiel verlassen. */
+  left: boolean;
+  /** Ein Computer spielt für diesen Menschen. */
+  standIn: BotLevel | null;
+}
+
 interface PlayerPanelProps {
   player: PlayerState;
   state: GameState;
   active: boolean;
+  presence?: PlayerPresence;
   /** Verknüpft: der Spieler besitzt das Feld unter dem Zeiger, oder sein Panel ist unter dem Zeiger. */
   linked?: boolean;
   focusSpace?: SpaceIndex | null;
@@ -114,6 +126,7 @@ export function PlayerPanel({
   player,
   state,
   active,
+  presence,
   linked = false,
   focusSpace = null,
   onPlayerHover,
@@ -141,8 +154,12 @@ export function PlayerPanel({
         <div className="panel__who">
           <div className="panel__title">
             <h2 className="panel__name">{player.name}</h2>
+            {presence?.you && <span className="chip chip--you">Du</span>}
             {player.bot && <span className="chip chip--bot">Computer · {BOT_LEVEL_NAMES[player.bot]}</span>}
             {active && <span className="chip chip--turn">Am Zug</span>}
+            {presence && !player.bankrupt && presence.left && <span className="chip chip--away">Ausgestiegen</span>}
+            {presence && !player.bankrupt && !presence.left && !presence.connected && <span className="chip chip--away">Getrennt</span>}
+            {presence?.standIn && !player.bankrupt && <span className="chip chip--bot">Computer vertritt</span>}
             {player.inJail && (
               <span className="chip chip--jail">
                 <Icon name="jail" /> Gefängnis
@@ -183,6 +200,8 @@ export function PlayerPanel({
 
 interface PlayerListProps {
   state: GameState;
+  /** Online: Verbindung je Spieler. */
+  presence?: Record<PlayerId, PlayerPresence>;
   /** Spieler, dessen Panel markiert ist (Besitzer des Feldes unter dem Zeiger oder Panel unter dem Zeiger). */
   linkedPlayer?: PlayerId | null;
   focusSpace?: SpaceIndex | null;
@@ -191,7 +210,7 @@ interface PlayerListProps {
 }
 
 /** Alle Spielerpanels mit Kopfzeile wie ein Fahrplan. */
-export function PlayerList({ state, linkedPlayer = null, focusSpace = null, onPlayerHover, onSpaceHover }: PlayerListProps) {
+export function PlayerList({ state, presence, linkedPlayer = null, focusSpace = null, onPlayerHover, onSpaceHover }: PlayerListProps) {
   const current = state.players[state.current];
   return (
     <section className="players" aria-label="Spieler">
@@ -205,6 +224,7 @@ export function PlayerList({ state, linkedPlayer = null, focusSpace = null, onPl
           player={player}
           state={state}
           active={state.winner === null && !player.bankrupt && player.id === current?.id}
+          presence={presence?.[player.id]}
           linked={player.id === linkedPlayer}
           focusSpace={focusSpace}
           onPlayerHover={onPlayerHover}

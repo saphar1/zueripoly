@@ -74,4 +74,4 @@ Die Uhr läuft ausserhalb der Engine (Server oder Client). Ist die Zeit um, schi
 
 ## Tests
 
-`npm test` führt die Regeltests, 300 Zufallspartien und 200 Bot-Partien aus (siehe [bots.md](bots.md)). In den Zufallspartien werden nach jeder Aktion die Invarianten geprüft (Gebäudevorrat 32/12, Besitz, Karten, kein negatives Geld, wer am Zug ist) und am Ende das ganze Geld-Protokoll nachgerechnet.
+`npm test` führt die Regeltests, 300 Zufallspartien, 50 Zufallspartien mit zufällig entfernten Spielern (`removePlayer`) und 200 Bot-Partien aus (siehe [bots.md](bots.md)), danach die Server-Tests (siehe [online.md](online.md)). In den Zufallspartien werden nach jeder Aktion die Invarianten geprüft (Gebäudevorrat 32/12, Besitz, Karten, kein negatives Geld, wer am Zug ist) und am Ende das ganze Geld-Protokoll nachgerechnet.

@@ -1,5 +1,7 @@
 // Tafel für Entscheidungen (design.md: keine Pop-ups, sondern eine Tafel neben dem Brett).
 // Zeigt, auf wen das Spiel wartet und was diese Person jetzt tun kann. Angeboten wird nur, was die Engine erlaubt.
+// Lokal bedient jeder Mensch am Gerät die Tafel. Online (`me` gesetzt) nur der eigene Platz;
+// wartet das Spiel auf jemand anderen, steht dort ein Satz zur Lage (wie bei Computergegnern).
 import { useEffect, useState, type ReactNode } from "react";
 import type { Action, GameState, PlayerId, PlayerState, SpaceIndex, TradeOffer, TradeSide } from "@zueripoly/engine";
 import {
@@ -30,10 +32,15 @@ interface ActionPanelProps {
   error: string | null;
   /** Restzeit in Sekunden, wenn ein Zeitlimit läuft. */
   secondsLeft: number | null;
+  /** Online: der eigene Platz. Lokal null (alle Menschen an diesem Gerät bedienen die Tafel). */
+  me?: PlayerId | null;
+  /** Online: Zusatz zum Wartenden, z. B. «Computer vertritt» (Kopf) oder «nicht verbunden» (Hinweis). */
+  waitingLabel?: string | null;
+  waitingNote?: string | null;
   /** Aktion für den wartenden Spieler (oder mit `as` für jemand anderen, z. B. Angebot zurückziehen). */
   onAct: (action: Action, as?: PlayerId) => void;
-  onNewGame: () => void;
-  onMenu: () => void;
+  /** Knöpfe nach Spielende (Nochmals spielen, Hauptmenü …). */
+  endActions: ReactNode;
 }
 
 interface Choice {
@@ -134,11 +141,13 @@ interface TradeOfferViewProps {
   offer: TradeOffer;
   legal: Action[];
   disabled: boolean;
+  /** Darf der Anbieter hier zurückziehen (lokal: Mensch am selben Gerät)? */
+  canCancel: boolean;
   onAct: (action: Action, as?: PlayerId) => void;
 }
 
 /** Offenes Angebot: Empfänger nimmt an (belastete Felder wahlweise sofort auslösen) oder lehnt ab. */
-function TradeOfferView({ state, offer, legal, disabled, onAct }: TradeOfferViewProps) {
+function TradeOfferView({ state, offer, legal, disabled, canCancel, onAct }: TradeOfferViewProps) {
   const [lift, setLift] = useState<SpaceIndex[]>([]);
   const mortgaged = offer.give.spaces.filter((i) => state.properties[i]?.mortgaged);
   const accept: Action = { type: "acceptTrade", lift };
@@ -169,7 +178,7 @@ function TradeOfferView({ state, offer, legal, disabled, onAct }: TradeOfferView
             Ablehnen
           </button>
         )}
-        {!isBot(state, offer.from) && (
+        {canCancel && (
           <button type="button" className="button" disabled={disabled} onClick={() => onAct({ type: "cancelTrade" }, offer.from)}>
             {nameOf(state, offer.from)} zieht zurück
           </button>
@@ -197,15 +206,18 @@ function OfferTable({ state, offer }: { state: GameState; offer: TradeOffer }) {
   );
 }
 
-interface BotStatusProps {
+interface WatchStatusProps {
   state: GameState;
+  /** Wer gerade entscheidet (Computergegner oder online ein anderer Mensch). */
   bot: PlayerState;
   disabled: boolean;
+  /** Darf man hier das offene Angebot zurückziehen (eigenes Angebot)? */
+  canCancel: boolean;
   onAct: (action: Action, as?: PlayerId) => void;
 }
 
-/** Ein Computergegner ist dran: keine Knöpfe, nur ein Satz zur Lage (immer mit Namen). */
-function botStatus({ state, bot, disabled, onAct }: BotStatusProps): { label: string; body: ReactNode } {
+/** Jemand anderes ist dran (Computergegner, online ein anderer Mensch): keine Knöpfe, nur ein Satz zur Lage. */
+function watchStatus({ state, bot, disabled, canCancel, onAct }: WatchStatusProps): { label: string; body: ReactNode } {
   const name = bot.name;
   if (state.trade) {
     const offer = state.trade;
@@ -215,7 +227,7 @@ function botStatus({ state, bot, disabled, onAct }: BotStatusProps): { label: st
         <>
           <OfferTable state={state} offer={offer} />
           <p className="tafel__prompt">{name} prüft das Angebot.</p>
-          {!isBot(state, offer.from) && (
+          {canCancel && (
             <div className="tafel__actions">
               <button type="button" className="button" disabled={disabled} onClick={() => onAct({ type: "cancelTrade" }, offer.from)}>
                 Angebot zurückziehen
@@ -276,14 +288,16 @@ function botStatus({ state, bot, disabled, onAct }: BotStatusProps): { label: st
   return { label: "Am Zug", body: <p className="tafel__prompt">{name} verwaltet den Besitz und beendet dann den Zug.</p> };
 }
 
-export function ActionPanel({ state, busy, error, secondsLeft, onAct, onNewGame, onMenu }: ActionPanelProps) {
+export function ActionPanel({ state, busy, error, secondsLeft, me = null, waitingLabel, waitingNote, onAct, endActions }: ActionPanelProps) {
   const waitingId = getWaitingFor(state);
   const [composing, setComposing] = useState(false);
   // Neuer Entscheid (anderer Spieler, Angebot verschickt): Handels-Tafel schliessen.
   useEffect(() => setComposing(false), [waitingId, state.trade]);
+  // Zuschauen statt bedienen: ein Computergegner ist dran, oder online jemand anderes.
   const botTurn = waitingId !== null && isBot(state, waitingId);
+  const watching = waitingId !== null && (botTurn || (me !== null && waitingId !== me));
   const tradeAllowed =
-    waitingId !== null && !botTurn && canProposeTrade(state, waitingId) && state.players.filter((p) => !p.bankrupt).length > 1;
+    waitingId !== null && !watching && canProposeTrade(state, waitingId) && state.players.filter((p) => !p.bankrupt).length > 1;
   const winner = state.winner ? state.players.find((p) => p.id === state.winner) : null;
 
   if (winner) {
@@ -296,16 +310,7 @@ export function ActionPanel({ state, busy, error, secondsLeft, onAct, onNewGame,
             <h2 className="tafel__name">{winner.name} gewinnt ZüriPoly!</h2>
           </div>
         </header>
-        <div className="tafel__body">
-          <div className="tafel__actions">
-            <button type="button" className="button button--primary" onClick={onNewGame}>
-              Nochmals spielen
-            </button>
-            <button type="button" className="button" onClick={onMenu}>
-              Zum Hauptmenü
-            </button>
-          </div>
-        </div>
+        <div className="tafel__body">{endActions}</div>
       </section>
     );
   }
@@ -320,15 +325,30 @@ export function ActionPanel({ state, busy, error, secondsLeft, onAct, onNewGame,
   let label = "Am Zug";
   let body: ReactNode;
 
-  if (botTurn) {
-    ({ label, body } = botStatus({ state, bot: player, disabled, onAct }));
+  if (watching) {
+    // Lokal darf ein Mensch sein Angebot an einen Bot zurückziehen; online nur das eigene Angebot.
+    const offerFrom = state.trade?.from;
+    const canCancel = offerFrom !== undefined && (me === null ? !isBot(state, offerFrom) : offerFrom === me);
+    ({ label, body } = watchStatus({ state, bot: player, disabled, canCancel, onAct }));
     if (player.bot) label = `${label} · Computer, ${BOT_LEVEL_NAMES[player.bot]}`;
+    else if (waitingLabel) label = `${label} · ${waitingLabel}`;
+    if (waitingNote) {
+      body = (
+        <>
+          {body}
+          <p className="tafel__hint">{waitingNote}</p>
+        </>
+      );
+    }
   } else if (composing && tradeAllowed) {
     label = "Handel";
     body = <TradeComposer state={state} from={player} disabled={disabled} onSend={(a) => onAct(a)} onCancel={() => setComposing(false)} />;
   } else if (state.trade) {
     label = "Handelsangebot";
-    body = <TradeOfferView state={state} offer={state.trade} legal={legal} disabled={disabled} onAct={onAct} />;  } else if (state.mortgageDecision) {
+    // Online steht der Anbieter nicht am selben Gerät: Zurückziehen kann er nur selbst.
+    const canCancel = me === null && !isBot(state, state.trade.from);
+    body = <TradeOfferView state={state} offer={state.trade} legal={legal} disabled={disabled} canCancel={canCancel} onAct={onAct} />;
+  } else if (state.mortgageDecision) {
     const spaces = state.mortgageDecision.spaces.map((i) => getPropertySpace(i));
     const liftAll = spaces.reduce((sum, s) => sum + unmortgageCost(s), 0);
     const interest = spaces.reduce((sum, s) => sum + mortgageInterest(s), 0);
@@ -433,7 +453,7 @@ export function ActionPanel({ state, busy, error, secondsLeft, onAct, onNewGame,
 
   const urgent = secondsLeft !== null && secondsLeft <= 10;
   return (
-    <section className="tafel" aria-live="polite" aria-busy={busy || botTurn} aria-label={`${label}: ${player.name}`}>
+    <section className="tafel" aria-live="polite" aria-busy={busy || watching} aria-label={`${label}: ${player.name}`}>
       <header className="tafel__head">
         <Token token={player.token} />
         <div>
