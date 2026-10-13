@@ -2,7 +2,7 @@
 import type { NetworkInterfaceInfo } from "node:os";
 import { networkInterfaces } from "node:os";
 import { describe, expect, it } from "vitest";
-import { isLoopback, isPrivateIpv4, lanAddresses, routeAddress } from "../src/lan";
+import { isLocalRequest, isLoopback, isPrivateIpv4, lanAddresses, routeAddress } from "../src/lan";
 import { rawRequest, startServer } from "./helpers";
 
 function v4(address: string, internal = false): NetworkInterfaceInfo {
@@ -54,10 +54,23 @@ describe("routeAddress", () => {
   });
 });
 
-describe("isLoopback", () => {
+describe("isLoopback und isLocalRequest", () => {
   it("erkennt den eigenen PC", () => {
     for (const address of ["127.0.0.1", "127.1.2.3", "::1", "::ffff:127.0.0.1"]) expect(isLoopback(address), address).toBe(true);
     for (const address of [undefined, "", "192.168.1.23", "::ffff:192.168.1.23", "fe80::1", "10.0.0.1"]) expect(isLoopback(address), String(address)).toBe(false);
+  });
+
+  it("hinter einem Proxy (Render) ist Loopback nicht der eigene PC", () => {
+    expect(isLocalRequest("127.0.0.1", { host: "localhost:3001" })).toBe(true);
+    expect(isLocalRequest("::1", { host: "[::1]:3001" })).toBe(true);
+    expect(isLocalRequest("::ffff:127.0.0.1", { host: "127.0.0.1:3001" })).toBe(true);
+    // So kommt eine Anfrage auf Render an: über den Proxy im Container, mit dessen Kopfzeilen.
+    expect(isLocalRequest("::ffff:127.0.0.1", { host: "zueripoly.onrender.com", "x-forwarded-for": "85.1.2.3" })).toBe(false);
+    expect(isLocalRequest("127.0.0.1", { host: "localhost:3001", "x-forwarded-for": "85.1.2.3" })).toBe(false);
+    expect(isLocalRequest("127.0.0.1", { host: "localhost:3001", forwarded: "for=85.1.2.3" })).toBe(false);
+    expect(isLocalRequest("127.0.0.1", { host: "zueripoly.onrender.com" })).toBe(false);
+    expect(isLocalRequest("127.0.0.1", {})).toBe(false);
+    expect(isLocalRequest("192.168.1.23", { host: "localhost:3001" })).toBe(false);
   });
 });
 
@@ -79,5 +92,15 @@ describe("/api/lan-addresses", () => {
     // Ohne gebaute Oberfläche kommt der allgemeine Text, aber nie die Adressliste.
     expect(res.headers["content-type"]).not.toContain("application/json");
     expect(res.body).not.toContain("urls");
+  });
+
+  it("verrät nichts, wenn die Anfrage über einen Proxy kommt (wie auf Render)", async () => {
+    const server = await startServer();
+    const variants: Record<string, string>[] = [{ "x-forwarded-for": "85.1.2.3" }, { host: "zueripoly.onrender.com" }];
+    for (const headers of variants) {
+      const res = await rawRequest(server.port, "/api/lan-addresses", "GET", headers);
+      expect(res.headers["content-type"], JSON.stringify(headers)).not.toContain("application/json");
+      expect(res.body).not.toContain("urls");
+    }
   });
 });

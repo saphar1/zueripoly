@@ -8,7 +8,7 @@ import type { AddressInfo } from "node:net";
 import { networkInterfaces } from "node:os";
 import { Server, type Socket } from "socket.io";
 import { ENGINE_VERSION, type TokenId } from "@zueripoly/engine";
-import { isLoopback, lanAddresses, routeAddress } from "./lan";
+import { isLocalRequest, lanAddresses, routeAddress } from "./lan";
 import { normalizeOrigin, originAllowed } from "./origin";
 import { asObject, cleanName, parseAction, parseBotLevel, parseDecision, parseOptions, parseSeatId, parseToken } from "./parse";
 import { REQUEST_NAMES, type Reply, type RequestName, type Requests, SERVER_PORT } from "./protocol";
@@ -156,7 +156,7 @@ export async function startZueriServer(options: ZueriServerOptions = {}): Promis
       res.end("ok\n");
       return;
     }
-    if (pathname === "/api/lan-addresses" && isLoopback(req.socket.remoteAddress)) {
+    if (pathname === "/api/lan-addresses" && isLocalRequest(req.socket.remoteAddress, req.headers)) {
       // Nur für den eigenen PC: Die Lobby zeigt damit den Link fürs gleiche WLAN.
       void routeAddress().then((preferred) => {
         res.writeHead(200, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });

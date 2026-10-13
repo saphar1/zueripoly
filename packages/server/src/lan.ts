@@ -65,8 +65,23 @@ export function routeAddress(): Promise<string | null> {
   });
 }
 
-/** Kommt die Anfrage vom eigenen PC? */
+/** Ist die Gegenstelle der eigene PC (Loopback)? */
 export function isLoopback(address: string | undefined): boolean {
   if (!address) return false;
   return address === "::1" || address.startsWith("127.") || address.startsWith("::ffff:127.");
+}
+
+const LOCAL_HOST_HEADER = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i;
+const PROXY_HEADERS = ["x-forwarded-for", "forwarded", "x-real-ip"];
+
+/**
+ * Kommt die Anfrage wirklich vom eigenen PC? Loopback allein reicht nicht: Hinter einem Proxy
+ * (Render, Vite-Weiterleitung) verbindet der Proxy über 127.0.0.1. Darum zusätzlich: keine
+ * Proxy-Kopfzeilen und als Adresse «localhost» (so, wie der Browser auf dem eigenen PC fragt).
+ */
+export function isLocalRequest(remoteAddress: string | undefined, headers: Record<string, string | string[] | undefined>): boolean {
+  if (!isLoopback(remoteAddress)) return false;
+  if (PROXY_HEADERS.some((name) => headers[name] !== undefined)) return false;
+  const host = headers.host;
+  return typeof host === "string" && LOCAL_HOST_HEADER.test(host);
 }
