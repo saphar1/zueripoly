@@ -1,16 +1,22 @@
 // HTTP-Server mit Socket.IO. Verdrahtet die Anfragen der Browser mit den Räumen.
 // Jede Anfrage wird geprüft (parse.ts), begrenzt (rate-limit.ts) und in try/catch ausgeführt:
 // Ungültige oder unerwartete Nachrichten bekommen eine Fehlermeldung, der Server läuft weiter.
+// Daneben liefert er auf Wunsch die gebaute Oberfläche aus (static-files.ts), damit im WLAN und
+// auf Render eine Adresse für alles reicht.
 import { createServer, type Server as HttpServer } from "node:http";
 import type { AddressInfo } from "node:net";
+import { networkInterfaces } from "node:os";
 import { Server, type Socket } from "socket.io";
 import { ENGINE_VERSION, type TokenId } from "@zueripoly/engine";
+import { isLoopback, lanAddresses, routeAddress } from "./lan";
+import { normalizeOrigin, originAllowed } from "./origin";
 import { asObject, cleanName, parseAction, parseBotLevel, parseDecision, parseOptions, parseSeatId, parseToken } from "./parse";
 import { REQUEST_NAMES, type Reply, type RequestName, type Requests, SERVER_PORT } from "./protocol";
 import { TokenBucket } from "./rate-limit";
 import { DEFAULT_TIMING, type Timing } from "./room";
 import { normalizeRoomCode } from "./room-code";
 import { RoomRegistry } from "./room-registry";
+import { createStaticHandler } from "./static-files";
 
 /** Grösste Nachricht, die ein Browser schicken darf (Bytes). */
 const MAX_MESSAGE_BYTES = 16 * 1024;
@@ -27,6 +33,10 @@ export interface ZueriServerOptions {
   log?: boolean;
   /** Begrenzung pro Verbindung: Vorrat und Nachschub pro Sekunde. */
   rateLimit?: { capacity: number; perSecond: number };
+  /** Ordner mit der gebauten Oberfläche (packages/client/dist). Ohne: nur Spielserver. */
+  clientDir?: string;
+  /** Fremde Seiten, die verbinden dürfen (z. B. https://name.github.io). Die eigene Adresse darf immer. */
+  allowedOrigins?: string[];
 }
 
 export interface ZueriServer {
@@ -132,8 +142,33 @@ export async function startZueriServer(options: ZueriServerOptions = {}): Promis
   };
   const limits = options.rateLimit ?? { capacity: 20, perSecond: 10 };
 
+  const allowedOrigins = (options.allowedOrigins ?? []).map(normalizeOrigin);
+  const staticFiles = options.clientDir ? createStaticHandler(options.clientDir) : null;
+  /** Tatsächlicher Port (steht erst nach listen fest, z. B. bei Port 0 in Tests). */
+  let port = 0;
+
+  // Alles ausser /socket.io (das beantwortet Socket.IO selbst, bevor dieser Rückruf drankommt).
   const http = createServer((req, res) => {
-    // Einfache Antwort für «Läuft der Server?». Das Spiel selbst läuft über /socket.io.
+    const pathname = (req.url ?? "/").split("?")[0];
+    if (pathname === "/healthz") {
+      // Für das Hosting (Render prüft damit, ob der Dienst läuft).
+      res.writeHead(200, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" });
+      res.end("ok\n");
+      return;
+    }
+    if (pathname === "/api/lan-addresses" && isLoopback(req.socket.remoteAddress)) {
+      // Nur für den eigenen PC: Die Lobby zeigt damit den Link fürs gleiche WLAN.
+      void routeAddress().then((preferred) => {
+        res.writeHead(200, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+        res.end(JSON.stringify({ urls: lanAddresses(networkInterfaces(), port, preferred) }));
+      });
+      return;
+    }
+    if (staticFiles) {
+      staticFiles(req, res);
+      return;
+    }
+    // Ohne gebaute Oberfläche: einfache Antwort für «Läuft der Server?».
     res.writeHead(200, { "content-type": "text/plain; charset=utf-8" });
     res.end(`ZüriPoly-Server läuft (Engine ${ENGINE_VERSION}).\n`);
   });
@@ -142,6 +177,14 @@ export async function startZueriServer(options: ZueriServerOptions = {}): Promis
     pingInterval: 10_000,
     pingTimeout: 8_000,
     serveClient: false,
+    // Erlaubte fremde Seiten (GitHub Pages) dürfen per Polling anfragen …
+    cors: { origin: allowedOrigins },
+    // … und kommt die Anfrage von einer Webseite, muss es die eigene oder eine erlaubte sein.
+    allowRequest: (req, callback) => {
+      const ok = originAllowed(req.headers.origin, req.headers.host, allowedOrigins);
+      if (!ok) log(`Verbindung von fremder Seite abgelehnt: ${String(req.headers.origin).slice(0, 100)}`);
+      callback(ok ? null : "Diese Seite darf nicht mit dem Spielserver verbinden.", ok);
+    },
   });
 
   const registry = new RoomRegistry(timing, {
@@ -208,7 +251,7 @@ export async function startZueriServer(options: ZueriServerOptions = {}): Promis
       resolve();
     });
   });
-  const port = (http.address() as AddressInfo).port;
+  port = (http.address() as AddressInfo).port;
 
   return {
     port,

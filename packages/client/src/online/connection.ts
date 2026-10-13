@@ -29,6 +29,18 @@ export interface OnlineSnapshot {
 /** So lange wartet eine Anfrage höchstens auf die Antwort des Servers. */
 const REQUEST_TIMEOUT_MS = 8000;
 
+/**
+ * Adresse des Spielservers, wenn er woanders läuft als die Seite (Seite auf GitHub Pages, Server
+ * auf Render; beim Bauen gesetzt mit VITE_ZUERIPOLY_SERVER). Sonst undefined: dieselbe Adresse wie die Seite.
+ */
+export const SERVER_URL: string | undefined = import.meta.env.VITE_ZUERIPOLY_SERVER || undefined;
+
+/**
+ * So lange wartet «Raum eröffnen» usw. auf die Verbindung. Der Gratis-Server auf Render schläft nach
+ * 15 Minuten ohne Spiel und braucht zum Aufwachen bis zu einer Minute.
+ */
+const CONNECT_WAIT_MS = SERVER_URL ? 75_000 : 4000;
+
 export class OnlineClient {
   private readonly socket: Socket;
   private snapshot: OnlineSnapshot = {
@@ -46,8 +58,8 @@ export class OnlineClient {
   private resuming: Promise<Reply<SeatGrant>> | null = null;
 
   constructor() {
-    // Gleiche Adresse wie die Seite: Im Entwickeln leitet Vite /socket.io an den Server weiter.
-    this.socket = io({ reconnectionDelay: 500, reconnectionDelayMax: 4000 });
+    // Ohne SERVER_URL gleiche Adresse wie die Seite (im Entwickeln leitet Vite /socket.io an den Server weiter).
+    this.socket = io(SERVER_URL, { reconnectionDelay: 500, reconnectionDelayMax: 4000 });
     this.socket.on("connect", () => {
       this.set({ status: "online" });
       // Nach einem Abbruch: zurück auf den eigenen Platz.
@@ -110,7 +122,7 @@ export class OnlineClient {
     }
   }
 
-  /** Wartet auf die Verbindung (höchstens ein paar Sekunden). */
+  /** Wartet auf die Verbindung (höchstens CONNECT_WAIT_MS). */
   private async connected(): Promise<boolean> {
     if (this.socket.connected) return true;
     return new Promise((resolve) => {
@@ -120,7 +132,7 @@ export class OnlineClient {
         resolve(value);
       };
       const onConnect = () => done(true);
-      const timer = setTimeout(() => done(false), 4000);
+      const timer = setTimeout(() => done(false), CONNECT_WAIT_MS);
       this.socket.on("connect", onConnect);
     });
   }

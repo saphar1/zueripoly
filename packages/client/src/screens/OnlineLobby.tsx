@@ -10,7 +10,7 @@ import { GameOptionsForm } from "../components/GameOptionsForm";
 import { Icon } from "../components/Icon";
 import { Token } from "../components/Token";
 import { TokenPicker } from "../components/TokenPicker";
-import type { OnlineClient } from "../online/connection";
+import { type OnlineClient, SERVER_URL } from "../online/connection";
 import { BOT_LEVELS } from "./Lobby";
 import "./Lobby.css";
 import "./OnlineLobby.css";
@@ -31,13 +31,53 @@ function startProblem(room: RoomSnapshot): string | null {
   return null;
 }
 
-function roomLink(code: string): string {
-  return `${window.location.origin}/?${ROOM_LINK_PARAM}=${code}`;
+/** Adressen, die nur auf diesem Gerät funktionieren. */
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+/**
+ * Kommt die Seite vom eigenen Spielserver (npm start)? Nur der kennt /api/lan-addresses.
+ * Im Entwickeln liefert Vite die Seite, auf GitHub Pages läuft der Server woanders.
+ */
+const SERVED_BY_GAME_SERVER = !import.meta.env.DEV && !SERVER_URL;
+
+/**
+ * Adresse für den Link zum Raum. Läuft die Seite auf «localhost», fragt sie den Server nach seiner
+ * Adresse im WLAN (das beantwortet er nur dem eigenen PC). `local`: Der Link geht nur auf diesem Gerät.
+ */
+function useShareOrigin(): { origin: string; lan: boolean; local: boolean } {
+  const here = window.location.origin;
+  const onThisDevice = LOCAL_HOSTS.has(window.location.hostname);
+  const [lanOrigin, setLanOrigin] = useState<string | null>(null);
+  useEffect(() => {
+    if (!onThisDevice || !SERVED_BY_GAME_SERVER) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch("/api/lan-addresses", { cache: "no-store" });
+        if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) return;
+        const data = (await response.json()) as { urls?: unknown };
+        const first = Array.isArray(data.urls) ? data.urls.find((u): u is string => typeof u === "string" && /^http:\/\/[\d.]+:\d+$/.test(u)) : undefined;
+        if (first && !cancelled) setLanOrigin(first);
+      } catch {
+        // Keine Antwort: Link mit der Adresse dieses Geräts.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [onThisDevice]);
+  if (lanOrigin) return { origin: lanOrigin, lan: true, local: false };
+  return { origin: here, lan: false, local: onThisDevice };
+}
+
+function roomLink(origin: string, code: string): string {
+  return `${origin}${import.meta.env.BASE_URL}?${ROOM_LINK_PARAM}=${code}`;
 }
 
 /** Raumcode wie eine Anzeigetafel, mit Link zum Weitergeben. */
 function RoomCode({ code }: { code: string }) {
-  const link = roomLink(code);
+  const share = useShareOrigin();
+  const link = roomLink(share.origin, code);
   const input = useRef<HTMLInputElement>(null);
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -70,6 +110,10 @@ function RoomCode({ code }: { code: string }) {
           <p className="room-code__copied" role="status">
             {copied}
           </p>
+        )}
+        {share.lan && <p className="room-code__note">Der Link führt über dein WLAN: Freunde müssen im gleichen WLAN sein.</p>}
+        {share.local && (
+          <p className="room-code__note">Dieser Link funktioniert nur auf diesem Gerät. Freunde im gleichen WLAN brauchen die WLAN-Adresse aus dem Server-Fenster.</p>
         )}
       </div>
     </section>

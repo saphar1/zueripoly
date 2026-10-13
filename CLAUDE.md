@@ -25,6 +25,7 @@ npm test           # Engine-Tests (Vitest, 300 Zufallspartien, 200 Bot-Partien) 
 npm run typecheck  # TypeScript in allen Paketen
 npm run dev        # Spielserver (Port 3001) und Client (Vite, http://localhost:5173) gleichzeitig; Online braucht beides
 npm run build      # Client bauen
+npm start          # Client bauen + Server liefert alles unter einer Adresse aus (gleiches WLAN, Port 3001)
 npm run test -w @zueripoly/server                       # nur Server-Tests (~10 s)
 npm run dev -w @zueripoly/server                        # nur Spielserver (startet bei Codeänderungen neu, Räume sind dann weg)
 npm run dev -w @zueripoly/client                        # nur Client; Designentwurf: http://localhost:5173/entwurf.html
@@ -34,6 +35,7 @@ npm run playtest -w @zueripoly/client                   # Durchspiel-Test der Ob
 npm run playtest -w @zueripoly/client -- --money 500    # kurze Partie bis zum Gewinner (wenig Startkapital)
 npm run playtest -w @zueripoly/client -- --solo --bots 3 # Solo: klickt nur für «Anna», Bots ziehen selbst (Bilder solo-*.png)
 npm run playtest -w @zueripoly/client -- --online       # Online: eigener Server, 3 Browserfenster spielen bis zum Gewinner, Ben lädt neu
+npm run playtest -w @zueripoly/client -- --online --prod # wie GitHub Pages + Render: gebaute Seite unter /zueripoly/, Server unter anderer Adresse
 npm run screenshots -w @zueripoly/client -- --online    # Online-Bildschirme Desktop + Handy (online-*.png)
 npm run bots -w @zueripoly/engine                       # Bot-Liga: Siegquoten je Paarung (optional -- --games 500 --check)
 ```
@@ -78,7 +80,17 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 - **Phase 2 abgeschlossen**: Engine mit allen Regeln, 108 Tests, 300 Zufallspartien. Details in `docs/engine.md`.
 - **Phase 3 abgeschlossen**: Design freigegeben (2026-10-12), lokal spielbar von Anfang bis Gewinner (Menü, Lobby, Spiel mit allen Entscheidungen, Handel, Zoom auf dem Handy). Durchspiel-Test der Oberfläche: `npm run playtest -w @zueripoly/client`.
 - **Phase 4 abgeschlossen**: Computergegner «einfach» und «clever», Solomodus mit 1–5 Bots. 200 Bot-Partien in `npm test` (alle enden, clever schlägt einfach im Zweikampf in rund 90 %). Details in `docs/bots.md`.
-- **Phase 5, Teil A abgeschlossen**: Spielserver mit Räumen, Lobby, Wiederverbinden und Host-Entscheiden; Online-Spiel im Browser, lokal mit mehreren Fenstern getestet. Details in `docs/online.md`. **Nächster Schritt: Teil B** (Freunde von eigenen Geräten): zuerst Optionen recherchieren und dem Entwickler zur Entscheidung vorlegen, nichts umsetzen ohne sein Okay.
+- **Phase 5, Teil A abgeschlossen**: Spielserver mit Räumen, Lobby, Wiederverbinden und Host-Entscheiden; Online-Spiel im Browser, lokal mit mehreren Fenstern getestet. Details in `docs/online.md`.
+- **Phase 5, Teil B (Freunde von eigenen Geräten)**: Entscheid 2026-10-13: alles gratis, Seite auf GitHub Pages, Spielserver auf Render (Frankfurt), dazu gleiches WLAN (`npm start`). Code und Tests fertig. Offen: Commits umschreiben, Repository hochladen, Pages und Render einrichten, mit Freunden testen (siehe `PLAN.md`).
+
+### Freunde spielen (Phase 5, Teil B)
+- Server (`server.ts`): neben `/socket.io` noch `/healthz` (für Render), `/api/lan-addresses` (nur für Anfragen vom eigenen PC, `isLoopback`) und mit `clientDir` die gebaute Seite (`static-files.ts`, ohne Bibliothek: nur GET/HEAD, nur Dateien im Ordner, `/assets/*` immutable, sonst `no-cache`). `index.ts` liefert `packages/client/dist` aus, ausser mit `--dev` (aus `npm run dev`).
+- WLAN-Adresse (`lan.ts`): `routeAddress()` fragt per UDP-«connect» auf 192.0.2.1 (kein Paket) nach dem Adapter des Wegs ins Internet; der kommt zuerst. Grund: Viele PCs haben virtuelle Adapter (VirtualBox «Ethernet 3» 192.168.56.1, VMware …), die man am Namen nicht immer erkennt.
+- Lobby (`OnlineLobby.tsx`, `useShareOrigin`): fragt `/api/lan-addresses` nur, wenn die Seite vom eigenen Server kommt (`!import.meta.env.DEV && !SERVER_URL`) und auf `localhost` läuft; sonst keine Anfrage (keine 404 in der Konsole). Raumlink immer mit `import.meta.env.BASE_URL`.
+- GitHub Pages: Vite `base` aus `ZUERIPOLY_BASE` (Pages: `/<repository>/`), Serveradresse beim Bauen aus `VITE_ZUERIPOLY_SERVER` (`SERVER_URL` in `online/connection.ts`, Typ in `src/vite-env.d.ts`). Mit `SERVER_URL` wartet «Raum eröffnen» bis 75 s auf die Verbindung, und `OnlineStart` erklärt das Aufwecken (nach 3 s; nach 90 s «antwortet nicht»).
+- Origin-Prüfung (`origin.ts`): Webseiten dürfen nur von der eigenen Adresse (Origin-Host = Host-Kopfzeile) oder aus `ZUERIPOLY_ORIGINS` verbinden; ohne `Origin` (Tests) erlaubt. Socket.IO `cors` + `allowRequest`.
+- Deployment: `.github/workflows/pages.yml` (bei Push auf `main`: `npm ci`, `npm test`, bauen, veröffentlichen; Variable `ZUERIPOLY_SERVER_URL`), `render.yaml` (Blueprint, Gratisstufe, Frankfurt, Start `npm run start -w @zueripoly/server`, `ZUERIPOLY_ORIGINS` im Dashboard), `.node-version` (24) für beide. **Ein Push auf `main` veröffentlicht** (Pages und Render bauen neu, Render-Neustart löscht alle Räume). `tsx` ist im Server-Paket eine normale Abhängigkeit (Render startet damit).
+- Alle Browser-Speicher-Schlüssel beginnen mit `zueripoly.` (alle Pages-Seiten eines GitHub-Kontos teilen sich eine Adresse).
 
 ### Server und Online (Phase 5, Teil A)
 - Server `packages/server/src`: `protocol.ts` (Nachrichten, Typen, Konstanten; nur Typen und Konstanten, der Client importiert es als `@zueripoly/server/protocol`), `server.ts` (`startZueriServer`, Socket.IO, jede Anfrage begrenzt und in try/catch), `room-registry.ts` (Räume, Socket → Raum, Aufräumen), `room.ts` (Lobby, Spiel, Bots, Zeitlimit, Anwesenheit, Host), `parse.ts` (Eingänge neu bauen), `room-code.ts`, `rate-limit.ts`, `pace.ts` (Abspielzeit und Denkpausen wie im Client).
@@ -145,7 +157,7 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 - Preise und Mieten wie im Original, in CHF (`docs/brett.md`).
 - Bots: regelbasiert, zwei Stufen (einfach, clever), keine Simulation.
 - Server zuerst nur lokal / Heimnetz, Spielstände als JSON-Dateien (Ordner `saves/`, in `.gitignore`). Hosting später optional.
-- Git: Branch `main`. Zwischenstände innerhalb einer Phase als «Phase X (Zwischenstand): …» (auf Wunsch des Entwicklers), der Abschluss als eigener Commit «Phase X: …». Der Ordner `.claude/` wird nicht committet.
+- Git: Branch `main`. Zwischenstände innerhalb einer Phase als «Phase X (Zwischenstand): …» (auf Wunsch des Entwicklers), der Abschluss als eigener Commit «Phase X: …». Der Ordner `.claude/` wird nicht committet. Commit-E-Mail in diesem Repository: `eekk7439@gmail.com` (das Repository ist öffentlich).
 - Regelabweichungen vom Original: siehe `docs/regeln.md`, Abschnitt 16.
 
 ## Bekannte Probleme
@@ -161,4 +173,9 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 - Der Durchspiel-Test mit 1500 CHF Startkapital endet oft ohne Gewinner (die Zufallsstrategie belastet zu viel). Mit `--money 500` endet er meist nach 500–800 Schritten mit Gewinner.
 - Solo mit 5 Bots: Zwischen zwei eigenen Zügen vergehen leicht 20–30 s (Denkpause pro Bot-Schritt). Eine Tempo-Einstellung gibt es noch nicht (Idee für Phase 6).
 - Während Würfel und Figur noch laufen, zeigt die Tafel schon den nächsten Entscheid (bei Bots den Satz zur nächsten Lage). Gilt auch für Menschen (Knöpfe dann gesperrt).
+- Render (Gratisstufe) schläft nach 15 Minuten ohne Verkehr (Aufwachen bis 1 Minute) und startet bei jedem Push neu: Laufende Online-Räume sind dann weg. Speichern kommt in Phase 6.
+- WLAN: Beim ersten `npm start` fragt die Windows-Firewall nach Node.js; der Entwickler muss «Private Netzwerke» selbst zulassen (Claude ändert keine Sicherheitseinstellungen). Über `http://` kein Schreiben in die Zwischenablage (Ersatz: Link markieren).
+- Auf dem PC des Entwicklers laufen oft noch ältere `npm run dev` (Port 3001 und 5173 belegt). Nicht beenden, sondern für eigene Prüfungen `PORT=3002` nutzen.
+- In Git Bash wandelt MSYS Pfade in Umgebungsvariablen um (`ZUERIPOLY_BASE=/zueripoly/` wird zu `C:/Program Files/Git/zueripoly/`): dort `MSYS_NO_PATHCONV=1` davor setzen. PowerShell und GitHub Actions sind nicht betroffen.
+- Noch kein Favicon (Browser fragen `/favicon.ico` an, 404). Phase 6.
 - «clever» ist für Anfänger stark (handelt geschickt, nutzt aus, dass «einfach» nur Listenpreise rechnet). Wer gewinnen lernen will, beginnt mit «einfach».

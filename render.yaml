@@ -1,0 +1,17 @@
+# Spielserver auf Render (Gratisstufe, Frankfurt). Einrichten: Render → New → Blueprint → dieses Repository.
+# Render baut bei jedem Push auf main neu (Node-Version aus .node-version). Der Server liefert auch die
+# Seite selbst aus (Ersatzadresse); die Hauptadresse fürs Spielen ist GitHub Pages.
+# Beim Einrichten fragt Render nach ZUERIPOLY_ORIGINS: https://<github-name>.github.io (Seite, die verbinden darf).
+services:
+  - type: web
+    name: zueripoly
+    runtime: node
+    region: frankfurt
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm run start -w @zueripoly/server
+    healthCheckPath: /healthz
+    autoDeployTrigger: commit
+    envVars:
+      - key: ZUERIPOLY_ORIGINS
+        sync: false

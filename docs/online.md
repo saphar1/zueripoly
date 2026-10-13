@@ -1,6 +1,6 @@
 # ZüriPoly – Online-Spiel
 
-Wie Server und Browser zusammenspielen (Phase 5). Code: `packages/server`, im Client `src/online/`, `game/use-online-game.ts` und die Bildschirme `OnlineStart`, `OnlineLobby`, `OnlineRoom`, `OnlineGameScreen`.
+Wie Server und Browser zusammenspielen und wie Freunde mitspielen (Phase 5). Code: `packages/server`, im Client `src/online/`, `game/use-online-game.ts` und die Bildschirme `OnlineStart`, `OnlineLobby`, `OnlineRoom`, `OnlineGameScreen`.
 
 ## Grundidee
 
@@ -10,9 +10,75 @@ Wie Server und Browser zusammenspielen (Phase 5). Code: `packages/server`, im Cl
 - **Geheimes bleibt auf dem Server:** die Reihenfolge der Kartenstapel und der Zustand der Zufallsquelle. Browser bekommen die Stapel sortiert (die Anzahl stimmt, die Reihenfolge nicht).
 - **Dieselbe Engine** läuft im Browser (Solo, Lokal) und auf dem Server (Online). Die Anzeige (`GameView`) ist für alle Spielarten dieselbe.
 
+## Mit Freunden spielen
+
+Zwei Wege, beide gratis (Entscheid 2026-10-13):
+
+| | Im Internet | Im gleichen WLAN |
+|---|---|---|
+| Adresse | `https://<github-name>.github.io/zueripoly/` | `http://<PC-Adresse>:3001`, z. B. `http://10.9.21.208:3001` |
+| Seite | GitHub Pages (fertige Dateien, baut bei jedem Push auf `main`) | dein PC (`npm start`) |
+| Spielserver | Render, Gratisstufe, Frankfurt | dein PC (`npm start`) |
+| Dein PC muss laufen | nein | ja |
+| Grenzen | Server schläft nach 15 Minuten ohne Spiel, Aufwachen bis 1 Minute. Neustart (auch jeder Push) löscht alle Räume. | Gäste-WLAN trennt Geräte oft voneinander. Server-Neustart löscht alle Räume. |
+
+Solo und Lokal laufen ganz im Browser und brauchen den Spielserver nicht. Auf GitHub Pages starten sie darum immer sofort, auch wenn der Server schläft.
+
+### Im Internet
+
+Freunden einfach die Pages-Adresse schicken (oder in der Lobby «Link kopieren»). Schläft der Server, steht unter «Online mit Freunden» «Der Spielserver schläft und wird gerade geweckt …», und die Seite verbindet sich von selbst, sobald er wach ist.
+
+Einrichtung (einmalig):
+1. GitHub: öffentliches Repository, Settings → Pages → Source «GitHub Actions». Der Workflow `.github/workflows/pages.yml` testet (`npm test`), baut und veröffentlicht bei jedem Push auf `main`.
+2. Render: New → Blueprint → Repository wählen. `render.yaml` beschreibt den Dienst (Gratisstufe, Frankfurt, Build `npm ci --include=dev && npm run build`, Start `npm run start -w @zueripoly/server`, Prüfung `/healthz`). Render baut bei jedem Push auf `main` neu. Node-Version aus `.node-version`.
+3. Render fragt dabei nach `ZUERIPOLY_ORIGINS`: `https://<github-name>.github.io` (die Seite, die verbinden darf; mehrere mit Komma). Später änderbar unter Render → Dienst → Environment.
+4. GitHub → Settings → Secrets and variables → Actions → Variables: `ZUERIPOLY_SERVER_URL = https://<dienst>.onrender.com`. Danach den Workflow neu laufen lassen (Actions → «Seite auf GitHub Pages» → Run workflow), denn die Adresse wird beim Bauen eingebaut.
+
+Die Render-Adresse zeigt das Spiel ebenfalls (der Server liefert die gebaute Seite selbst aus) und taugt als Ersatz.
+
+### Im gleichen WLAN
+
+1. Im Projektordner `npm start`. Das baut die Seite und startet den Server, der Seite und Spiel unter einer Adresse ausliefert. Er nennt seine Adressen:
+   ```
+   Spiel öffnen:
+     Auf diesem PC:     http://localhost:3001
+     Im gleichen WLAN:  http://10.9.21.208:3001
+   ```
+2. Raum eröffnen. Läuft die Seite auf `localhost`, zeigt die Lobby den Link mit der WLAN-Adresse; den bekommen die Freunde.
+3. **Windows-Firewall:** Beim ersten Start fragt Windows, ob Node.js im Netzwerk erreichbar sein darf: **«Private Netzwerke» ankreuzen und zulassen.** Das WLAN muss in Windows als «Privates Netzwerk» eingestellt sein (Einstellungen → Netzwerk und Internet → WLAN → Eigenschaften). Wurde die Frage weggeklickt, sperrt Windows Node.js; freigeben unter «Windows-Sicherheit → Firewall- und Netzwerkschutz → Zugriff von App durch Firewall zulassen».
+
+Wenn es nicht geht:
+- Handy wirklich im selben WLAN (nicht Mobilfunk, nicht Gäste-WLAN)?
+- VPN auf PC oder Handy aus?
+- Die Adresse kann sich nach einem Router-Neustart ändern: neu ablesen.
+- Der Server nennt auch «andere Adapter» (VirtualBox, VMware, WSL …). Die WLAN-Adresse ist die, über die der PC ins Internet geht (`routeAddress` in `lan.ts`); die anderen nur ausprobieren, wenn sie nicht klappt.
+- `http://` statt `https://`: Der Browser darf dann nicht selbst in die Zwischenablage schreiben; «Link kopieren» markiert den Link, kopieren mit Ctrl+C (Handy: lange drücken).
+
+### Später (recherchiert 2026-10-13)
+
+| Möglichkeit | Kosten | Bemerkung |
+|---|---|---|
+| Eigene Domain (z. B. `zueripoly.ch`) | ca. CHF 7–12 pro Jahr | bei GitHub Pages und Render (2 Domains gratis) anschliessbar; Code bleibt gleich, nur `ZUERIPOLY_BASE` wird `/` |
+| Cloudflare-Tunnel vom eigenen PC | 0, kein Konto | `cloudflared tunnel --url http://localhost:3001`, Adresse wechselt bei jedem Start, laut Cloudflare nur zum Testen |
+| Render bezahlt, Fly.io, Railway, eigener Server | ca. 2–7 $ pro Monat | schläft nicht |
+| Verworfen | | Koyeb (Gratisstufe läuft aus), ngrok (Warnseite, Konto), Tailscale Funnel (Konto, kein Vorteil), Glitch (eingestellt) |
+
 ## Verbindung
 
-Socket.IO über dieselbe Adresse wie die Seite. Im Entwickeln leitet Vite `/socket.io` an den Server weiter (`vite.config.ts`, Ziel änderbar mit der Umgebungsvariable `ZUERIPOLY_SERVER`). Der Server läuft auf Port 3001 (`PORT` überschreibt).
+Socket.IO. Ohne weitere Angabe über dieselbe Adresse wie die Seite: Im Entwickeln leitet Vite `/socket.io` an den Server weiter (`vite.config.ts`, Ziel änderbar mit der Umgebungsvariable `ZUERIPOLY_SERVER`), mit `npm start` und auf Render liefert der Server die Seite selbst aus. Der Server läuft auf Port 3001 (`PORT` überschreibt).
+
+Liegt die Seite woanders als der Server (GitHub Pages → Render), wird die Serveradresse beim Bauen eingebaut: `VITE_ZUERIPOLY_SERVER`. Der Server erlaubt fremde Seiten nur, wenn sie in `ZUERIPOLY_ORIGINS` stehen (Socket.IO `cors` und `allowRequest`, `origin.ts`). Webseiten von anderen Adressen werden abgelehnt (Polling 403, WebSocket getrennt); Programme ohne `Origin` (Tests) dürfen.
+
+| Umgebungsvariable | Wo | Zweck |
+|---|---|---|
+| `PORT` | Server | Port (Standard 3001; Render setzt ihn selbst) |
+| `ZUERIPOLY_ORIGINS` | Server | Fremde Seiten, die verbinden dürfen, mit Komma getrennt |
+| `ZUERIPOLY_CLIENT_DIR` | Server | Ordner der gebauten Seite (Standard `packages/client/dist`) |
+| `ZUERIPOLY_BASE` | Bauen | Pfad der Seite (Standard `/`, GitHub Pages `/zueripoly/`) |
+| `VITE_ZUERIPOLY_SERVER` | Bauen | Adresse des Spielservers, wenn nicht dieselbe wie die Seite |
+| `ZUERIPOLY_SERVER` | Entwickeln | Ziel der Vite-Weiterleitung (Tests) |
+
+Weitere HTTP-Adressen des Servers neben `/socket.io`: `/healthz` (immer «ok», für Render), `/api/lan-addresses` (WLAN-Adressen, nur für Anfragen vom eigenen PC, sonst wie jede unbekannte Adresse), sonst die gebaute Seite (`static-files.ts`: nur GET/HEAD, nur Dateien im Ordner, `/assets/*` ein Jahr zwischenspeichern, alles andere `no-cache`). Ohne gebaute Seite (oder mit `--dev` aus `npm run dev`) antwortet er mit einem kurzen Text.
 
 Anfragen haben immer eine Antwort (Socket.IO «ack»): `{ ok: true, … }` oder `{ ok: false, error }`. Die Typen stehen in `packages/server/src/protocol.ts`; der Client importiert sie über `@zueripoly/server/protocol`.
 
@@ -69,7 +135,7 @@ Nachrichten vom Server:
 - Nachrichten höchstens **16 KB**, höchstens **500 Räume**. Unbekannte Nachrichten bekommen «Unbekannte Nachricht.».
 - Jede Anfrage und jeder Zeitgeber laufen in `try/catch`: Fehler werden protokolliert, der Server läuft weiter.
 - **Aufräumen:** Leere Lobby (niemand verbunden) nach 5 Minuten, leeres Spiel nach 10 Minuten. Räume ohne Menschen sofort.
-- Spielstände werden noch **nicht gespeichert**: Startet der Server neu, sind die Räume weg (Phase 6).
+- Spielstände werden noch **nicht gespeichert**: Startet der Server neu, sind die Räume weg (Phase 6). Auf Render passiert das bei jedem Push und wenn der Dienst schlafen geht.
 
 ## Tests
 
@@ -81,5 +147,8 @@ Nachrichten vom Server:
 | `game.test.ts` | 2, 3 und 4 Spieler spielen mindestens 10 Züge (alle sehen denselben Stand), eine ganze Partie bis zum Gewinner, Bots, Aktionen ausserhalb des eigenen Zugs, ungültige Aktionen, geheime Stapelreihenfolge, Zeitlimit |
 | `reconnect.test.ts` | Getrennt-Anzeige, Wiederverbinden mit vollem Stand, falscher Schlüssel, zweites Fenster, Host-Entscheide (warten, Computer, entfernen), Host-Wechsel, ruhendes Spiel, Aufräumen |
 | `robustness.test.ts` | kaputte Nachrichten, `__proto__`, zu grosse Nachrichten, Flutbremse, Namen |
+| `static.test.ts` | Seite ausliefern: Dateien, Typen, Zwischenspeichern, 404/405, keine Pfad-Ausbrüche (`..`, `%2e%2e`, `\`), `/healthz` |
+| `lan.test.ts` | WLAN-Adressen (private IPv4, virtuelle Adapter weg, Weg ins Internet zuerst), nur der eigene PC bekommt sie |
+| `origin.test.ts` | erlaubte Seite (CORS), gleiche Adresse, ohne Origin, fremde Seite abgelehnt (Polling und WebSocket) |
 
-Oberfläche: `npm run playtest -w @zueripoly/client -- --online` (drei Browserfenster spielen eine Partie, eines lädt mittendrin neu) und `npm run screenshots -w @zueripoly/client -- --online`.
+Oberfläche: `npm run playtest -w @zueripoly/client -- --online` (drei Browserfenster spielen eine Partie, eines lädt mittendrin neu) und `npm run screenshots -w @zueripoly/client -- --online`. Mit `-- --online --prod` spielt der Test «Pages + Render» nach: Seite gebaut unter `/zueripoly/` mit eingebauter Serveradresse, ausgeliefert von einem eigenen Server, Spielserver unter einer anderen Adresse, der nur diese Seite erlaubt (Bilder `online-prod-*.png`).

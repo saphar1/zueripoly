@@ -73,7 +73,7 @@ Vorarbeit: `docs/engine.md` (Ablauf, `getWaitingFor`, `getLegalActions`, `canPro
 
 **Ergebnis Bot-Liga** (200 Partien je Paarung, alle beendet): clever gegen einfach 88 % Siege für clever, 1 clever gegen 3 einfach 79 % (gleich stark wären 25 %). Tabelle in `docs/bots.md`.
 
-## Phase 5: Server und Online  ← Teil A fertig, Teil B als Nächstes
+## Phase 5: Server und Online  ← Teil A fertig, Teil B: Code fertig, Hochladen und Einrichten läuft
 Vorarbeit: `docs/online.md` (Ablauf, Nachrichten, Grenzen), `docs/engine.md` (`removePlayer`).
 
 Teil A: lokal lauffähig (Server und Client auf einem PC, mehrere Browserfenster) ✓
@@ -90,9 +90,15 @@ Teil A: lokal lauffähig (Server und Client auf einem PC, mehrere Browserfenster
 - [x] Tests: 43 Server-Tests mit simulierten Clients; Online-Durchspiel-Test mit 3 Browserfenstern (mit Neuladen); Screenshots Desktop und Handy
 
 Teil B: Freunde spielen von eigenen Geräten
-- [ ] Optionen recherchieren und vergleichen (gleiches WLAN, Tunnel, Hosting mit Gratisstufe), Empfehlung, Entscheid des Entwicklers abwarten
-- [ ] Server liefert die gebaute Oberfläche selbst aus (eine Adresse für alles)
-- [ ] Gewählte Option einrichten und mit Freunden testen
+- [x] Optionen recherchiert und verglichen (WLAN, Tunnel, Render, GitHub Pages, bezahlt, eigene Domain; Tabelle in `docs/online.md`). **Entscheid 2026-10-13:** alles gratis, Seite auf GitHub Pages, Spielserver auf Render (Frankfurt), dazu gleiches WLAN, Gratis-Adressen; Commits mit `eekk7439@gmail.com`
+- [x] Server liefert die gebaute Oberfläche selbst aus (`npm start`, eine Adresse für alles), `/healthz`
+- [x] WLAN: Startmeldung und Lobby zeigen die Adresse des Wegs ins Internet (virtuelle Adapter stören nicht), `/api/lan-addresses` nur für den eigenen PC
+- [x] GitHub Pages: Pfad `/zueripoly/` (`ZUERIPOLY_BASE`), Serveradresse beim Bauen (`VITE_ZUERIPOLY_SERVER`), Text beim Aufwecken des Servers, Workflow `.github/workflows/pages.yml` (testet, baut, veröffentlicht)
+- [x] Render: `render.yaml` (Gratisstufe, Frankfurt), `.node-version`; Server erlaubt fremde Seiten nur aus `ZUERIPOLY_ORIGINS`
+- [x] Tests: `static.test.ts`, `lan.test.ts`, `origin.test.ts` (65 Server-Tests), Durchspiel-Test `--online --prod` (Pages + Render nachgespielt) bis zum Gewinner
+- [ ] Commits auf die neue E-Mail umschreiben, GitHub-Repository (öffentlich) anlegen und hochladen
+- [ ] Pages und Render einrichten (Anleitung in `docs/online.md`), beide Adressen prüfen
+- [ ] Mit Freunden testen: Handy über Mobilfunk (Internet), Handy im WLAN (`npm start`)
 - [ ] Abschluss: Doku, Commit «Phase 5: …»
 
 Verschoben auf Phase 6: Spielstände auf dem Server speichern (zusammen mit «Spielstand fortsetzen»).
@@ -102,4 +108,4 @@ Verschoben auf Phase 6: Spielstände auf dem Server speichern (zusammen mit «Sp
 - [ ] Sounds und Stummschalter
 - [ ] Mobile-Feinschliff
 - [ ] Spielstand speichern und fortsetzen (lokal und online; online: Server speichert Räume als JSON in `saves/`)
-- [ ] Hosting verfeinern (je nach Entscheid in Phase 5, Teil B)
+- [ ] Hosting verfeinern: Räume über Neustarts von Render retten (Spielstände speichern), eventuell eigene Domain (ca. CHF 7–12 pro Jahr), eigenes Favicon

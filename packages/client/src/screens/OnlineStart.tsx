@@ -1,9 +1,9 @@
 // Online-Start: Name eingeben, dann Raum eröffnen (du bist Host) oder mit Raumcode beitreten.
 // Wer vor kurzem in einem Raum war, kann direkt dorthin zurück.
-import { type FormEvent, useMemo, useState, useSyncExternalStore } from "react";
+import { type FormEvent, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { Reply, SeatGrant } from "@zueripoly/server/protocol";
 import { NAME_MAX, ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH } from "@zueripoly/server/protocol";
-import type { OnlineClient } from "../online/connection";
+import { type ConnectionStatus, type OnlineClient, SERVER_URL } from "../online/connection";
 import { loadLastSeat, loadName, saveName } from "../online/seat-storage";
 import "./Lobby.css";
 import "./OnlineStart.css";
@@ -22,8 +22,42 @@ export function cleanCodeInput(value: string): string {
   return [...value.toUpperCase()].filter((c) => ROOM_CODE_ALPHABET.includes(c)).join("").slice(0, ROOM_CODE_LENGTH);
 }
 
+/** Wie lange schon keine Verbindung: «fresh» (bis 3 s), «slow» (bis 90 s), danach «stuck». */
+type Waiting = "fresh" | "slow" | "stuck";
+
+function useWaiting(status: ConnectionStatus): Waiting {
+  const [waiting, setWaiting] = useState<Waiting>("fresh");
+  const online = status === "online";
+  useEffect(() => {
+    setWaiting("fresh");
+    if (online) return;
+    const slow = setTimeout(() => setWaiting("slow"), 3000);
+    const stuck = setTimeout(() => setWaiting("stuck"), 90_000);
+    return () => {
+      clearTimeout(slow);
+      clearTimeout(stuck);
+    };
+  }, [online]);
+  return waiting;
+}
+
+/** Satz zur Verbindung, solange sie nicht steht. */
+function connectionText(status: ConnectionStatus, waiting: Waiting): string {
+  if (SERVER_URL) {
+    // Gratis-Server im Internet: schläft nach 15 Minuten ohne Spiel und wacht bei der ersten Anfrage auf.
+    if (waiting === "stuck") return "Der Spielserver antwortet nicht. Bitte später nochmals versuchen.";
+    if (status === "connecting" && waiting === "fresh") return "Verbinde mit dem Spielserver …";
+    return "Der Spielserver schläft und wird gerade geweckt. Das dauert bis zu einer Minute, die Seite verbindet sich von selbst.";
+  }
+  if (status === "connecting") return "Verbinde mit dem Spielserver …";
+  return import.meta.env.DEV
+    ? "Keine Verbindung zum Spielserver. Läuft er? (Im Projektordner: npm run dev)"
+    : "Keine Verbindung zum Spielserver. Läuft er noch? (Im Projektordner: npm start)";
+}
+
 export function OnlineStart({ client, initialCode, onSeated, onBack }: OnlineStartProps) {
   const online = useSyncExternalStore(client.subscribe, client.getSnapshot);
+  const waiting = useWaiting(online.status);
   const last = useMemo(loadLastSeat, []);
   const [name, setName] = useState(() => loadName() || last?.name || "");
   const [code, setCode] = useState(() => cleanCodeInput(initialCode));
@@ -73,9 +107,7 @@ export function OnlineStart({ client, initialCode, onSeated, onBack }: OnlineSta
 
         {online.status !== "online" && (
           <p className="online-start__status" role="status">
-            {online.status === "connecting"
-              ? "Verbinde mit dem Spielserver …"
-              : "Keine Verbindung zum Spielserver. Läuft er? (Im Projektordner: npm run dev)"}
+            {connectionText(online.status, waiting)}
           </p>
         )}
 

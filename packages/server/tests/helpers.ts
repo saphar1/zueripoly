@@ -1,4 +1,5 @@
 // Hilfen für die Server-Tests: Server auf freiem Port mit kurzen Zeiten, simulierte Browser (Socket.IO-Clients).
+import { request as httpRequest } from "node:http";
 import { afterEach } from "vitest";
 import { io as connect, type Socket } from "socket.io-client";
 import type { BotLevel, GameState, PlayerId } from "@zueripoly/engine";
@@ -194,4 +195,27 @@ export function waitingClient(players: TestClient[]): TestClient {
 export function expectError<T extends object>(reply: Reply<T>): string {
   if (reply.ok) throw new Error("Erwartet: Fehler, erhalten: ok.");
   return reply.error;
+}
+
+interface RawResponse {
+  status: number;
+  headers: Record<string, string | string[] | undefined>;
+  body: string;
+}
+
+/**
+ * HTTP-Anfrage ohne Umformung des Pfads (fetch würde «..» schon selbst auflösen). Ohne Keep-alive,
+ * damit der Server nach dem Test sofort schliessen kann.
+ */
+export function rawRequest(port: number, pathname: string, method = "GET", headers: Record<string, string> = {}, host = "127.0.0.1"): Promise<RawResponse> {
+  return new Promise((resolve, reject) => {
+    const req = httpRequest({ host, port, path: pathname, method, headers, agent: false }, (res) => {
+      let body = "";
+      res.setEncoding("utf8");
+      res.on("data", (chunk: string) => (body += chunk));
+      res.on("end", () => resolve({ status: res.statusCode ?? 0, headers: res.headers, body }));
+    });
+    req.on("error", reject);
+    req.end();
+  });
 }

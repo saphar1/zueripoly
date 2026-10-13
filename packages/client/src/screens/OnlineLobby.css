@@ -70,6 +70,12 @@
   font-weight: 600;
 }
 
+.room-code__note {
+  max-width: 52ch;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
 /* Plätze: Name und Figur oben, Zustand darunter */
 .online-seat__name {
   overflow: hidden;
