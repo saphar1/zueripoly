@@ -1,7 +1,8 @@
 # Seite auf GitHub Pages: Bei jedem Push auf main testen, bauen und veröffentlichen.
 # Adresse: https://<github-name>.github.io/<repository>/
-# Einmalig einrichten: Settings → Pages → Source «GitHub Actions»;
-# Settings → Secrets and variables → Actions → Variables: ZUERIPOLY_SERVER_URL = Adresse des Spielservers auf Render.
+# Einmalig einrichten: Settings → Pages → Source «GitHub Actions».
+# Spielserver: https://zueripoly.onrender.com (unten). Überschreiben ohne Codeänderung:
+# Settings → Secrets and variables → Actions → Reiter «Variables»: ZUERIPOLY_SERVER_URL.
 name: Seite auf GitHub Pages
 
 on:
@@ -35,8 +36,8 @@ jobs:
         env:
           # Projektseite liegt unter /<repository>/, z. B. /zueripoly/
           ZUERIPOLY_BASE: /${{ github.event.repository.name }}/
-          # Spielserver auf Render (leer: Online-Spiel geht auf Pages nicht, Solo und Lokal schon)
-          VITE_ZUERIPOLY_SERVER: ${{ vars.ZUERIPOLY_SERVER_URL }}
+          # Spielserver auf Render (nicht geheim: die Adresse steht ohnehin in der gebauten Seite)
+          VITE_ZUERIPOLY_SERVER: ${{ vars.ZUERIPOLY_SERVER_URL || 'https://zueripoly.onrender.com' }}
       - uses: actions/upload-pages-artifact@v5
         with:
           path: packages/client/dist

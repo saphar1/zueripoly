@@ -16,7 +16,7 @@ Zwei Wege, beide gratis (Entscheid 2026-10-13):
 
 | | Im Internet | Im gleichen WLAN |
 |---|---|---|
-| Adresse | `https://<github-name>.github.io/zueripoly/` | `http://<PC-Adresse>:3001`, z. B. `http://10.9.21.208:3001` |
+| Adresse | `https://saphar1.github.io/zueripoly/` | `http://<PC-Adresse>:3001`, z. B. `http://10.9.21.208:3001` |
 | Seite | GitHub Pages (fertige Dateien, baut bei jedem Push auf `main`) | dein PC (`npm start`) |
 | Spielserver | Render, Gratisstufe, Frankfurt | dein PC (`npm start`) |
 | Dein PC muss laufen | nein | ja |
@@ -31,8 +31,8 @@ Freunden einfach die Pages-Adresse schicken (oder in der Lobby «Link kopieren»
 Einrichtung (einmalig):
 1. GitHub: öffentliches Repository, Settings → Pages → Source «GitHub Actions». Der Workflow `.github/workflows/pages.yml` testet (`npm test`), baut und veröffentlicht bei jedem Push auf `main`.
 2. Render: New → Blueprint → Repository wählen. `render.yaml` beschreibt den Dienst (Gratisstufe, Frankfurt, Build `npm ci --include=dev && npm run build`, Start `npm run start -w @zueripoly/server`, Prüfung `/healthz`). Render baut bei jedem Push auf `main` neu. Node-Version aus `.node-version`.
-3. Render fragt dabei nach `ZUERIPOLY_ORIGINS`: `https://<github-name>.github.io` (die Seite, die verbinden darf; mehrere mit Komma). Später änderbar unter Render → Dienst → Environment.
-4. GitHub → Settings → Secrets and variables → Actions → Variables: `ZUERIPOLY_SERVER_URL = https://<dienst>.onrender.com`. Danach den Workflow neu laufen lassen (Actions → «Seite auf GitHub Pages» → Run workflow), denn die Adresse wird beim Bauen eingebaut.
+3. Render fragt dabei nach `ZUERIPOLY_ORIGINS`: `https://saphar1.github.io` (die Seite, die verbinden darf; mehrere mit Komma). Später änderbar unter Render → Dienst → Environment.
+4. Die Adresse des Spielservers (`https://zueripoly.onrender.com`) steht im Workflow und wird beim Bauen eingebaut. Ändert sie sich: entweder im Workflow anpassen oder ohne Codeänderung unter GitHub → Settings → Secrets and variables → Actions → Reiter **Variables** (nicht «Secrets») `ZUERIPOLY_SERVER_URL` setzen und den Workflow neu laufen lassen (Actions → «Seite auf GitHub Pages» → Run workflow).
 
 Die Render-Adresse zeigt das Spiel ebenfalls (der Server liefert die gebaute Seite selbst aus) und taugt als Ersatz.
 

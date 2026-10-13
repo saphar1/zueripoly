@@ -21,7 +21,7 @@ npm run dev
 Online ausprobieren: Im ersten Fenster «Online mit Freunden» → Name → «Raum eröffnen». In einem zweiten Fenster (oder Tab) dieselbe Adresse öffnen, «Online mit Freunden» → Name → Raumcode → «Beitreten» → «Ich bin bereit». Dann startet der Host mit «Losfahren». Wie das Online-Spiel funktioniert: [docs/online.md](docs/online.md).
 
 **Mit Freunden spielen**
-- Im Internet: die Adresse der Seite auf GitHub Pages schicken (`https://<github-name>.github.io/zueripoly/`). Der Gratis-Spielserver schläft nach 15 Minuten ohne Spiel; beim ersten Online-Besuch dauert das Aufwecken bis zu einer Minute. Solo und Lokal starten immer sofort.
+- Im Internet: **https://saphar1.github.io/zueripoly/** schicken (Seite auf GitHub Pages, Spielserver auf Render). Der Gratis-Spielserver schläft nach 15 Minuten ohne Spiel; beim ersten Online-Besuch dauert das Aufwecken bis zu einer Minute. Solo und Lokal starten immer sofort.
 - Im gleichen WLAN: `npm start` baut die Seite und startet den Server, der alles unter einer Adresse ausliefert. Er nennt die WLAN-Adresse (z. B. `http://10.9.21.208:3001`), die Lobby zeigt den passenden Link. Beim ersten Start in der Windows-Firewall Node.js für «Private Netzwerke» zulassen.
 
 Einrichtung und Hilfe: [docs/online.md](docs/online.md), Abschnitt «Mit Freunden spielen».
