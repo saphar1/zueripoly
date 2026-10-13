@@ -33,8 +33,8 @@ describe("Brett", () => {
     expect([7, 22, 36].map((i) => getSpace(i).kind)).toEqual(["event", "event", "event"]);
     expect([5, 15, 25, 35].map((i) => getSpace(i).name)).toEqual(["Hauptbahnhof", "Stadelhofen", "Oerlikon", "Hardbrücke"]);
     expect([12, 28].map((i) => getSpace(i).name)).toEqual(["Stromnetz", "Seewasserwerk"]);
-    expect(getSpace(4)).toMatchObject({ kind: "tax", amount: 200 });
-    expect(getSpace(38)).toMatchObject({ kind: "tax", amount: 100 });
+    expect(getSpace(4)).toMatchObject({ kind: "tax", amount: 100 });
+    expect(getSpace(38)).toMatchObject({ kind: "tax", amount: 50 });
   });
 
   it("hat die Farbgruppen in der richtigen Grösse", () => {

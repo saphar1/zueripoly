@@ -129,7 +129,7 @@ export interface PlayerState {
   money: number;
   position: SpaceIndex;
   inJail: boolean;
-  /** Gescheiterte Würfe im Gefängnis (0 bis 2). */
+  /** Ausgesessene Züge im Gefängnis (0 oder 1). Nach einem ausgesessenen Zug ist man im nächsten frei. */
   jailTurns: number;
   /** Gehaltene Freikarten («Aus dem Gefängnis frei»). */
   jailCards: CardId[];
@@ -177,7 +177,6 @@ export type MoneyReason =
   | DebtReason
   | "start"
   | "purchase"
-  | "auction"
   | "build"
   | "sellBuilding"
   | "mortgage"
@@ -193,20 +192,6 @@ export interface Debt {
   amount: number;
   reason: DebtReason;
   space: SpaceIndex | null;
-}
-
-export type AuctionOrigin = "declined" | "bankruptcy";
-
-export interface AuctionState {
-  space: SpaceIndex;
-  origin: AuctionOrigin;
-  /** Noch bietende Spieler in Bietreihenfolge. Wer passt, wird entfernt. */
-  bidders: PlayerId[];
-  /** Index in `bidders`: wer jetzt bieten oder passen muss. */
-  next: number;
-  /** Höchstes Gebot, 0 = noch kein Gebot. */
-  highestBid: number;
-  highestBidder: PlayerId | null;
 }
 
 export interface TradeSide {
@@ -261,9 +246,6 @@ export interface GameState {
   jackpot: number;
   /** Kartenstapel, oberste Karte = Index 0. */
   decks: Record<DeckId, CardId[]>;
-  auction: AuctionState | null;
-  /** Felder, die nach einem Bankrott an die Bank nacheinander versteigert werden. */
-  auctionQueue: SpaceIndex[];
   /** Offene Schulden, werden der Reihe nach beglichen. */
   debts: Debt[];
   mortgageDecision: MortgageDecision | null;
@@ -283,8 +265,6 @@ export type Action =
   | { type: "useJailCard" }
   | { type: "buyProperty" }
   | { type: "declineProperty" }
-  | { type: "bid"; amount: number }
-  | { type: "passBid" }
   | { type: "buildHouse"; space: SpaceIndex }
   | { type: "sellBuilding"; space: SpaceIndex }
   | { type: "mortgage"; space: SpaceIndex }
@@ -307,12 +287,12 @@ export type ErrorCode =
   | "notYourTurn"
   | "wrongPhase"
   | "notInJail"
+  | "inJail"
   | "noJailCard"
   | "notEnoughMoney"
   | "invalidSpace"
   | "notOwner"
   | "invalidAmount"
-  | "bidTooLow"
   | "groupIncomplete"
   | "groupMortgaged"
   | "unevenBuilding"
@@ -345,20 +325,16 @@ export type GameEvent =
   | { type: "startOrderRolled"; round: number; rolls: { player: PlayerId; dice: Dice }[] }
   | { type: "gameStarted"; order: PlayerId[] }
   | { type: "turnStarted"; player: PlayerId; turnNumber: number }
-  | { type: "diceRolled"; player: PlayerId; dice: Dice; purpose: "move" | "jail" | "utilityRent" }
+  | { type: "diceRolled"; player: PlayerId; dice: Dice; purpose: "move" | "utilityRent" }
   | { type: "moved"; player: PlayerId; from: SpaceIndex; to: SpaceIndex; direction: "forward" | "backward"; passedStart: boolean }
   | { type: "moneyTransferred"; from: MoneyParty; to: MoneyParty; amount: number; reason: MoneyReason; space: SpaceIndex | null }
   | { type: "propertyBought"; player: PlayerId; space: SpaceIndex; price: number }
   | { type: "propertyDeclined"; player: PlayerId; space: SpaceIndex }
-  | { type: "auctionStarted"; space: SpaceIndex; origin: AuctionOrigin; bidders: PlayerId[] }
-  | { type: "bidPlaced"; player: PlayerId; space: SpaceIndex; amount: number }
-  | { type: "bidPassed"; player: PlayerId; space: SpaceIndex }
-  | { type: "auctionWon"; player: PlayerId; space: SpaceIndex; amount: number }
-  | { type: "auctionUnsold"; space: SpaceIndex }
   | { type: "cardDrawn"; player: PlayerId; deck: DeckId; card: CardId }
   | { type: "sentToJail"; player: PlayerId; from: SpaceIndex; reason: "space" | "card" | "doubles" }
-  | { type: "jailRollFailed"; player: PlayerId; attempt: number }
-  | { type: "leftJail"; player: PlayerId; method: "fine" | "card" | "doubles" | "forcedFine" }
+  /** Im Gefängnis einen Zug ausgesessen (statt Kaution oder Freikarte); im nächsten Zug frei. */
+  | { type: "jailTurnServed"; player: PlayerId }
+  | { type: "leftJail"; player: PlayerId; method: "fine" | "card" | "served" }
   | { type: "houseBuilt"; player: PlayerId; space: SpaceIndex; level: number }
   | { type: "buildingSold"; player: PlayerId; space: SpaceIndex; fromLevel: number; toLevel: number }
   | { type: "mortgaged"; player: PlayerId; space: SpaceIndex }

@@ -6,6 +6,7 @@ import {
   getActivePlayers,
   groupHasMortgage,
   HOTEL_LEVEL,
+  JAIL_TURNS,
   ownsWholeGroup,
   TOTAL_HOTELS,
   TOTAL_HOUSES,
@@ -24,7 +25,8 @@ export function checkInvariants(state: GameState): string[] {
   for (const p of players) {
     if (!Number.isInteger(p.money) || p.money < 0) fail(`${p.id}: ungültiges Guthaben ${p.money}.`);
     if (!isSpaceIndex(p.position)) fail(`${p.id}: ungültige Position ${p.position}.`);
-    if (p.jailTurns < 0 || p.jailTurns > 2) fail(`${p.id}: ungültige Gefängnisrunden ${p.jailTurns}.`);
+    if (p.jailTurns < 0 || p.jailTurns > JAIL_TURNS) fail(`${p.id}: ungültige Gefängnisrunden ${p.jailTurns}.`);
+    if (!p.inJail && p.jailTurns !== 0) fail(`${p.id}: nicht im Gefängnis, aber Gefängnisrunden ${p.jailTurns}.`);
     if (p.inJail && p.position !== 10) fail(`${p.id}: im Gefängnis, aber nicht auf Feld 10.`);
     if (p.bankrupt && (p.money !== 0 || p.jailCards.length > 0 || p.inJail)) {
       fail(`${p.id}: ausgeschieden, hat aber noch Geld, Karten oder sitzt im Gefängnis.`);
@@ -87,19 +89,10 @@ export function checkInvariants(state: GameState): string[] {
   if (state.winner === null) {
     if (active.length < 2) fail("Weniger als zwei Spieler im Spiel, aber kein Gewinner.");
     const current = players[state.current];
-    // Nach einem Bankrott bleibt der Ausgeschiedene am Zug, bis Hypothekenentscheid und Versteigerungen erledigt sind.
-    const settling = state.mortgageDecision !== null || state.auction !== null || state.debts.length > 0;
+    // Nach einem Bankrott bleibt der Ausgeschiedene am Zug, bis der Hypothekenentscheid erledigt ist.
+    const settling = state.mortgageDecision !== null || state.debts.length > 0;
     if (!current || (current.bankrupt && !settling)) fail("Der Spieler am Zug ist ungültig oder ausgeschieden.");
     if (state.turn.phase === "buy" && state.turn.pendingBuy === null) fail("Kaufentscheid ohne Feld.");
-    if (state.auction) {
-      const a = state.auction;
-      if (a.bidders.length === 0 || a.next < 0 || a.next >= a.bidders.length) fail("Versteigerung mit ungültiger Reihenfolge.");
-      if (!a.bidders.every((id) => active.some((p) => p.id === id))) fail("Versteigerung mit ausgeschiedenem Bieter.");
-      if (state.properties[a.space]?.owner !== null) fail("Versteigertes Feld hat bereits einen Besitzer.");
-    }
-    if (state.auctionQueue.length > 0 && !state.auction && !state.trade && !state.mortgageDecision && state.debts.length === 0) {
-      fail("Versteigerungen warten, aber keine läuft.");
-    }
     for (const debt of state.debts) {
       if (!(debt.amount > 0)) fail("Schuld mit ungültigem Betrag.");
       if (!active.some((p) => p.id === debt.debtor)) fail("Schuld eines ausgeschiedenen Spielers.");

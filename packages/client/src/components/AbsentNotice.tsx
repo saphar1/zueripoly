@@ -74,8 +74,8 @@ export function AbsentNotice({ room, roomAt, disabled, onDecide }: AbsentNoticeP
             {isHost && (
               <p className="absent__help">
                 {seat.left
-                  ? "Aus dem Spiel nehmen: Der Besitz geht an die Bank und wird versteigert."
-                  : "Kommt die Person zurück, spielt sie wieder selbst. Aus dem Spiel nehmen: Der Besitz geht an die Bank und wird versteigert."}
+                  ? "Aus dem Spiel nehmen: Der Besitz geht an die Bank zurück, die Felder sind wieder frei."
+                  : "Kommt die Person zurück, spielt sie wieder selbst. Aus dem Spiel nehmen: Der Besitz geht an die Bank zurück, die Felder sind wieder frei."}
               </p>
             )}
           </div>

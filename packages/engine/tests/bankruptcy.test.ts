@@ -91,35 +91,24 @@ describe("Bankrott", () => {
     expect(state.winner).toBeNull();
   });
 
-  it("an die Bank: Gebäude zurück, Felder werden einzeln unbelastet versteigert", () => {
+  it("an die Bank: Gebäude zurück, Felder sind wieder frei und unbelastet (keine Versteigerung)", () => {
     const start = own(newGame(3), "p2", 1, 3, 5);
     setHouses(start, 1, 1);
-    setHouses(start, 3, 1);
     start.properties[5]!.mortgaged = true;
-    player(start, "p2").money = 50;
+    player(start, "p2").money = 0;
     start.current = 1;
     placeAt(start, "p2", 0);
-    // Steuer 200; möglich wären nur 50 + 2 × 25 (Häuser) + 2 × 30 (Hypotheken) = 160.
+    // Steuer 100; möglich wären nur 25 (Haus) + 2 × 30 (Hypotheken) = 85.
     let { state } = act(start, "p2", { type: "rollDice" }, dice([1, 3]));
-    expect(state.debts[0]).toMatchObject({ debtor: "p2", creditor: "bank", amount: 200 });
+    expect(state.debts[0]).toMatchObject({ debtor: "p2", creditor: "bank", amount: 100 });
     ({ state } = act(state, "p2", { type: "declareBankruptcy" }));
     expect(state.bank.houses).toBe(32);
-    expect(state.properties[5]).toMatchObject({ owner: null, mortgaged: false });
-    // Versteigerungen beginnen links vom Spieler am Zug (p2 → p3, p1).
-    expect(state.auction).toMatchObject({ space: 1, bidders: ["p3", "p1"], origin: "bankruptcy" });
-    expect(state.auctionQueue).toEqual([3, 5]);
-    ({ state } = act(state, "p3", { type: "bid", amount: 10 }));
-    ({ state } = act(state, "p1", { type: "passBid" }));
-    expect(state.properties[1]?.owner).toBe("p3");
-    expect(state.auction?.space).toBe(3);
-    ({ state } = act(state, "p3", { type: "passBid" }));
-    ({ state } = act(state, "p1", { type: "passBid" }));
-    expect(state.auction?.space).toBe(5);
-    ({ state } = act(state, "p3", { type: "passBid" }));
-    ({ state } = act(state, "p1", { type: "bid", amount: 150 }));
-    expect(state.properties[5]?.owner).toBe("p1");
-    expect(state.auction).toBeNull();
+    for (const space of [1, 3, 5]) expect(state.properties[space]).toMatchObject({ owner: null, mortgaged: false, houses: 0 });
     expect(getWaitingFor(state)).toBe("p3");
+    // Wer auf ein zurückgegebenes Feld kommt, kann es zum vollen Preis kaufen.
+    placeAt(state, "p3", 0);
+    ({ state } = act(state, "p3", { type: "rollDice" }, dice([2, 3])));
+    expect(state.turn).toMatchObject({ phase: "buy", pendingBuy: 5 });
   });
 
   it("der letzte verbliebene Spieler gewinnt", () => {

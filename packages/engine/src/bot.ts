@@ -28,7 +28,6 @@ import {
   groupLevels,
   HOTEL_LEVEL,
   JAIL_FINE,
-  minimumBid,
   mortgageInterest,
   unmortgageCost,
 } from "./rules";
@@ -72,7 +71,6 @@ export function chooseBotAction(state: GameState, playerId: PlayerId, rng: Rng, 
   if (state.trade) return answerTrade(ctx);
   if (state.mortgageDecision) return resolveMortgages(ctx);
   if (state.debts[0]) return raiseMoney(ctx);
-  if (state.auction) return bid(ctx);
   return playTurn(ctx);
 }
 
@@ -193,23 +191,24 @@ function opponentsHaveBuildings(state: GameState, playerId: PlayerId): boolean {
   });
 }
 
+/** Im Gefängnis: Freikarte, Kaution oder einen Zug aussitzen (`endTurn`). Sonst würfeln. */
 function leaveJailOrRoll(ctx: BotContext): Action {
   const { state, me, rng } = ctx;
-  const roll: Action = { type: "rollDice" };
-  if (!me.inJail) return roll;
+  if (!me.inJail) return { type: "rollDice" };
+  const sitOut: Action = { type: "endTurn" };
   const card = legalOf(ctx, "useJailCard")[0];
   const fine = legalOf(ctx, "payJailFine")[0];
   if (ctx.level === "easy") {
     if (card && chance(rng, 0.5)) return card;
     if (fine && chance(rng, 0.4)) return fine;
-    return roll;
+    return sitOut;
   }
   // Früh im Spiel raus (es gibt noch viel zu kaufen), später im Gefängnis sicher sitzen bleiben.
   const unowned = PROPERTY_INDICES.filter((i) => getProperty(state, i).owner === null).length;
-  if (unowned < 6 || opponentsHaveBuildings(state, me.id)) return roll;
+  if (unowned < 6 || opponentsHaveBuildings(state, me.id)) return sitOut;
   if (card) return card;
   if (fine && me.money - JAIL_FINE >= cashReserve(state, me.id)) return fine;
-  return roll;
+  return sitOut;
 }
 
 /** Hypothek auf ein Feld, das wenig bringt (nicht aus ganzen Gruppen, nicht aus `keepGroupOf`). */
@@ -245,44 +244,6 @@ function decideBuy(ctx: BotContext): Action {
     if (mortgage && me.money + mortgageable >= price) return mortgage;
   }
   return decline;
-}
-
-// ---------------------------------------------------------------------------
-// Versteigerung
-// ---------------------------------------------------------------------------
-
-function bid(ctx: BotContext): Action {
-  const { state, me, rng } = ctx;
-  const auction = state.auction;
-  const pass: Action = { type: "passBid" };
-  if (!auction) return pass;
-  const min = minimumBid(auction);
-  const price = getPropertySpace(auction.space).price;
-
-  if (ctx.level === "easy") {
-    if (!chance(rng, 0.7)) return pass;
-    const cap = Math.min(price * (0.4 + rng.nextInt(61) / 100), me.money);
-    const amount = Math.min(min + 10 * rng.nextInt(5), floorTo10(cap));
-    if (amount >= min) return { type: "bid", amount };
-    return pass;
-  }
-
-  const worth = propertyWorth(state, me.id, auction.space);
-  const important = worth >= price * 1.4;
-  const limit = important ? me.money : me.money - cashReserve(state, me.id) / 2;
-  const max = floorTo10(Math.min(worth, limit));
-  if (min > max) {
-    // Letzte Strasse einer Gruppe: notfalls Einzelfelder belasten und weiterbieten.
-    if (completesGroup(state, me.id, auction.space) && min <= worth && canManage(ctx)) {
-      const mortgage = cheapMortgage(ctx, auction.space);
-      if (mortgage) return mortgage;
-    }
-    return pass;
-  }
-  // In Sprüngen von etwa 10 % des Preises, damit Versteigerungen nicht ewig dauern.
-  const step = Math.max(10, floorTo10(price * 0.1));
-  const target = auction.highestBidder === null ? floorTo10(price * 0.5) : auction.highestBid + step;
-  return { type: "bid", amount: Math.min(max, Math.max(min, target)) };
 }
 
 // ---------------------------------------------------------------------------

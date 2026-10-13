@@ -6,17 +6,14 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import type { Action, ColorGroup, GameState, PlayerId, PlayerState, SpaceIndex, TradeOffer, TradeSide } from "@zueripoly/engine";
 import {
   BANK,
-  BID_STEP,
   BOT_LEVEL_NAMES,
   GROUP_NAMES,
   JAIL_FINE,
-  MAX_JAIL_ROLLS,
   canProposeTrade,
   getLegalActions,
   getPropertySpace,
   getSpace,
   getWaitingFor,
-  minimumBid,
   mortgageInterest,
   unmortgageCost,
   validateAction,
@@ -101,52 +98,6 @@ function ChoiceButtons({ choices, legal, disabled, onAct }: { choices: Choice[];
         </button>
       ))}
     </div>
-  );
-}
-
-function Auction({ state, bidder, disabled, onAct }: { state: GameState; bidder: PlayerState; disabled: boolean; onAct: (a: Action) => void }) {
-  const auction = state.auction!;
-  const min = minimumBid(auction);
-  const [amount, setAmount] = useState(min);
-  useEffect(() => setAmount(min), [min, bidder.id]);
-
-  const bid: Action = { type: "bid", amount };
-  const bidError = validateAction(state, bidder.id, bid);
-  const space = getPropertySpace(auction.space);
-  const others = auction.bidders.filter((id) => id !== bidder.id).map((id) => nameOf(state, id));
-
-  return (
-    <>
-      <p className="tafel__prompt">
-        Versteigerung: <strong>{spaceNom(auction.space)}</strong> (Listenpreis {formatChf(space.price)}).{" "}
-        {auction.highestBidder
-          ? `Höchstgebot: ${formatChf(auction.highestBid)} von ${nameOf(state, auction.highestBidder)}.`
-          : "Noch kein Gebot."}
-      </p>
-      <div className="bid" role="group" aria-label="Gebot">
-        <button type="button" className="button" disabled={disabled || amount - BID_STEP < min} onClick={() => setAmount(amount - BID_STEP)} aria-label={`${BID_STEP} CHF weniger`}>
-          −{BID_STEP}
-        </button>
-        <output className="bid__amount num" aria-live="polite">
-          {formatChf(amount)}
-        </output>
-        {[BID_STEP, 50, 100].map((step) => (
-          <button key={step} type="button" className="button" disabled={disabled} onClick={() => setAmount(amount + step)} aria-label={`${step} CHF mehr`}>
-            +{step}
-          </button>
-        ))}
-      </div>
-      <div className="tafel__actions">
-        <button type="button" className="button button--primary" disabled={disabled || bidError !== null} onClick={() => onAct(bid)}>
-          Bieten · {formatChf(amount)}
-        </button>
-        <button type="button" className="button" disabled={disabled} onClick={() => onAct({ type: "passBid" })}>
-          Passen
-        </button>
-      </div>
-      {bidError && amount > bidder.money && <p className="tafel__hint">So viel Bargeld hat {bidder.name} nicht ({formatChf(bidder.money)}).</p>}
-      {others.length > 0 && <p className="tafel__hint">Noch dabei: {others.join(", ")}.</p>}
-    </>
   );
 }
 
@@ -267,19 +218,6 @@ function watchStatus({ state, bot, disabled, canCancel, onAct }: WatchStatusProp
       ),
     };
   }
-  if (state.auction) {
-    const auction = state.auction;
-    return {
-      label: "Bietet jetzt",
-      body: (
-        <p className="tafel__prompt">
-          Versteigerung: <strong>{spaceNom(auction.space)}</strong> (Listenpreis {formatChf(getPropertySpace(auction.space).price)}).{" "}
-          {auction.highestBidder ? `Höchstgebot: ${formatChf(auction.highestBid)} von ${nameOf(state, auction.highestBidder)}.` : "Noch kein Gebot."}{" "}
-          {name} bietet oder passt.
-        </p>
-      ),
-    };
-  }
   if (state.turn.phase === "buy" && state.turn.pendingBuy !== null) {
     const space = getPropertySpace(state.turn.pendingBuy);
     return {
@@ -293,7 +231,7 @@ function watchStatus({ state, bot, disabled, canCancel, onAct }: WatchStatusProp
   }
   if (state.turn.phase === "preRoll") {
     const text = bot.inJail
-      ? `${name} sitzt im Gefängnis und entscheidet: Kaution, Freikarte oder auf einen Pasch würfeln.`
+      ? `${name} sitzt im Gefängnis und entscheidet: Kaution, Freikarte oder einen Zug aussetzen.`
       : state.turn.doublesCount > 0
         ? `Pasch! ${name} würfelt nochmals.`
         : `${name} würfelt gleich.`;
@@ -424,9 +362,6 @@ export function ActionPanel({
         />
       </>
     );
-  } else if (state.auction) {
-    label = "Bietet jetzt";
-    body = <Auction state={state} bidder={player} disabled={disabled} onAct={onAct} />;
   } else if (state.turn.phase === "buy" && state.turn.pendingBuy !== null) {
     const space = getPropertySpace(state.turn.pendingBuy);
     body = (
@@ -440,15 +375,15 @@ export function ActionPanel({
           onAct={onAct}
           choices={[
             { action: { type: "buyProperty" }, label: `Kaufen · ${formatChf(space.price)}`, primary: true },
-            { action: { type: "declineProperty" }, label: "Nicht kaufen, versteigern" },
+            { action: { type: "declineProperty" }, label: "Nicht kaufen" },
           ]}
         />
-        {!legal.some((a) => a.type === "buyProperty") && <p className="tafel__hint">Zu wenig Bargeld. Erst Geld auftreiben (Feld anklicken) oder versteigern.</p>}
+        {!legal.some((a) => a.type === "buyProperty") && <p className="tafel__hint">Zu wenig Bargeld. Erst Geld auftreiben (Feld anklicken) oder nicht kaufen: Das Feld bleibt dann frei.</p>}
       </>
     );
   } else if (state.turn.phase === "preRoll") {
     const prompt = player.inJail
-      ? `Im Gefängnis, Versuch ${player.jailTurns + 1} von ${MAX_JAIL_ROLLS}. Pasch würfeln, Kaution zahlen oder Freikarte zeigen.`
+      ? "Im Gefängnis. Einen Zug aussetzen (danach frei), Kaution zahlen oder Freikarte zeigen und sofort würfeln."
       : state.turn.doublesCount > 0
         ? "Pasch! Nochmals würfeln."
         : "Bereit? Würfeln und losfahren.";
@@ -460,7 +395,9 @@ export function ActionPanel({
           disabled={disabled}
           onAct={onAct}
           choices={[
-            { action: { type: "rollDice" }, label: player.inJail ? "Auf Pasch würfeln" : "Würfeln", primary: true },
+            { action: { type: "rollDice" }, label: "Würfeln", primary: true },
+            // Im Gefängnis vor dem Würfeln heisst «Zug beenden»: einen Zug aussitzen (Engine).
+            { action: { type: "endTurn" }, label: "Zug aussetzen", primary: true },
             { action: { type: "payJailFine" }, label: `Kaution zahlen · ${formatChf(JAIL_FINE)}` },
             { action: { type: "useJailCard" }, label: "Freikarte zeigen" },
           ]}

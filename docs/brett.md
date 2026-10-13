@@ -13,7 +13,7 @@ Zählkontrolle: 22 Strassen + 4 Bahnhöfe + 2 Versorger + 12 Spezialfelder = **4
 | 1 | Albisrieden | Strasse | Braun | 60 |
 | 2 | Gemeindekarte | Gemeinde | | |
 | 3 | Altstetten | Strasse | Braun | 60 |
-| 4 | Staats- und Gemeindesteuer | Steuer | | zahle 200 |
+| 4 | Staats- und Gemeindesteuer | Steuer | | zahle 100 |
 | 5 | **Hauptbahnhof** | Bahnhof | | 200 |
 | 6 | Seebach | Strasse | Hellblau | 100 |
 | 7 | Ereigniskarte | Ereignis | | |
@@ -47,7 +47,7 @@ Zählkontrolle: 22 Strassen + 4 Bahnhöfe + 2 Versorger + 12 Spezialfelder = **4
 | 35 | **Hardbrücke** | Bahnhof | | 200 |
 | 36 | Ereigniskarte | Ereignis | | |
 | 37 | Paradeplatz | Strasse | Dunkelblau | 350 |
-| 38 | Serafe-Rechnung | Steuer | | zahle 100 |
+| 38 | Serafe-Rechnung | Steuer | | zahle 50 |
 | 39 | Bahnhofstrasse | Strasse | Dunkelblau | 400 |
 
 Ecken: 0 Start (unten rechts), 10 Gefängnis (unten links), 20 Ferien am Zürichsee (oben links), 30 Gehe ins Gefängnis (oben rechts).
@@ -113,8 +113,8 @@ Miete: **4 ×** Augensumme (1 Versorger) / **10 ×** Augensumme (beide).
 | 10 | Gefängnis (Besuch) | Nur Besuch, passiert nichts. Hier sitzen Gefangene. |
 | 20 | Ferien am Zürichsee | Ohne Option: nichts. Mit Jackpot-Option: Topf kassieren. |
 | 30 | Gehe ins Gefängnis | Direkt auf Feld 10, ohne Start-Geld, Zug endet. |
-| 4 | Staats- und Gemeindesteuer | Zahle 200 |
-| 38 | Serafe-Rechnung | Zahle 100 |
+| 4 | Staats- und Gemeindesteuer | Zahle 100 |
+| 38 | Serafe-Rechnung | Zahle 50 |
 | 7, 22, 36 | Ereigniskarte | Ereignisstapel |
 | 2, 17, 33 | Gemeindekarte | Gemeindestapel |
 

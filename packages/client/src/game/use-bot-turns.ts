@@ -15,7 +15,7 @@ const READ_CARD_MS = 2000;
 /** Spielen nur noch Bots, laufen sie im Zeitraffer zu Ende. */
 const NO_AUDIENCE_MS = 150;
 
-const QUICK: readonly Action["type"][] = ["bid", "passBid", "buildHouse", "sellBuilding", "mortgage", "unmortgage"];
+const QUICK: readonly Action["type"][] = ["buildHouse", "sellBuilding", "mortgage", "unmortgage"];
 
 /** Nur im Entwicklungsmodus: `?botpause=50` setzt alle Pausen (für den Durchspiel-Test). */
 function devPause(): number | null {

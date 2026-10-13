@@ -9,12 +9,13 @@ function jailed(): GameState {
 }
 
 describe("Gefängnis", () => {
-  it("bietet zahlen, Freikarte oder Würfeln an", () => {
+  it("bietet zahlen, Freikarte oder einen Zug aussetzen an, aber kein Würfeln", () => {
     const state = jailed();
-    expect(getLegalActions(state, "p1").map((a) => a.type)).toEqual(["rollDice", "payJailFine"]);
+    expect(getLegalActions(state, "p1").map((a) => a.type)).toEqual(["payJailFine", "endTurn"]);
     player(state, "p1").jailCards.push("E08");
     state.decks.event = state.decks.event.filter((c) => c !== "E08");
-    expect(getLegalActions(state, "p1").map((a) => a.type)).toEqual(["rollDice", "payJailFine", "useJailCard"]);
+    expect(getLegalActions(state, "p1").map((a) => a.type)).toEqual(["payJailFine", "useJailCard", "endTurn"]);
+    expectRejected(state, "p1", { type: "rollDice" }, "inJail");
   });
 
   it("50 CHF zahlen, dann normal würfeln (Pasch gibt weiteren Wurf)", () => {
@@ -34,46 +35,37 @@ describe("Gefängnis", () => {
     expect(after.decks.community.at(-1)).toBe("G05");
   });
 
-  it("mit Pasch frei: zieht, würfelt aber nicht nochmals", () => {
-    const { state, events } = act(jailed(), "p1", { type: "rollDice" }, dice([4, 4]));
-    expect(player(state, "p1")).toMatchObject({ inJail: false, position: 18 });
-    expect(eventsOfType(events, "leftJail")[0]?.method).toBe("doubles");
-    expect(state.turn.phase).toBe("buy");
-    const { state: done } = act(state, "p1", { type: "buyProperty" });
-    expect(done.turn.phase).toBe("postRoll");
+  it("einen Zug aussitzen: im nächsten eigenen Zug frei und ohne Kaution würfeln", () => {
+    let { state, events } = act(jailed(), "p1", { type: "endTurn" });
+    expect(eventsOfType(events, "jailTurnServed")).toHaveLength(1);
+    expect(player(state, "p1")).toMatchObject({ inJail: true, jailTurns: 1, position: 10 });
+    ({ state } = act(state, "p2", { type: "rollDice" }, dice([1, 2]))); // p2 auf Feld 3
+    ({ state } = act(state, "p2", { type: "declineProperty" }));
+    ({ state, events } = act(state, "p2", { type: "endTurn" }));
+    expect(eventsOfType(events, "leftJail")[0]?.method).toBe("served");
+    expect(player(state, "p1")).toMatchObject({ inJail: false, jailTurns: 0 });
+    expect(state.turn.phase).toBe("preRoll");
+    ({ state } = act(state, "p1", { type: "rollDice" }, dice([2, 3])));
+    expect(player(state, "p1")).toMatchObject({ position: 15, money: 1500 });
   });
 
-  it("ohne Pasch bleibt man sitzen, nach dem dritten Fehlversuch zahlt man 50 CHF und zieht", () => {
-    let state = jailed();
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      ({ state } = act(state, "p1", { type: "rollDice" }, dice([1, 2])));
-      expect(player(state, "p1")).toMatchObject({ inJail: true, position: 10, jailTurns: attempt });
-      expect(state.turn.phase).toBe("postRoll");
-      ({ state } = act(state, "p1", { type: "endTurn" }));
-      ({ state } = act(state, "p2", { type: "rollDice" }, dice([1, 2]))); // p2 auf Feld 3
-      ({ state } = act(state, "p2", { type: "declineProperty" }));
-      ({ state } = act(state, "p1", { type: "passBid" }));
-      ({ state } = act(state, "p2", { type: "passBid" }));
-      ({ state } = act(state, "p2", { type: "endTurn" }));
-      placeAt(state, "p2", 0);
-    }
-    const { state: after, events } = act(state, "p1", { type: "rollDice" }, dice([2, 3]));
-    expect(player(after, "p1")).toMatchObject({ inJail: false, position: 15, money: 1450 });
-    expect(eventsOfType(events, "leftJail")[0]?.method).toBe("forcedFine");
+  it("wer ins Gefängnis kommt, beendet den Zug normal und sitzt erst den nächsten aus", () => {
+    let { state } = act(placeAt(newGame(2), "p1", 25), "p1", { type: "rollDice" }, dice([2, 3])); // Feld 30
+    expect(player(state, "p1")).toMatchObject({ inJail: true, jailTurns: 0 });
+    ({ state } = act(state, "p1", { type: "endTurn" }));
+    expect(player(state, "p1")).toMatchObject({ inJail: true, jailTurns: 0 });
+    ({ state } = act(state, "p2", { type: "rollDice" }, dice([1, 2])));
+    ({ state } = act(state, "p2", { type: "declineProperty" }));
+    ({ state } = act(state, "p2", { type: "endTurn" }));
+    expect(player(state, "p1").inJail).toBe(true);
+    expect(getLegalActions(state, "p1").map((a) => a.type)).toEqual(["payJailFine", "endTurn"]);
   });
 
-  it("kann die Busse beim dritten Fehlversuch nicht bezahlen: Schuld", () => {
-    const state = jailed();
-    player(state, "p1").jailTurns = 2;
-    player(state, "p1").money = 30;
-    own(state, "p1", 39);
-    const { state: after } = act(state, "p1", { type: "rollDice" }, dice([1, 2]));
-    expect(after.debts).toEqual([{ debtor: "p1", creditor: "bank", amount: 50, reason: "jailFine", space: null }]);
-    expect(player(after, "p1").position).toBe(13);
-    const { state: paid } = act(after, "p1", { type: "mortgage", space: 39 });
-    expect(paid.debts).toEqual([]);
-    expect(player(paid, "p1").money).toBe(30 + 200 - 50);
-    expect(paid.turn.phase).toBe("buy");
+  it("Zeitlimit im Gefängnis: sitzt den Zug aus", () => {
+    const { state, events } = act(jailed(), "p1", { type: "timeout" });
+    expect(eventsOfType(events, "jailTurnServed")).toHaveLength(1);
+    expect(player(state, "p1")).toMatchObject({ inJail: true, jailTurns: 1, money: 1500 });
+    expect(state.players[state.current]?.id).toBe("p2");
   });
 
   it("lehnt Gefängnis-Aktionen ausserhalb des Gefängnisses ab", () => {
@@ -84,11 +76,11 @@ describe("Gefängnis", () => {
 });
 
 describe("Steuern, Ferien und Jackpot", () => {
-  it("Steuerfelder kosten 200 bzw. 100 CHF", () => {
+  it("Steuerfelder kosten 100 bzw. 50 CHF", () => {
     const { state } = act(newGame(2), "p1", { type: "rollDice" }, dice([1, 3]));
-    expect(player(state, "p1").money).toBe(1300);
+    expect(player(state, "p1").money).toBe(1400);
     const late = placeAt(newGame(2), "p1", 35);
-    expect(player(act(late, "p1", { type: "rollDice" }, dice([1, 2])).state, "p1").money).toBe(1400);
+    expect(player(act(late, "p1", { type: "rollDice" }, dice([1, 2])).state, "p1").money).toBe(1450);
   });
 
   it("ohne Jackpot passiert auf Ferien am Zürichsee nichts", () => {
@@ -99,15 +91,15 @@ describe("Steuern, Ferien und Jackpot", () => {
 
   it("mit Jackpot fliessen Steuern, Bussen und Gefängnisgeld in den Topf, Ferien kassieren ihn", () => {
     let state = newGame(2, { jackpot: true });
-    ({ state } = act(state, "p1", { type: "rollDice" }, dice([1, 3]))); // Steuer 200
-    expect(state.jackpot).toBe(200);
+    ({ state } = act(state, "p1", { type: "rollDice" }, dice([1, 3]))); // Steuer 100
+    expect(state.jackpot).toBe(100);
     ({ state } = act(state, "p1", { type: "endTurn" }));
     placeAt(state, "p2", 10).players[1]!.inJail = true;
     ({ state } = act(state, "p2", { type: "payJailFine" }));
-    expect(state.jackpot).toBe(250);
+    expect(state.jackpot).toBe(150);
     ({ state } = act(state, "p2", { type: "rollDice" }, dice([4, 6]))); // Feld 20
     expect(state.jackpot).toBe(0);
-    expect(player(state, "p2").money).toBe(1500 - 50 + 250);
+    expect(player(state, "p2").money).toBe(1500 - 50 + 150);
   });
 });
 
@@ -173,7 +165,7 @@ describe("Karten", () => {
   it("E09: von Feld 7 zurück auf die Steuer", () => {
     const state = cardOnTop(newGame(2), "event", "E09");
     const { state: after } = act(state, "p1", { type: "rollDice" }, dice([3, 4]));
-    expect(player(after, "p1")).toMatchObject({ position: 4, money: 1300 });
+    expect(player(after, "p1")).toMatchObject({ position: 4, money: 1400 });
   });
 
   it("E10 / G06: direkt ins Gefängnis, auch nach einem Pasch kein weiterer Wurf", () => {

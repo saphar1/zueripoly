@@ -113,11 +113,11 @@ Teil A: Rückmeldungen aus dem ersten Spiel mit Freunden (2026-10-13, iPhone, Sa
 - [x] Bauen sichtbar: Knopf «Bauen · Farbe» auf der Tafel öffnet die Besitzkarte; Satz in der Kurzanleitung (README)
 - [x] Durchspiel-Tests (lokal, solo, online) prüfen Zurück-Geste und bauen über den neuen Knopf
 
-Teil R: Regeländerungen (Wunsch des Entwicklers, 2026-10-13)
-- [ ] Steuerfelder günstiger: Staats- und Gemeindesteuer 100 CHF (statt 200), Serafe-Rechnung 50 CHF (statt 100)
-- [ ] Gefängnis: einen Zug ganz aussetzen (kein Pasch-Versuch), danach frei; Kaution oder Freikarte holen sofort raus
-- [ ] Versteigerungen ganz abschaffen: nicht gekaufte Felder bleiben frei; bei Bankrott an die Bank gehen Felder frei zurück
-- [ ] Bots, Client, Server, Tests, Doku (`regeln.md`, `brett.md`, `engine.md`, `bots.md`) anpassen; Bot-Liga prüfen
+Teil R: Regeländerungen (Wunsch des Entwicklers, 2026-10-13) ✓
+- [x] Steuerfelder günstiger: Staats- und Gemeindesteuer 100 CHF (statt 200), Serafe-Rechnung 50 CHF (statt 100)
+- [x] Gefängnis: einen Zug ganz aussetzen (kein Pasch-Versuch), danach frei; Kaution oder Freikarte holen sofort raus
+- [x] Versteigerungen ganz abschaffen: nicht gekaufte Felder bleiben frei; bei Bankrott an die Bank gehen Felder frei zurück
+- [x] Bots, Client, Server, Tests, Doku (`regeln.md` Abschnitte 5, 6, 9, 10, 12, 16; `brett.md`, `engine.md`, `bots.md`) angepasst; Bot-Liga: alle 1200 Partien enden, clever gegen einfach 79 %
 
 Teil B: Spielstand speichern und fortsetzen
 - [ ] Lokal und Solo: automatisch in `localStorage`, «Fortsetzen» im Hauptmenü, Neuladen führt zurück ins Spiel

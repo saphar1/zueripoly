@@ -12,7 +12,7 @@ const THINK_MS = 1000;
 const QUICK_MS = 500;
 const READ_CARD_MS = 2000;
 const NO_AUDIENCE_MS = 150;
-const QUICK: readonly Action["type"][] = ["bid", "passBid", "buildHouse", "sellBuilding", "mortgage", "unmortgage"];
+const QUICK: readonly Action["type"][] = ["buildHouse", "sellBuilding", "mortgage", "unmortgage"];
 
 /** Ungefähre Abspielzeit der Ereignisse im Browser (Würfel, Figur Feld für Feld, Karte). */
 export function playbackMs(events: readonly GameEvent[]): number {

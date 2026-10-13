@@ -82,10 +82,10 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 - **Phase 4 abgeschlossen**: Computergegner «einfach» und «clever», Solomodus mit 1–5 Bots. 200 Bot-Partien in `npm test` (alle enden, clever schlägt einfach im Zweikampf in rund 90 %). Details in `docs/bots.md`.
 - **Phase 5, Teil A abgeschlossen**: Spielserver mit Räumen, Lobby, Wiederverbinden und Host-Entscheiden; Online-Spiel im Browser, lokal mit mehreren Fenstern getestet. Details in `docs/online.md`.
 - **Phase 5 abgeschlossen** (Teil B 2026-10-13): Freunde spielen von eigenen Geräten, alles gratis: Seite auf GitHub Pages (https://saphar1.github.io/zueripoly/), Spielserver auf Render (https://zueripoly.onrender.com, Frankfurt), dazu gleiches WLAN (`npm start`). Live mit zwei Fenstern geprüft.
-- **Phase 6 läuft**: Teil A (Rückmeldungen vom Spiel mit Freunden) fertig. Nächster Schritt: Teil R (Regeländerungen), siehe `PLAN.md`.
+- **Phase 6 läuft**: Teil A (Rückmeldungen vom Spiel mit Freunden) und Teil R (Regeländerungen: keine Versteigerungen, Gefängnis ein Zug, Steuern 100 / 50) fertig. Nächster Schritt: Teil B (Spielstand speichern), siehe `PLAN.md`.
 
 ### Feinschliff (Phase 6)
-- Stand: Teil A (Rückmeldungen) fertig; als Nächstes Teil R (Regeländerungen), dann B (Speichern), C (Ton, Bewegung, Handy). Details in `PLAN.md`.
+- Stand: Teil A (Rückmeldungen) und Teil R (Regeln) fertig; als Nächstes B (Speichern), dann C (Ton, Bewegung, Handy). Details in `PLAN.md`.
 - Zurück-Geste: `screen-history.ts` hält genau zwei Verlaufseinträge, «base» (Hauptmenü) und «inner» (alles andere). `App.tsx` ruft `syncHistory` bei jedem Bildschirmwechsel; die Zurück-Geste im Spiel/Raum erhöht `leaveAsk`, die Bildschirme reagieren mit `useSignal` (Rückfrage öffnen, nach Spielende direkt ins Menü, in der Online-Lobby Raum verlassen).
 - `GameView` bekommt `leave` als Daten (`LeaveOptions`), nicht als Element, und zeigt «Spiel verlassen» zweimal: Handy in der Kopfleiste (`.game__bar`, Knopf «Menü»), Desktop rechts unten (`.game__leave-side`); CSS blendet je eines aus.
 - Handy-Ansicht (unter 900 px): Reihenfolge `bar, board, news, panel, below, side` in `GameScreen.css`. `Sign compact` = schmale Haltestellentafel; `PlayerPanel` zugeklappt nur Figur/Name/Geld (`.panel--open`, Knopf `.panel__toggle`); `GameLog` ist ein `<details>`, auf dem Handy zu Beginn zu.
@@ -147,21 +147,22 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 - Die Tafel hat `aria-busy`, solange eine Bewegung läuft (nutzt auch der Durchspiel-Test).
 - Handel: `components/TradeComposer.tsx` (Angebot erstellen, prüft laufend mit `validateAction`), offene Angebote in `ActionPanel` (`TradeOfferView`: annehmen mit Auslösen, ablehnen, zurückziehen). Die Tafel kann mit `onAct(action, as)` auch für jemand anderen handeln (Anbieter zieht zurück).
 - Zoom: `components/BoardViewport.tsx` nur unter 900 px Breite. Der Rahmen bekommt `--board-fit` (ganzes Brett passt) und setzt `--board-size = --board-fit × Zoom`. Zwei Finger zoomen (`touch-action: pan-x pan-y`), ein Finger verschiebt.
-- Haltestellentafel: nach jeder Bewegung neu (`signFor`); ohne Bewegung wird nur der Hinweis nachgeführt (Kauf, Versteigerung, Bankrott …).
+- Haltestellentafel: nach jeder Bewegung neu (`signFor`); ohne Bewegung wird nur der Hinweis nachgeführt (Kauf, Gefängnis, Bankrott …).
 - Übersichtliches Spielfeld (nach Phase 4): Felder zeigen den Preis nur, solange sie frei sind; gekauft = Besitzerkreis, belastet = Ring (`tile__owner--mortgaged`) + schraffierter Balken, kein Text. Brettmitte: Tafel + Würfel im Mittelpunkt, Logo und Kartenstapel klein, Bankvorrat nur als Hinweis bei Knappheit (`SCARCE_HOUSES`/`SCARCE_HOTELS` in `BoardCenter.tsx`). Neue Elemente auf dem Brett nur, wenn sie für den nächsten Entscheid nötig sind.
 - Durchspiel-Test `scripts/playtest.ts`: läuft mit `reducedMotion: "reduce"`, klickt meist den Hauptknopf, baut oft, handelt ab und zu, treibt bei Schulden Geld auf. Optionen `--steps`, `--players`, `--money`, `--snapshot`.
 
 ### Engine (Phase 2)
 - Dateien: `types.ts` (alle Typen), `board.ts` (Felder, Konstanten), `cards.ts`, `random.ts` (Mulberry32, `createSeededRng`), `rules.ts` (reine Abfragen und Prüfungen), `validate.ts` (Aktion prüfen, `getLegalActions`, deutsche Fehlermeldungen), `game.ts` (`createGame`, `applyAction`), `invariants.ts`, `save.ts`.
-- `applyAction(state, playerId, action, rng)` kopiert den Zustand (JSON-Kopie ohne Protokoll), arbeitet auf der Kopie und ruft danach `settle()` auf: Schulden automatisch zahlen, Versteigerungen aus der Warteschlange starten, Zug weitergeben, Gewinner feststellen.
-- Das Spiel wartet immer auf genau einen Spieler (`getWaitingFor`). Vorrang: Handelsangebot > Hypothekenentscheid > Schuld > Versteigerung > Zug (`preRoll` / `buy` / `postRoll`).
+- `applyAction(state, playerId, action, rng)` kopiert den Zustand (JSON-Kopie ohne Protokoll), arbeitet auf der Kopie und ruft danach `settle()` auf: Schulden automatisch zahlen, Zug weitergeben, Gewinner feststellen.
+- Das Spiel wartet immer auf genau einen Spieler (`getWaitingFor`). Vorrang: Handelsangebot > Hypothekenentscheid > Schuld > Zug (`preRoll` / `buy` / `postRoll`).
 - Jede Geldänderung läuft über `transfer()` und erzeugt ein `moneyTransferred`-Ereignis. Nie `money` direkt ändern, sonst schlägt `checkMoneyLog` fehl.
 - `PropertyState.houses`: 0–4 Häuser, 5 = Hotel. Gebäudevorrat in `state.bank`.
 - Kartenstapel: oberste Karte = Index 0, gezogene Karte kommt ans Ende; Freikarten bleiben beim Spieler bis zur Nutzung.
 - Spieler-IDs «bank» und «jackpot» sind reserviert (Geldparteien im Protokoll).
 - Figuren-IDs: `tram`, `swan`, `boeoegg`, `fondue`, `bike`, `coffee` (Namen in `TOKEN_NAMES`).
 - `state.log` hält die letzten 200 Ereignisse; das vollständige Protokoll entsteht aus `createGame().log` plus allen `events` aus `applyAction`.
-- Regelklarstellungen und weitere Abweichungen (Häuserversteigerung entfällt, Hotelabriss, Handel ohne Schulden, Schulden der Reihe nach usw.) stehen in `docs/regeln.md`, Abschnitt 16.
+- Regeländerungen 2026-10-13 (Wunsch des Entwicklers): **keine Versteigerungen** (nicht gekaufte Felder und Felder aus Bankrott an die Bank bleiben frei; `auction`, `bid`, `passBid` gibt es nicht mehr), **Gefängnis = einen Zug aussetzen** (`endTurn` im `preRoll` im Gefängnis, `JAIL_TURNS = 1`, Ereignisse `jailTurnServed` und `leftJail` mit `served`; Würfeln im Gefängnis ist verboten), **Steuern 100 / 50 CHF**.
+- Regelklarstellungen und weitere Abweichungen (keine Versteigerungen, Hotelabriss, Handel ohne Schulden, Schulden der Reihe nach usw.) stehen in `docs/regeln.md`, Abschnitt 16.
 - Tests: `packages/engine/tests/helpers.ts` (`newGame`, `act` mit Invariantenprüfung, `dice(...)` für vorgegebene Würfe, `own`, `setHouses`, `cardOnTop`). Zufallspartien in `random-play.ts`, aufgeteilt auf zwei Testdateien (laufen parallel).
 - Schriften gewählt: Bricolage Grotesque + Familjen Grotesk.
 - Preise und Mieten wie im Original, in CHF (`docs/brett.md`).

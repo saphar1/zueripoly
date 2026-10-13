@@ -46,7 +46,7 @@ export function spaceRule(state: GameState, space: Space): string {
     case "start":
       return `Wer hier landet oder vorbeizieht, bekommt ${formatChf(START_SALARY)}.`;
     case "jail":
-      return `Zu Besuch passiert nichts. Wer drin sitzt, kommt mit einem Pasch, ${formatChf(JAIL_FINE)} oder einer Freikarte raus.`;
+      return `Zu Besuch passiert nichts. Wer drin sitzt, setzt einen Zug aus oder kommt mit ${formatChf(JAIL_FINE)} oder einer Freikarte sofort raus.`;
     case "vacation":
       return state.options.jackpot
         ? `Wer hier landet, kassiert den Topf: jetzt ${formatChf(state.jackpot)}.`

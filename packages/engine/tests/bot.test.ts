@@ -56,16 +56,6 @@ describe("Computergegner: Kaufen", () => {
     expect(choose(state, "p1")).toEqual({ type: "mortgage", space: 15 });
   });
 
-  it("clever blockiert in der Versteigerung eine fremde Farbgruppe", () => {
-    let state = own(buyDecision(19, 1500), "p2", 16, 18);
-    player(state, "p2").money = 1500;
-    state = act(state, "p1", { type: "declineProperty" }).state;
-    // p2 bietet zuerst; danach muss p1 über den Listenpreis hinaus mitgehen.
-    state = act(state, "p2", { type: "bid", amount: 210 }).state;
-    const action = choose(state, "p1");
-    expect(action.type).toBe("bid");
-    if (action.type === "bid") expect(action.amount).toBeGreaterThan(210);
-  });
 });
 
 describe("Computergegner: Bauen und Gefängnis", () => {
@@ -110,7 +100,7 @@ describe("Computergegner: Bauen und Gefängnis", () => {
     expect(choose(state, "p1")).toEqual({ type: "payJailFine" });
     own(state, "p2", 1, 3);
     setHouses(state, 1, 1);
-    expect(choose(state, "p1")).toEqual({ type: "rollDice" });
+    expect(choose(state, "p1")).toEqual({ type: "endTurn" });
   });
 });
 

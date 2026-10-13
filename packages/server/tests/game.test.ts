@@ -81,9 +81,10 @@ describe("Online-Spiel mit simulierten Clients", () => {
     const seq = waiting.seq;
     expect(expectError(await waiting.request("game:action", { action: { type: "buyProperty" } }))).toBe("Das ist im Moment nicht möglich.");
     expect(expectError(await waiting.request("game:action", { action: { type: "buildHouse", space: 1 } }))).toBe("Dieses Feld gehört dir nicht.");
-    expect(expectError(await waiting.request("game:action", { action: { type: "bid", amount: 50 } }))).toBe("Das ist im Moment nicht möglich.");
+    expect(expectError(await waiting.request("game:action", { action: { type: "endTurn" } }))).toBe("Das ist im Moment nicht möglich.");
     expect(expectError(await waiting.request("game:action", { action: { type: "fliegen" } }))).toContain("Unbekannte oder ungültige Aktion");
-    expect(expectError(await waiting.request("game:action", { action: { type: "bid", amount: "100" } }))).toContain("ungültige Aktion");
+    // Versteigerungen gibt es nicht mehr (docs/regeln.md, Abschnitt 16).
+    expect(expectError(await waiting.request("game:action", { action: { type: "bid", amount: 100 } }))).toContain("ungültige Aktion");
     // Das Zeitlimit schickt nur der Server.
     expect(expectError(await waiting.request("game:action", { action: { type: "timeout" } }))).toContain("ungültige Aktion");
     // Ein Handel mit fremdem Feld

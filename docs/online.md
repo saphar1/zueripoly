@@ -118,7 +118,7 @@ Nachrichten vom Server:
 - Bricht die Verbindung ab, verbindet Socket.IO von selbst neu und der Browser meldet sich mit dem Schlüssel wieder an. Er bekommt den Vollstand und spielt ab dort weiter.
 - Öffnet jemand denselben Platz in einem zweiten Fenster, wird das erste abgemeldet.
 - **Anzeige:** Spielerpanel und Lobby zeigen «Getrennt» (gestrichelter roter Rahmen), «Ausgestiegen» und «Computer vertritt».
-- **Nach 60 Sekunden** (`Timing.absentMs`) sieht der Host eine Störungsmeldung: *Warten* (fragt nach weiteren 60 Sekunden wieder), *Computer spielt weiter* (Stufe clever; kommt die Person zurück, spielt sie wieder selbst) oder *Aus dem Spiel nehmen* (`removePlayer` der Engine: Besitz an die Bank, Felder werden versteigert). Wer das Spiel ausdrücklich verlässt, kommt nicht zurück; der Entscheid ist sofort nötig (ohne «Warten»).
+- **Nach 60 Sekunden** (`Timing.absentMs`) sieht der Host eine Störungsmeldung: *Warten* (fragt nach weiteren 60 Sekunden wieder), *Computer spielt weiter* (Stufe clever; kommt die Person zurück, spielt sie wieder selbst) oder *Aus dem Spiel nehmen* (`removePlayer` der Engine: Besitz an die Bank, Felder sind wieder frei). Wer das Spiel ausdrücklich verlässt, kommt nicht zurück; der Entscheid ist sofort nötig (ohne «Warten»).
 - **Host-Wechsel:** Verlässt der Host den Raum, wird sofort der nächste verbundene Mensch Host. Ist der Host länger als 60 Sekunden getrennt, ebenso. Kommt er zurück, bleibt der neue Host.
 - **Alle Menschen getrennt:** Das Spiel ruht (keine Bot-Züge, kein Zeitlimit).
 

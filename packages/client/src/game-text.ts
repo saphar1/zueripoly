@@ -1,6 +1,6 @@
 // Protokoll-Ereignisse der Engine als deutsche Sätze (de-CH). Kurz, trocken, mit etwas Zürcher Witz.
 import type { CardId, GameEvent, GameState, MoneyParty, PlayerId, SpaceIndex, TradeSide } from "@zueripoly/engine";
-import { BANK, DECK_NAMES, HOTEL_LEVEL, JACKPOT, MAX_JAIL_ROLLS, getCard, getSpace } from "@zueripoly/engine";
+import { BANK, DECK_NAMES, HOTEL_LEVEL, JACKPOT, getCard, getSpace } from "@zueripoly/engine";
 import { formatChf } from "./format";
 
 // --- Feldnamen mit Artikel -------------------------------------------------------------
@@ -92,7 +92,6 @@ export function formatEvent(state: GameState, event: GameEvent): string | null {
       return `${who(event.player)} ist am Zug.`;
     case "diceRolled": {
       const [a, b] = event.dice;
-      if (event.purpose === "jail") return `${who(event.player)} würfelt ${a} + ${b} und hofft auf einen Pasch.`;
       if (event.purpose === "utilityRent") return `${who(event.player)} würfelt ${a} + ${b} für die Miete.`;
       return `${who(event.player)} würfelt ${a} + ${b}${a === b ? ", Pasch" : ""}.`;
     }
@@ -107,37 +106,23 @@ export function formatEvent(state: GameState, event: GameEvent): string | null {
     case "propertyBought":
       return `${who(event.player)} kauft ${spaceAcc(event.space)} für ${formatChf(event.price)}.`;
     case "propertyDeclined":
-      return `${who(event.player)} kauft ${spaceAcc(event.space)} nicht.`;
-    case "auctionStarted":
-      return event.origin === "bankruptcy"
-        ? `Aus der Konkursmasse wird ${spaceNom(event.space)} versteigert.`
-        : `${capitalize(spaceNom(event.space))} wird versteigert.`;
-    case "bidPlaced":
-      return `${who(event.player)} bietet ${formatChf(event.amount)}.`;
-    case "bidPassed":
-      return `${who(event.player)} passt.`;
-    case "auctionWon":
-      return `${who(event.player)} ersteigert ${spaceAcc(event.space)} für ${formatChf(event.amount)}.`;
-    case "auctionUnsold":
-      return `Niemand bietet. ${capitalize(spaceNom(event.space))} bleibt bei der Bank.`;
+      return `${who(event.player)} kauft ${spaceAcc(event.space)} nicht. Das Feld bleibt frei.`;
     case "cardDrawn":
       return `${who(event.player)} zieht eine ${DECK_NAMES[event.deck]}: «${cardText(event.card)}»`;
     case "sentToJail":
       if (event.reason === "doubles") return `Dritter Pasch in Folge: ${who(event.player)} muss ins Gefängnis.`;
       if (event.reason === "card") return `${who(event.player)} muss ins Gefängnis.`;
       return `${who(event.player)} geht ins Gefängnis. Direkt dorthin, ohne über Start.`;
-    case "jailRollFailed":
-      return `Kein Pasch. ${who(event.player)} bleibt sitzen (Versuch ${event.attempt} von ${MAX_JAIL_ROLLS}).`;
+    case "jailTurnServed":
+      return `${who(event.player)} setzt einen Zug aus und ist im nächsten Zug frei.`;
     case "leftJail":
       switch (event.method) {
         case "fine":
           return `${who(event.player)} zahlt die Kaution und ist frei.`;
         case "card":
           return `${who(event.player)} zeigt die Freikarte und ist frei.`;
-        case "doubles":
-          return `Pasch! ${who(event.player)} ist frei.`;
-        case "forcedFine":
-          return `Drei Versuche ohne Pasch: ${who(event.player)} zahlt die Kaution und ist frei.`;
+        case "served":
+          return `${who(event.player)} hat einen Zug ausgesessen und ist frei.`;
       }
       return null;
     case "houseBuilt":
@@ -165,7 +150,7 @@ export function formatEvent(state: GameState, event: GameEvent): string | null {
     case "propertyTransferred":
       return `${capitalize(spaceNom(event.space))} geht von ${who(event.from)} an ${who(event.to)}.`;
     case "propertyReturned":
-      return `${capitalize(spaceNom(event.space))} geht zurück an die Bank.`;
+      return `${capitalize(spaceNom(event.space))} geht zurück an die Bank und ist wieder frei.`;
     case "jailCardTransferred":
       return `Die Freikarte geht von ${who(event.from)} an ${who(event.to)}.`;
     case "jailCardReturned":
@@ -220,7 +205,7 @@ function formatMoney(state: GameState, event: Extract<GameEvent, { type: "moneyT
       if (event.to === JACKPOT) return `${from} zahlt ${amount} in den Topf.`;
       return `${from} zahlt ${to} ${amount}.`;
     default:
-      // Kauf, Versteigerung, Bauen, Hypothek, Handel, Kaution, Bankrott: beschreibt schon ein anderes Ereignis.
+      // Kauf, Bauen, Hypothek, Handel, Kaution, Bankrott: beschreibt schon ein anderes Ereignis.
       return null;
   }
 }

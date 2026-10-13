@@ -40,10 +40,10 @@ Nur die Oberfläche: `npm run dev -w @zueripoly/client`. Den Designentwurf (Stil
 ## Spielanleitung (Kurzfassung)
 
 - 2 bis 6 Spieler, je 1500 CHF Startkapital, 200 CHF beim Überqueren von Start.
-- Würfeln, ziehen, auf unbesetzten Feldern kaufen oder versteigern lassen, auf fremden Feldern Miete zahlen.
+- Würfeln, ziehen, unbesetzte Felder kaufen (oder frei lassen), auf fremden Feldern Miete zahlen. Versteigerungen gibt es nicht.
 - Wer alle Strassen einer Farbe besitzt, darf Häuser und Hotels bauen (gleichmässig). Die Bank hat 32 Häuser und 12 Hotels.
   Im Spiel: Knopf «Bauen · Farbe» auf der Tafel, oder ein eigenes Feld antippen, dann «Haus bauen» auf der Besitzkarte.
-- Ein Pasch gibt einen weiteren Wurf, der dritte Pasch führt ins Gefängnis.
+- Ein Pasch gibt einen weiteren Wurf, der dritte Pasch führt ins Gefängnis. Dort setzt man einen Zug aus (oder zahlt 50 CHF bzw. zeigt eine Freikarte) und ist danach frei.
 - Hypotheken, Handel zwischen Spielern, Ereignis- und Gemeindekarten.
 - Wer zahlungsunfähig wird, scheidet aus. Gewonnen hat der Letzte, der noch im Spiel ist.
 

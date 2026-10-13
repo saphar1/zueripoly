@@ -19,7 +19,7 @@ Die Regeln selbst stehen in [regeln.md](regeln.md), Felder und Karten in [brett.
 | `validateGameConfig(config)` | Lobby prüfen (2–6 Spieler, Figuren, Optionen). Gibt Fehlertext oder `null`. |
 | `createGame(config, rng)` | Neues Spiel: Startreihenfolge auswürfeln, Stapel mischen. |
 | `applyAction(state, playerId, action, rng)` | Aktion ausführen (prüft vorher alles). |
-| `removePlayer(state, playerId)` | Eingriff von aussen (online: Host bei Abwesenheit): Spieler scheidet aus, Besitz an die Bank, Felder werden versteigert. Kein Spielzug, gibt ein `ActionResult` zurück. |
+| `removePlayer(state, playerId)` | Eingriff von aussen (online: Host bei Abwesenheit): Spieler scheidet aus, Besitz an die Bank, Felder sind wieder frei. Kein Spielzug, gibt ein `ActionResult` zurück. |
 | `getWaitingFor(state)` | Auf wen das Spiel wartet (oder `null` bei Spielende). |
 | `getLegalActions(state, playerId)` | Gültige Aktionen (Gebote nur mit Mindestbetrag, Handel nicht). |
 | `canProposeTrade(state, playerId)` | Darf der Spieler jetzt ein Handelsangebot machen? |
@@ -30,7 +30,7 @@ Die Regeln selbst stehen in [regeln.md](regeln.md), Felder und Karten in [brett.
 
 ## Aktionen
 
-`rollDice`, `payJailFine`, `useJailCard`, `buyProperty`, `declineProperty`, `bid {amount}`, `passBid`,
+`rollDice`, `payJailFine`, `useJailCard`, `buyProperty`, `declineProperty`,
 `buildHouse {space}`, `sellBuilding {space}`, `mortgage {space}`, `unmortgage {space}`,
 `proposeTrade {offer}`, `acceptTrade {lift?}`, `rejectTrade`, `cancelTrade`,
 `resolveMortgages {lift}`, `declareBankruptcy`, `endTurn`, `timeout`.
@@ -42,10 +42,9 @@ Das Spiel wartet immer auf **genau einen** Spieler (`getWaitingFor`). Vorrang vo
 1. **Offenes Handelsangebot** (`state.trade`): Empfänger nimmt an oder lehnt ab. Der Anbieter darf zurückziehen.
 2. **Hypothekenentscheid** (`state.mortgageDecision`): Nach einem Bankrott wählt der Gläubiger, welche belasteten Felder er sofort ablöst.
 3. **Schuld** (`state.debts[0]`): Der Schuldner treibt Geld auf (verkaufen, belasten, handeln) oder erklärt Bankrott. Sobald das Bargeld reicht, zahlt die Engine automatisch.
-4. **Versteigerung** (`state.auction`): Der Bieter `bidders[next]` bietet oder passt.
-5. **Zug** des Spielers `players[current]`, Phase `state.turn.phase`:
-   - `preRoll`: würfeln (im Gefängnis auch zahlen oder Freikarte), verwalten, handeln. Nach einem Pasch wieder `preRoll`.
-   - `buy`: freies Feld `turn.pendingBuy` kaufen oder ablehnen (→ Versteigerung).
+4. **Zug** des Spielers `players[current]`, Phase `state.turn.phase`:
+   - `preRoll`: würfeln, verwalten, handeln. Nach einem Pasch wieder `preRoll`. **Im Gefängnis** kein Würfeln (Fehler `inJail`), sondern `payJailFine` / `useJailCard` (danach würfeln) oder `endTurn` = einen Zug aussitzen (`jailTurns = 1`, Ereignis `jailTurnServed`). Zu Beginn des nächsten eigenen Zugs ist man frei (`leftJail`, `method: "served"`).
+   - `buy`: freies Feld `turn.pendingBuy` kaufen oder ablehnen (das Feld bleibt frei, keine Versteigerung).
    - `postRoll`: verwalten, handeln, `endTurn`.
 
 «Verwalten» heisst bauen, Gebäude verkaufen, belasten, Hypothek zurückzahlen.
@@ -56,13 +55,12 @@ Das Spiel wartet immer auf **genau einen** Spieler (`getWaitingFor`). Vorrang vo
 1. Ereignis `playerRemoved`.
 2. Ein offenes Angebot von ihm wird zurückgezogen, eines an ihn gilt als abgelehnt.
 3. Ein Hypothekenentscheid von ihm verfällt (die Felder gehen ohnehin an die Bank).
-4. In einer Versteigerung scheidet er aus; war er Höchstbietender, gilt sein Gebot nicht mehr (die anderen bieten ab 10 CHF weiter).
-5. Bankrott an die Bank (wie `goBankrupt`): Gebäude zurück, Bargeld an die Bank (nie in den Jackpot), Felder werden versteigert, Freikarten unter den Stapel. Schulden von ihm und an ihn verfallen.
-6. Danach wie nach jeder Aktion: Versteigerungen starten, Zug weitergeben, Gewinner feststellen.
+4. Bankrott an die Bank (wie `goBankrupt`): Gebäude zurück, Bargeld an die Bank (nie in den Jackpot), Felder sind wieder frei (`propertyReturned`), Freikarten unter den Stapel. Schulden von ihm und an ihn verfallen.
+5. Danach wie nach jeder Aktion: Zug weitergeben, Gewinner feststellen.
 
 ## Zeitlimit
 
-Die Uhr läuft ausserhalb der Engine (Server oder Client). Ist die Zeit um, schickt sie für den wartenden Spieler `timeout`. Die Engine macht dann **einen** Standardschritt (würfeln, nicht kaufen, passen, ablehnen, belastet lassen, Geld auftreiben oder Bankrott, Zug beenden). Ist danach immer noch derselbe Spieler dran, wird erneut `timeout` geschickt.
+Die Uhr läuft ausserhalb der Engine (Server oder Client). Ist die Zeit um, schickt sie für den wartenden Spieler `timeout`. Die Engine macht dann **einen** Standardschritt (würfeln oder im Gefängnis aussitzen, nicht kaufen, ablehnen, belastet lassen, Geld auftreiben oder Bankrott, Zug beenden). Ist danach immer noch derselbe Spieler dran, wird erneut `timeout` geschickt.
 
 ## Computergegner
 

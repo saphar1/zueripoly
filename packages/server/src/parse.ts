@@ -55,7 +55,6 @@ const SIMPLE = [
   "useJailCard",
   "buyProperty",
   "declineProperty",
-  "passBid",
   "rejectTrade",
   "cancelTrade",
   "declareBankruptcy",
@@ -77,10 +76,6 @@ export function parseAction(value: unknown): Action | null {
     return space === null ? null : ({ type, space } as Action);
   }
   switch (type) {
-    case "bid": {
-      const amount = int(raw.amount, 1, MAX_MONEY);
-      return amount === null ? null : { type, amount };
-    }
     case "proposeTrade": {
       const offer = asObject(raw.offer);
       if (!offer || typeof offer.to !== "string" || offer.to.length > 16) return null;

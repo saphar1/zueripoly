@@ -14,7 +14,6 @@ import {
   isFreeOfBuildings,
   JAIL_FINE,
   liquidationValue,
-  minimumBid,
   mortgageInterest,
   mortgageTransferCost,
   unmortgageCost,
@@ -39,12 +38,12 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   notYourTurn: "Du bist gerade nicht an der Reihe.",
   wrongPhase: "Das ist im Moment nicht möglich.",
   notInJail: "Du bist nicht im Gefängnis.",
+  inJail: "Im Gefängnis wird nicht gewürfelt: Zug aussetzen, Kaution zahlen oder Freikarte zeigen.",
   noJailCard: "Du hast keine Freikarte.",
   notEnoughMoney: "Dafür reicht dein Bargeld nicht.",
   invalidSpace: "Dieses Feld ist dafür nicht geeignet.",
   notOwner: "Dieses Feld gehört dir nicht.",
   invalidAmount: "Der Betrag ist ungültig.",
-  bidTooLow: "Das Gebot ist zu tief.",
   groupIncomplete: "Dir gehört noch nicht die ganze Farbgruppe.",
   groupMortgaged: "In dieser Farbgruppe ist ein Feld mit einer Hypothek belastet.",
   unevenBuilding: "Es muss gleichmässig gebaut und verkauft werden.",
@@ -76,8 +75,7 @@ export function validateAction(state: GameState, playerId: PlayerId, action: Act
 
 /**
  * Alle gültigen Aktionen eines Spielers.
- * Gebote erscheinen nur mit dem Mindestbetrag, Handelsangebote gar nicht
- * (dafür gibt es `canProposeTrade` und `validateAction`).
+ * Handelsangebote erscheinen nicht (dafür gibt es `canProposeTrade` und `validateAction`).
  */
 export function getLegalActions(state: GameState, playerId: PlayerId): Action[] {
   if (state.winner !== null) return [];
@@ -87,14 +85,12 @@ export function getLegalActions(state: GameState, playerId: PlayerId): Action[] 
     { type: "useJailCard" },
     { type: "buyProperty" },
     { type: "declineProperty" },
-    { type: "passBid" },
     { type: "endTurn" },
     { type: "declareBankruptcy" },
     { type: "acceptTrade", lift: [] },
     { type: "rejectTrade" },
     { type: "cancelTrade" },
   ];
-  if (state.auction) candidates.push({ type: "bid", amount: minimumBid(state.auction) });
   if (state.mortgageDecision) {
     candidates.push({ type: "resolveMortgages", lift: [] });
     candidates.push({ type: "resolveMortgages", lift: [...state.mortgageDecision.spaces] });
@@ -164,33 +160,13 @@ function checkAction(state: GameState, playerId: PlayerId, action: Action): Erro
   }
   if (action.type === "declareBankruptcy") return "wrongPhase";
 
-  // 4. Versteigerung: bieten oder passen; vor dem Bieten darf Geld aufgetrieben werden.
-  const auction = state.auction;
-  if (auction) {
-    if (playerId !== auction.bidders[auction.next]) return "notYourTurn";
-    switch (action.type) {
-      case "bid":
-        if (!Number.isInteger(action.amount) || action.amount <= 0) return "invalidAmount";
-        if (action.amount < minimumBid(auction)) return "bidTooLow";
-        return action.amount > player.money ? "notEnoughMoney" : null;
-      case "passBid":
-        return null;
-      case "sellBuilding":
-        return checkSellBuilding(state, playerId, action.space);
-      case "mortgage":
-        return checkMortgage(state, playerId, action.space);
-      default:
-        return "wrongPhase";
-    }
-  }
-  if (action.type === "bid" || action.type === "passBid") return "wrongPhase";
-
-  // 5. Eigener Zug.
+  // 4. Eigener Zug.
   if (playerId !== getCurrentPlayer(state).id) return "notYourTurn";
   const phase = state.turn.phase;
   switch (action.type) {
     case "rollDice":
-      return phase === "preRoll" ? null : "wrongPhase";
+      if (phase !== "preRoll") return "wrongPhase";
+      return player.inJail ? "inJail" : null;
     case "payJailFine":
       if (phase !== "preRoll") return "wrongPhase";
       if (!player.inJail) return "notInJail";
@@ -207,7 +183,8 @@ function checkAction(state: GameState, playerId: PlayerId, action: Action): Erro
     case "declineProperty":
       return phase === "buy" ? null : "wrongPhase";
     case "endTurn":
-      return phase === "postRoll" ? null : "wrongPhase";
+      // Im Gefängnis vor dem Würfeln heisst «Zug beenden»: einen Zug aussitzen.
+      return phase === "postRoll" || (phase === "preRoll" && player.inJail) ? null : "wrongPhase";
     case "buildHouse":
       return checkBuild(state, playerId, action.space);
     case "sellBuilding":

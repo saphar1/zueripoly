@@ -9,9 +9,6 @@ describe("Würfeln und Ziehen", () => {
     expect(state.turn.phase).toBe("buy");
     expect(eventsOfType(events, "diceRolled")[0]?.dice).toEqual([2, 4]);
     ({ state } = act(state, "p1", { type: "declineProperty" }));
-    ({ state } = act(state, "p2", { type: "passBid" }));
-    ({ state } = act(state, "p3", { type: "passBid" }));
-    ({ state } = act(state, "p1", { type: "passBid" }));
     expect(state.turn.phase).toBe("postRoll");
     ({ state, events } = act(state, "p1", { type: "endTurn" }));
     expect(getWaitingFor(state)).toBe("p2");
@@ -46,8 +43,8 @@ describe("Würfeln und Ziehen", () => {
   });
 
   it("gibt nach einem Pasch einen weiteren Wurf", () => {
-    let { state } = act(newGame(2), "p1", { type: "rollDice" }, dice([2, 2])); // Feld 4: Steuer
-    expect(player(state, "p1").money).toBe(1300);
+    let { state } = act(newGame(2), "p1", { type: "rollDice" }, dice([2, 2])); // Feld 4: Steuer 100
+    expect(player(state, "p1").money).toBe(1400);
     expect(state.turn.phase).toBe("preRoll");
     expect(state.turn.doublesCount).toBe(1);
     expectRejected(state, "p1", { type: "endTurn" }, "wrongPhase");
@@ -58,10 +55,10 @@ describe("Würfeln und Ziehen", () => {
   it("schickt beim dritten Pasch sofort ins Gefängnis, ohne zu ziehen", () => {
     let state = cardOnTop(newGame(2), "community", "G16");
     ({ state } = act(state, "p1", { type: "rollDice" }, dice([1, 1]))); // Feld 2: Gemeindekarte +10
-    ({ state } = act(state, "p1", { type: "rollDice" }, dice([1, 1]))); // Feld 4: Steuer 200
+    ({ state } = act(state, "p1", { type: "rollDice" }, dice([1, 1]))); // Feld 4: Steuer 100
     expect(state.turn).toMatchObject({ phase: "preRoll", doublesCount: 2 });
     const result = act(state, "p1", { type: "rollDice" }, dice([4, 4]));
-    expect(player(result.state, "p1")).toMatchObject({ position: 10, inJail: true, money: 1310 });
+    expect(player(result.state, "p1")).toMatchObject({ position: 10, inJail: true, money: 1410 });
     expect(eventsOfType(result.events, "sentToJail")[0]).toMatchObject({ reason: "doubles", from: 4 });
     expect(eventsOfType(result.events, "moved")).toHaveLength(0);
     expect(result.state.turn.phase).toBe("postRoll");
@@ -106,68 +103,28 @@ describe("Kaufen und Versteigern", () => {
     expectRejected(after, "p1", { type: "buyProperty" }, "notEnoughMoney");
   });
 
-  it("versteigert ein abgelehntes Feld, links vom Spieler am Zug beginnend", () => {
-    let { state } = act(newGame(3), "p1", { type: "rollDice" }, dice([2, 3])); // Feld 5 Hauptbahnhof
-    ({ state } = act(state, "p1", { type: "declineProperty" }));
-    expect(state.auction).toMatchObject({ space: 5, bidders: ["p2", "p3", "p1"], next: 0 });
-    expectRejected(state, "p1", { type: "bid", amount: 10 }, "notYourTurn");
-    expectRejected(state, "p2", { type: "bid", amount: 5 }, "bidTooLow");
-    expectRejected(state, "p2", { type: "bid", amount: 12.5 }, "invalidAmount");
-    expectRejected(state, "p2", { type: "endTurn" }, "wrongPhase");
-    ({ state } = act(state, "p2", { type: "bid", amount: 10 }));
-    expectRejected(state, "p3", { type: "bid", amount: 15 }, "bidTooLow");
-    ({ state } = act(state, "p3", { type: "bid", amount: 25 }));
-    ({ state } = act(state, "p1", { type: "bid", amount: 40 }));
-    ({ state } = act(state, "p2", { type: "passBid" }));
-    expect(state.auction?.bidders).toEqual(["p3", "p1"]);
-    const { state: done, events } = act(state, "p3", { type: "passBid" });
-    expect(done.auction).toBeNull();
-    expect(done.properties[5]?.owner).toBe("p1");
-    expect(player(done, "p1").money).toBe(1460);
-    expect(eventsOfType(events, "auctionWon")[0]).toMatchObject({ player: "p1", amount: 40 });
-    expect(done.turn.phase).toBe("postRoll");
+  it("nicht kaufen: das Feld bleibt frei, keine Versteigerung", () => {
+    let { state, events } = act(newGame(3), "p1", { type: "rollDice" }, dice([2, 3])); // Feld 5 Hauptbahnhof
+    ({ state, events } = act(state, "p1", { type: "declineProperty" }));
+    expect(state.properties[5]?.owner).toBeNull();
+    expect(eventsOfType(events, "propertyDeclined")).toEqual([{ type: "propertyDeclined", player: "p1", space: 5 }]);
+    expect(player(state, "p1").money).toBe(1500);
+    expect(state.turn.phase).toBe("postRoll");
+    expect(getWaitingFor(state)).toBe("p1");
+    // Der Nächste kann das Feld zum vollen Preis kaufen.
+    ({ state } = act(state, "p1", { type: "endTurn" }));
+    placeAt(state, "p2", 0);
+    ({ state } = act(state, "p2", { type: "rollDice" }, dice([1, 4])));
+    ({ state } = act(state, "p2", { type: "buyProperty" }));
+    expect(state.properties[5]?.owner).toBe("p2");
+    expect(player(state, "p2").money).toBe(1300);
   });
 
-  it("lässt den Bieter vorher Geld auftreiben, aber nicht mehr bieten als er hat", () => {
-    let { state } = act(newGame(2), "p1", { type: "rollDice" }, dice([1, 2]));
-    ({ state } = act(state, "p1", { type: "declineProperty" }));
-    player(state, "p2").money = 20;
-    state.properties[39]!.owner = "p2";
-    expectRejected(state, "p2", { type: "bid", amount: 30 }, "notEnoughMoney");
-    ({ state } = act(state, "p2", { type: "mortgage", space: 39 }));
-    expect(player(state, "p2").money).toBe(220);
-    ({ state } = act(state, "p2", { type: "bid", amount: 30 }));
-    ({ state } = act(state, "p1", { type: "passBid" }));
-    expect(state.properties[3]?.owner).toBe("p2");
-  });
-
-  it("lässt das Feld frei, wenn niemand bietet", () => {
-    let { state } = act(newGame(2), "p1", { type: "rollDice" }, dice([1, 2]));
-    ({ state } = act(state, "p1", { type: "declineProperty" }));
-    ({ state } = act(state, "p2", { type: "passBid" }));
-    const { state: done, events } = act(state, "p1", { type: "passBid" });
-    expect(done.properties[3]?.owner).toBeNull();
-    expect(eventsOfType(events, "auctionUnsold")).toHaveLength(1);
-  });
-
-  it("geht nach einer Versteigerung mit Pasch weiter zum nächsten Wurf", () => {
+  it("nach einem Pasch geht es auch ohne Kauf mit dem nächsten Wurf weiter", () => {
     let { state } = act(newGame(2), "p1", { type: "rollDice" }, dice([3, 3])); // Feld 6 Seebach
     ({ state } = act(state, "p1", { type: "declineProperty" }));
-    ({ state } = act(state, "p2", { type: "bid", amount: 10 }));
-    ({ state } = act(state, "p1", { type: "passBid" }));
-    expect(state.properties[6]?.owner).toBe("p2");
+    expect(state.properties[6]?.owner).toBeNull();
     expect(state.turn.phase).toBe("preRoll");
     expect(getWaitingFor(state)).toBe("p1");
-  });
-
-  it("gewinnt der letzte Bieter auch, wenn er als Einziger übrig bleibt und dann bietet", () => {
-    let { state } = act(newGame(3), "p1", { type: "rollDice" }, dice([1, 2]));
-    ({ state } = act(state, "p1", { type: "declineProperty" }));
-    ({ state } = act(state, "p2", { type: "passBid" }));
-    ({ state } = act(state, "p3", { type: "passBid" }));
-    expect(state.auction?.bidders).toEqual(["p1"]);
-    ({ state } = act(state, "p1", { type: "bid", amount: 10 }));
-    expect(state.properties[3]?.owner).toBe("p1");
-    expect(player(state, "p1").money).toBe(1490);
   });
 });

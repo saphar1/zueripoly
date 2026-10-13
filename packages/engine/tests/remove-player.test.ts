@@ -17,18 +17,8 @@ const offer = (to: string, give = side(), take = side()): { type: "proposeTrade"
   offer: { to, give, take },
 });
 
-/** Alle Versteigerungen der Reihe nach mit «passen» beenden. */
-function passAllAuctions(state: GameState): GameState {
-  for (let guard = 0; state.auction && guard < 100; guard++) {
-    const bidder = getWaitingFor(state);
-    if (!bidder) break;
-    ({ state } = act(state, bidder, { type: "passBid" }));
-  }
-  return state;
-}
-
 describe("Spieler aus dem Spiel nehmen", () => {
-  it("im eigenen Zug: Besitz an die Bank, Felder werden versteigert, danach ist der Nächste dran", () => {
+  it("im eigenen Zug: Besitz an die Bank, Felder sind wieder frei, danach ist der Nächste dran", () => {
     const start = own(newGame(3), "p1", 1, 3, 5);
     setHouses(start, 1, 2);
     setHouses(start, 3, 2);
@@ -38,13 +28,9 @@ describe("Spieler aus dem Spiel nehmen", () => {
     expect(eventsOfType(events, "bankrupt")).toEqual([{ type: "bankrupt", player: "p1", creditor: "bank" }]);
     expect(state.bank.houses).toBe(32);
     expect([1, 3, 5].map((s) => state.properties[s]?.owner)).toEqual([null, null, null]);
-    // Versteigerung der Konkursmasse, links vom Ausgeschiedenen beginnend.
-    expect(state.auction).toMatchObject({ space: 1, origin: "bankruptcy", bidders: ["p2", "p3"] });
-    const after = passAllAuctions(state);
-    expect(after.auction).toBeNull();
-    expect(after.auctionQueue).toEqual([]);
-    expect(getWaitingFor(after)).toBe("p2");
-    expect(after.turn.phase).toBe("preRoll");
+    expect(eventsOfType(events, "propertyReturned").map((e) => e.space)).toEqual([1, 3, 5]);
+    expect(getWaitingFor(state)).toBe("p2");
+    expect(state.turn.phase).toBe("preRoll");
   });
 
   it("ohne Besitz geht der Zug sofort weiter", () => {
@@ -56,38 +42,9 @@ describe("Spieler aus dem Spiel nehmen", () => {
   it("wer nicht am Zug ist, kann ebenfalls entfernt werden; das Spiel läuft weiter", () => {
     const { state } = remove(own(newGame(3), "p3", 39), "p3");
     expect(player(state, "p3").bankrupt).toBe(true);
-    expect(state.auction).toMatchObject({ space: 39, bidders: ["p2", "p1"] });
-    const after = passAllAuctions(state);
-    expect(getWaitingFor(after)).toBe("p1");
-    expect(after.turnNumber).toBe(1);
-  });
-
-  it("in der Versteigerung: das Gebot des Höchstbietenden verfällt, die anderen bieten weiter", () => {
-    let state = newGame(3);
-    ({ state } = act(state, "p1", { type: "rollDice" }, dice([1, 2]))); // Feld 3, frei
-    ({ state } = act(state, "p1", { type: "declineProperty" }));
-    expect(state.auction?.bidders).toEqual(["p2", "p3", "p1"]);
-    ({ state } = act(state, "p2", { type: "bid", amount: 100 }));
-    expect(getWaitingFor(state)).toBe("p3");
-    const { state: after } = remove(state, "p2");
-    expect(after.auction).toMatchObject({ bidders: ["p3", "p1"], highestBid: 0, highestBidder: null });
-    expect(getWaitingFor(after)).toBe("p3");
-    ({ state } = act(after, "p3", { type: "bid", amount: 10 }));
-    ({ state } = act(state, "p1", { type: "passBid" }));
-    expect(state.properties[3]?.owner).toBe("p3");
-  });
-
-  it("in der Versteigerung: bleibt nur der Höchstbietende übrig, bekommt er das Feld", () => {
-    let state = newGame(3);
-    ({ state } = act(state, "p1", { type: "rollDice" }, dice([1, 2])));
-    ({ state } = act(state, "p1", { type: "declineProperty" }));
-    ({ state } = act(state, "p2", { type: "bid", amount: 60 }));
-    ({ state } = act(state, "p3", { type: "passBid" }));
+    expect(state.properties[39]?.owner).toBeNull();
     expect(getWaitingFor(state)).toBe("p1");
-    const { state: after, events } = remove(state, "p1");
-    expect(eventsOfType(events, "auctionWon")).toEqual([{ type: "auctionWon", player: "p2", space: 3, amount: 60 }]);
-    expect(after.properties[3]?.owner).toBe("p2");
-    expect(getWaitingFor(after)).toBe("p2");
+    expect(state.turnNumber).toBe(1);
   });
 
   it("mit offenem Angebot als Anbieter: das Angebot wird zurückgezogen", () => {
@@ -105,9 +62,9 @@ describe("Spieler aus dem Spiel nehmen", () => {
     const { state: after, events } = remove(state, "p2");
     expect(eventsOfType(events, "tradeRejected")).toHaveLength(1);
     expect(after.properties[1]?.owner).toBe("p1");
-    const done = passAllAuctions(after);
-    expect(getWaitingFor(done)).toBe("p1");
-    expect(done.turn.phase).toBe("preRoll");
+    expect(after.properties[3]?.owner).toBeNull();
+    expect(getWaitingFor(after)).toBe("p1");
+    expect(after.turn.phase).toBe("preRoll");
   });
 
   it("als Gläubiger: die offene Schuld an ihn verfällt", () => {
@@ -122,9 +79,8 @@ describe("Spieler aus dem Spiel nehmen", () => {
     ({ state } = remove(state, "p1"));
     expect(state.debts).toEqual([]);
     expect(player(state, "p2").money).toBe(100);
-    const after = passAllAuctions(state);
-    expect(getWaitingFor(after)).toBe("p2");
-    expect(after.turn.phase).toBe("postRoll");
+    expect(getWaitingFor(state)).toBe("p2");
+    expect(state.turn.phase).toBe("postRoll");
   });
 
   it("als Schuldner: die Schuld verfällt, der Gläubiger bekommt nichts", () => {
@@ -160,16 +116,13 @@ describe("Spieler aus dem Spiel nehmen", () => {
       { owner: null, houses: 0, mortgaged: false },
       { owner: null, houses: 0, mortgaged: false },
     ]);
-    expect(state.auction?.bidders).toEqual(["p3", "p4"]);
-    const after = passAllAuctions(state);
-    expect(getWaitingFor(after)).toBe("p3");
+    expect(getWaitingFor(state)).toBe("p3");
   });
 
   it("bleibt nur ein Spieler übrig, gewinnt er", () => {
     const { state, events } = remove(own(newGame(2), "p2", 1), "p2");
     expect(state.winner).toBe("p1");
     expect(eventsOfType(events, "gameWon")).toEqual([{ type: "gameWon", player: "p1" }]);
-    expect(state.auction).toBeNull();
   });
 
   it("lehnt Unbekannte, Ausgeschiedene und beendete Spiele ab", () => {

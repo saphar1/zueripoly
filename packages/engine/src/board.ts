@@ -81,7 +81,7 @@ export const BOARD: readonly Space[] = [
   street(1, "Albisrieden", "brown", 60, [2, 10, 30, 90, 160, 250], 50),
   { kind: "community", index: 2, name: "Gemeindekarte" },
   street(3, "Altstetten", "brown", 60, [4, 20, 60, 180, 320, 450], 50),
-  { kind: "tax", index: 4, name: "Staats- und Gemeindesteuer", amount: 200 },
+  { kind: "tax", index: 4, name: "Staats- und Gemeindesteuer", amount: 100 },
   station(5, "Hauptbahnhof"),
   street(6, "Seebach", "lightblue", 100, [6, 30, 90, 270, 400, 550], 50),
   { kind: "event", index: 7, name: "Ereigniskarte" },
@@ -115,7 +115,7 @@ export const BOARD: readonly Space[] = [
   station(35, "Hardbrücke"),
   { kind: "event", index: 36, name: "Ereigniskarte" },
   street(37, "Paradeplatz", "navy", 350, [35, 175, 500, 1100, 1300, 1500], 200),
-  { kind: "tax", index: 38, name: "Serafe-Rechnung", amount: 100 },
+  { kind: "tax", index: 38, name: "Serafe-Rechnung", amount: 50 },
   street(39, "Bahnhofstrasse", "navy", 400, [50, 200, 600, 1400, 1700, 2000], 200),
 ];
 

@@ -24,9 +24,8 @@ Bots haben keinen versteckten Zustand. Was sie im laufenden Zug schon getan habe
 
 Spielt wie jemand, der die Regeln kennt, aber nicht rechnet:
 - kauft freie Felder mit etwa 65 % Wahrscheinlichkeit, wenn das Geld reicht (auch bis fast auf null);
-- bietet in Versteigerungen zufällig bis 40–100 % des Listenpreises und steigt zufällig aus;
 - baut selten (etwa jede vierte Gelegenheit), löst Hypotheken selten aus;
-- entscheidet im Gefängnis zufällig zwischen Freikarte, Kaution und Würfeln;
+- entscheidet im Gefängnis zufällig zwischen Freikarte, Kaution und einen Zug aussetzen;
 - verkauft bei Schulden Häuser oder belastet Felder in zufälliger Reihenfolge (oft ungeschickt);
 - prüft Handelsangebote nur nach **Listenpreisen** und schätzt ungenau. Darum verkauft sie auch einmal die letzte Strasse einer fremden Farbgruppe, wenn genug Geld geboten wird;
 - schlägt selten selbst einen Handel vor (Geld für die fehlenden Strassen einer eigenen Gruppe).
@@ -43,18 +42,17 @@ Bewertet die ganze Spielposition in Franken (`positionValue`):
 
 Entscheide:
 - **Kaufen:** immer, wenn das Feld eine eigene Gruppe vollendet oder eine fremde blockiert, notfalls mit einer Hypothek auf ein Einzelfeld. Sonst nur, wenn die Reserve bleibt.
-- **Versteigern:** bietet bis zum eigenen Wert des Feldes, in Sprüngen von etwa 10 % des Preises.
 - **Bauen:** nur auf ganzen, unbelasteten Gruppen, gleichmässig, zuerst bis drei Häuser (bester Ertrag pro Franken). Für Häuser greift der Bot bis auf 30 % in die Reserve.
 - **Hypotheken nur bei Bedarf:** bei Schulden oder um eine Gruppe zu vollenden. Auslösen, sobald genug Geld da ist, zuerst Felder aus ganzen Gruppen.
 - **Schulden:** zuerst Einzelfelder belasten, dann Häuser verkaufen (wo am wenigsten Miete verloren geht), zuletzt Gruppenfelder. Bankrott nur, wenn die Engine ihn erlaubt (nichts reicht mehr).
-- **Gefängnis:** früh im Spiel raus (Freikarte, Kaution), wenn Gegner gebaut haben, sicher sitzen bleiben.
+- **Gefängnis:** früh im Spiel raus (Freikarte, Kaution), wenn Gegner gebaut haben, einen Zug sicher aussitzen.
 - **Handel:** sucht Felder, die ihm eine Gruppe vollenden (oder näher bringen), und bietet Geld oder einen Tausch, bei dem der Partner ebenfalls eine Gruppe bekommt. Nimmt ein Angebot an, wenn es ihm etwas bringt und dem Partner nicht deutlich mehr. Im Zweikampf zahlt er kein Geld für Felder (der Gegner würde damit sofort bauen) und will klar mehr gewinnen als der Gegner.
 
 ## Schutz vor Endlosschleifen
 
 - Höchstens **ein Handelsangebot pro Zug**; ein kürzlich abgelehntes Angebot (gleicher Partner, gleiche Felder) wird nicht wiederholt.
 - Höchstens **15** (clever) bzw. **4** (einfach) Verwaltungsschritte pro Zug (bauen, verkaufen, belasten, auslösen). Danach nur noch würfeln, kaufen oder ablehnen, Zug beenden.
-- Gebote steigen immer, also endet jede Versteigerung. Bei Schulden bringt jeder Schritt Geld, bis die Engine automatisch zahlt.
+- Bei Schulden bringt jeder Schritt Geld, bis die Engine automatisch zahlt.
 
 ## Warum jede Partie endet
 
@@ -67,15 +65,17 @@ Zwei Fallen gibt es im Original auch:
 - `npm test`: Einzelfälle (`tests/bot.test.ts`), 100 gemischte Bot-Partien und 100 Zweikämpfe. Jede Aktion muss gültig sein, nach jeder Aktion gelten die Invarianten, jede Partie endet mit Gewinner, und «clever» gewinnt mindestens 70 % der Zweikämpfe gegen «einfach».
 - `npm run bots -w @zueripoly/engine` (optional `-- --games 500 --check`): Tabelle mit Siegquoten je Paarung.
 
-Ergebnis bei Abschluss von Phase 4 (200 Partien je Paarung):
+Ergebnis nach den Regeländerungen vom 2026-10-13 (keine Versteigerungen, Gefängnis ein Zug, Steuern 100 / 50; 200 Partien je Paarung, mit Invariantenprüfung):
 
 | Paarung | beendet | Siege clever | Siege einfach | Ø Züge | max. Züge |
 |---|---|---|---|---|---|
-| einfach gegen einfach | 200 | – | 100 % | 137 | 389 |
-| clever gegen einfach | 200 | 88 % | 13 % | 121 | 230 |
-| clever gegen clever | 200 | 100 % | – | 123 | 212 |
-| 1 clever gegen 3 einfach | 200 | 79 % | 21 % | 160 | 281 |
-| 2 clever gegen 2 einfach | 200 | 93 % | 8 % | 156 | 307 |
-| 6 gemischt (3 + 3) | 200 | 100 % | 1 % | 175 | 361 |
+| einfach gegen einfach | 200 | – | 100 % | 143 | 284 |
+| clever gegen einfach | 200 | 79 % | 21 % | 141 | 299 |
+| clever gegen clever | 200 | 100 % | – | 133 | 220 |
+| 1 clever gegen 3 einfach | 200 | 78 % | 23 % | 172 | 347 |
+| 2 clever gegen 2 einfach | 200 | 92 % | 8 % | 162 | 345 |
+| 6 gemischt (3 + 3) | 200 | 95 % | 6 % | 201 | 482 |
+
+Zum Vergleich Phase 4 (mit Versteigerungen): clever gegen einfach 88 %, 1 clever gegen 3 einfach 79 %. Ohne Versteigerungen kann «clever» Felder nicht mehr günstig ersteigern, darum ist der Abstand etwas kleiner.
 
 Bei gleich starken Bots würde «clever» als einer von vier nur in etwa 25 % der Partien gewinnen.

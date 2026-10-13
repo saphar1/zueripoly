@@ -115,17 +115,6 @@ function chooseAction(state: GameState, playerId: PlayerId, rng: Rng): Action {
     return pick(rng, raise) ?? { type: "timeout" };
   }
 
-  if (state.auction) {
-    const bid = first("bid");
-    if (bid && bid.type === "bid" && chance(rng, 0.45)) {
-      const me = state.players.find((p) => p.id === playerId);
-      const extra = 10 * rng.nextInt(8);
-      const amount = Math.min(bid.amount + extra, me?.money ?? bid.amount);
-      return { type: "bid", amount: Math.max(amount, bid.amount) };
-    }
-    return { type: "passBid" };
-  }
-
   // Eigener Zug
   if (canProposeTrade(state, playerId) && chance(rng, 0.02)) {
     const trade = randomTrade(state, playerId, rng);
@@ -149,7 +138,8 @@ function chooseAction(state: GameState, playerId: PlayerId, rng: Rng): Action {
     if (card && chance(rng, 0.5)) return card;
     const fine = first("payJailFine");
     if (fine && chance(rng, 0.3)) return fine;
-    return { type: "rollDice" };
+    // Im Gefängnis: einen Zug aussitzen.
+    return first("rollDice") ?? { type: "endTurn" };
   }
   return { type: "endTurn" };
 }

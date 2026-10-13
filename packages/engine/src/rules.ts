@@ -12,7 +12,6 @@ import {
 import {
   BANK,
   JACKPOT,
-  type AuctionState,
   type ColorGroup,
   type DebtReason,
   type ErrorCode,
@@ -28,16 +27,14 @@ import {
 
 export const START_SALARY = 200;
 export const JAIL_FINE = 50;
-/** Nach so vielen gescheiterten Würfen im Gefängnis muss bezahlt werden. */
-export const MAX_JAIL_ROLLS = 3;
+/** So viele Züge sitzt man im Gefängnis aus (ohne Kaution oder Freikarte); danach ist man frei. */
+export const JAIL_TURNS = 1;
 /** Der dritte Pasch in Folge führt ins Gefängnis. */
 export const MAX_DOUBLES = 3;
 export const TOTAL_HOUSES = 32;
 export const TOTAL_HOTELS = 12;
 /** Stufe «Hotel» in `PropertyState.houses`. */
 export const HOTEL_LEVEL = 5;
-export const MIN_BID = 10;
-export const BID_STEP = 10;
 
 export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 6;
@@ -255,14 +252,9 @@ export function checkUnmortgage(state: GameState, playerId: PlayerId, index: unk
 // Ablauf
 // ---------------------------------------------------------------------------
 
-export function minimumBid(auction: AuctionState): number {
-  return auction.highestBidder === null ? MIN_BID : auction.highestBid + BID_STEP;
-}
-
 /**
  * Auf wen das Spiel gerade wartet (genau ein Spieler), oder null, wenn das Spiel zu Ende ist.
- * Reihenfolge: offenes Handelsangebot (Empfänger), Hypothekenentscheid, Schuld,
- * Versteigerung, sonst der Spieler am Zug.
+ * Reihenfolge: offenes Handelsangebot (Empfänger), Hypothekenentscheid, Schuld, sonst der Spieler am Zug.
  * Ein Anbieter darf sein offenes Angebot ausserdem jederzeit zurückziehen.
  */
 export function getWaitingFor(state: GameState): PlayerId | null {
@@ -271,7 +263,6 @@ export function getWaitingFor(state: GameState): PlayerId | null {
   if (state.mortgageDecision) return state.mortgageDecision.player;
   const debt = state.debts[0];
   if (debt) return debt.debtor;
-  if (state.auction) return state.auction.bidders[state.auction.next] ?? null;
   return getCurrentPlayer(state).id;
 }
 
@@ -282,6 +273,5 @@ export function canProposeTrade(state: GameState, playerId: PlayerId): boolean {
   if (!player || player.bankrupt) return false;
   const debt = state.debts[0];
   if (debt) return debt.debtor === playerId;
-  if (state.auction) return false;
   return getCurrentPlayer(state).id === playerId;
 }

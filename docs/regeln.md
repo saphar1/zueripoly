@@ -25,7 +25,6 @@ Bauen, Hypotheken und Handel sind nur auf dem **eigenen Zug** möglich, sowie in
 ### Pasch
 - Ein **Pasch** (beide Würfel gleich) gibt nach dem Auswerten des Feldes **einen weiteren Wurf**.
 - Der **dritte Pasch in Folge** schickt den Spieler **sofort ins Gefängnis**, ohne dass er zieht.
-- Ein Spieler, der per Pasch aus dem Gefängnis kommt, zieht, würfelt aber **nicht** noch einmal.
 
 ## 4. Start
 - Beim **Vorbeiziehen oder Landen** auf Start erhält man **200 CHF**. Man erhält nicht doppelt, wenn man genau darauf landet.
@@ -35,14 +34,11 @@ Bauen, Hypotheken und Handel sind nur auf dem **eigenen Zug** möglich, sowie in
 ## 5. Felder kaufen
 Landet ein Spieler auf einem **unbesetzten** Grundstück (Strasse, Bahnhof, Versorger):
 - Er darf es zum aufgedruckten **Preis** kaufen. Dann erhält er die Besitzkarte.
-- Kauft er nicht, wird das Feld sofort **versteigert** (Abschnitt 6).
+- Kauft er nicht (oder hat er nicht genug Geld), **bleibt das Feld frei**. Der Nächste, der darauf landet, darf es zum vollen Preis kaufen.
 
-## 6. Versteigerung
-- Alle noch im Spiel befindlichen Spieler dürfen bieten, **auch der Spieler, der nicht gekauft hat**.
-- Eröffnungsgebot ab **10 CHF**, jedes Gebot muss das letzte um mindestens **10 CHF** übersteigen.
-- Reihum, beginnend links vom Spieler, der gerade am Zug ist. Wer aussteigt («Passen»), bleibt draussen.
-- Es gewinnt das letzte verbliebene Gebot. Wer bietet, muss das Geld **sofort** haben (Bargeld; Gebäude verkaufen oder Hypotheken aufnehmen vor dem eigenen Gebot ist erlaubt, bauen und handeln nicht). Niemand bietet: Das Feld bleibt unbesetzt.
-- Dasselbe Verfahren gilt für Grundstücke, die bei einem Bankrott an die Bank fallen (Abschnitt 12), und für Häuser bei Hausknappheit (Abschnitt 8).
+## 6. Keine Versteigerungen
+- In ZüriPoly wird **nichts versteigert**: weder nicht gekaufte Felder noch Felder aus einem Bankrott (Abschnitt 12) noch Häuser (Abschnitt 8).
+- Grund: Bei Versteigerungen bekamen Spieler Felder weit unter dem Preis, nur weil jemand gerade kein Geld hatte. Jetzt kostet jedes Feld immer den aufgedruckten Preis (oder was zwei Spieler im Handel vereinbaren).
 
 ## 7. Miete
 Landet man auf einem Feld, das einem anderen Spieler gehört (und nicht hypothekarisch belastet ist), zahlt man **Miete** an den Besitzer. Der Besitzer muss sie nicht einfordern; die Engine verbucht sie automatisch.
@@ -71,21 +67,21 @@ Landet man auf einem Feld, das einem anderen Spieler gehört (und nicht hypothek
 - Landen auf **«Gehe ins Gefängnis»** (Feld 30).
 - Ziehen einer Karte «Gehe direkt ins Gefängnis».
 - **Dritter Pasch** in Folge.
-Dann: Figur direkt auf Feld 10 (Gefängnis), **ohne Start-Geld**, der Zug endet **sofort** (auch bei Pasch): kein weiterer Wurf. Verwalten (bauen, belasten, handeln) und «Zug beenden» bleiben möglich.
+Dann: Figur direkt auf Feld 10 (Gefängnis), **ohne Start-Geld**, kein weiterer Wurf (auch bei Pasch). Verwalten (bauen, belasten, handeln) und «Zug beenden» bleiben möglich.
 
 **Wer nur «zu Besuch» auf Feld 10 landet**, ist nicht im Gefängnis und zieht ganz normal weiter.
 
-**Wie man herauskommt** (nur im Gefängnis, bei jedem Zug **vor** dem Würfeln wählen):
-1. **50 CHF zahlen** und danach normal würfeln und ziehen.
-2. **Freikarte** abgeben (Karte geht zurück unter den Stapel) und normal würfeln und ziehen.
-3. **Würfeln und einen Pasch erzielen**: Figur zieht die Augensumme, der Spieler würfelt aber **nicht** noch einmal.
+**Wie man herauskommt** (im nächsten eigenen Zug **vor** dem Würfeln wählen):
+1. **Einen Zug aussetzen**: Der Spieler würfelt nicht, der Zug endet. Zu Beginn seines **nächsten** Zugs ist er frei und würfelt ganz normal. Kostet nichts.
+2. **50 CHF zahlen** und sofort normal würfeln und ziehen.
+3. **Freikarte** abgeben (Karte geht zurück unter den Stapel) und sofort normal würfeln und ziehen.
 
-Wird in drei aufeinanderfolgenden eigenen Zügen kein Pasch erzielt, muss der Spieler nach dem **dritten** Zug **50 CHF zahlen** und sofort mit der gewürfelten Augensumme ziehen. Kann er nicht bar zahlen, zieht er trotzdem; die 50 CHF werden zur Schuld, die vor allen späteren Zahlungen beglichen werden muss (Abschnitt 11).
+Im Gefängnis wird **nicht** auf einen Pasch gewürfelt. Länger als einen Zug sitzt niemand.
 
 Im Gefängnis darf man weiterhin **Miete einfordern, bauen, handeln** und Hypotheken aufnehmen.
 
 ## 10. Steuerfelder, Ereignis- und Gemeindefelder, Ferien
-- **Steuerfelder** (Feld 4: 200 CHF, Feld 38: 100 CHF): Der Betrag geht an die Bank (mit Jackpot an den Jackpot, siehe 14).
+- **Steuerfelder** (Feld 4: 100 CHF, Feld 38: 50 CHF): Der Betrag geht an die Bank (mit Jackpot an den Jackpot, siehe 14).
 - **Ereignis-** und **Gemeindefelder:** Oberste Karte des entsprechenden Stapels ziehen, vorlesen, ausführen und **unter den Stapel** legen. Ausnahme: **Freikarte**, die der Spieler behält, bis er sie einsetzt oder verkauft/tauscht; sie wird erst dann wieder unter den Stapel gelegt.
 - Bei Karten mit Bewegung gelten die normalen Regeln für das Zielfeld (Kaufen, Miete, Karte, Steuer). Ein Spieler, der per Karte auf ein Karten- oder Steuerfeld rückt, führt auch dieses aus.
 - **Ferien am Zürichsee** (Feld 20): Ohne Jackpot-Option **passiert nichts**. Mit Jackpot-Option siehe Abschnitt 14.
@@ -109,10 +105,10 @@ Wer zahlen **kann**, muss zahlen (kein Aufschieben). Die Engine bucht jede Zahlu
 ## 12. Bankrott
 Ein Spieler ist bankrott, wenn er eine Schuld nicht bezahlen kann, auch nach Verkauf aller Gebäude und Aufnahme aller Hypotheken. **Bankrott erklären** geht nur, wenn Bargeld + Verkaufswert aller Gebäude + alle noch möglichen Hypotheken zusammen nicht reichen.
 - **Schulden bei einem Mitspieler:** Alle Grundstücke und Freikarten gehen an den **Gläubiger**. Gebäude werden vorher zu ½ Hauspreis an die Bank verkauft (das Geld geht an den Gläubiger). Belastete Felder: Der Gläubiger zahlt sofort **10 %** und darf wie im Handel entscheiden (sofort ablösen oder belastet lassen). Sein restliches Bargeld erhält der Gläubiger ebenfalls.
-- **Schulden bei der Bank** (Steuer, Karte): Alles geht an die Bank. Gebäude zurück in den Vorrat, Grundstücke werden einzeln **versteigert** (unbelastet; vorher Hypotheken aufgehoben, kein Zins), Freikarten gehen unter den Stapel.
+- **Schulden bei der Bank** (Steuer, Karte): Alles geht an die Bank. Gebäude zurück in den Vorrat, Grundstücke sind wieder **frei** (unbelastet; Hypotheken aufgehoben, kein Zins) und können zum vollen Preis gekauft werden, Freikarten gehen unter den Stapel.
 - Fehlt dem Gläubiger das Geld für den Zins auf übernommene belastete Felder, entsteht eine Schuld bei der Bank.
 - Der Restbetrag einer Schuld bei der Bank (Bargeld des Bankrotteurs) fliesst mit Jackpot-Option in den Topf, wenn die Schuld eine Steuer, Karte oder Gefängnisgebühr war.
-- Der bankrotte Spieler scheidet aus. Seine übrigen offenen Schulden (und Schulden an ihn) verfallen. War er am Zug, ist nach den Versteigerungen der nächste Spieler dran.
+- Der bankrotte Spieler scheidet aus. Seine übrigen offenen Schulden (und Schulden an ihn) verfallen. War er am Zug, ist der nächste Spieler dran.
 - **Gewonnen** hat der letzte verbliebene Spieler.
 
 ## 13. Handel
@@ -130,7 +126,7 @@ Ein Spieler ist bankrott, wenn er eine Schuld nicht bezahlen kann, auch nach Ver
 | Option | Standard | Wirkung |
 |---|---|---|
 | **Jackpot bei Ferien am Zürichsee** | aus | Alle Zahlungen an die Bank (Steuern, Kartenbussen, Gefängnisgebühr) fliessen in einen Topf. Wer auf **Ferien am Zürichsee** landet, erhält den ganzen Topf. Der Topf startet bei 0. Aus: Zahlungen gehen an die Bank, Ferien tut nichts. |
-| **Zeitlimit pro Zug** | aus (Wahl: 30 / 60 / 90 Sekunden) | Läuft die Zeit ab, wird für den Spieler automatisch gehandelt: würfeln, wenn er noch nicht gewürfelt hat; **nicht kaufen** (also Versteigerung); Zug beenden. In anderen Lagen: bei Versteigerung passen, Handelsangebot ablehnen, belastete Felder belastet lassen, bei Schuld automatisch Geld auftreiben (zuerst belasten, dann Gebäude verkaufen) oder Bankrott. Nur in Online-Spielen und lokal mit Zeitlimit-Anzeige. Computergegner sind davon unberührt. |
+| **Zeitlimit pro Zug** | aus (Wahl: 30 / 60 / 90 Sekunden) | Läuft die Zeit ab, wird für den Spieler automatisch gehandelt: würfeln, wenn er noch nicht gewürfelt hat (im Gefängnis: einen Zug aussetzen); **nicht kaufen** (das Feld bleibt frei); Zug beenden. In anderen Lagen: Handelsangebot ablehnen, belastete Felder belastet lassen, bei Schuld automatisch Geld auftreiben (zuerst belasten, dann Gebäude verkaufen) oder Bankrott. Nur in Online-Spielen und lokal mit Zeitlimit-Anzeige. Computergegner sind davon unberührt. |
 | **Startkapital** | 1500 CHF | Wählbar von 500 bis 5000 CHF in 100er-Schritten. Gilt für alle Spieler. |
 
 ## 15. Sonderfälle
@@ -143,16 +139,16 @@ Ein Spieler ist bankrott, wenn er eine Schuld nicht bezahlen kann, auch nach Ver
 - **Karte «Zahle jedem Spieler 50»**: Nur an noch im Spiel befindliche Spieler.
 - **Reparaturen-Karte**: Betrag pro Haus/Hotel des Spielers; ohne Gebäude zahlt er nichts.
 - **Wenn der Stapel durch ist**, wird er (ohne die gehaltenen Freikarten) neu gemischt. In der Praxis laufen die Karten im Kreis unter den Stapel, deshalb ist ein Mischen nur beim Spielstart nötig.
-- **Wiederverbinden** (online): Verliert ein Spieler die Verbindung, behält er seinen Platz und wartet das Spiel, wenn er entscheiden muss (mit Zeitlimit handelt der Server nach Ablauf für ihn). Nach 1 Minute Abwesenheit entscheidet der Host: warten, ein Computergegner spielt weiter (bis der Spieler zurück ist) oder der Spieler wird aus dem Spiel genommen. Dann geht sein Besitz wie bei einem Bankrott an die Bank: Gebäude zurück, Bargeld an die Bank, Felder werden versteigert, sein offenes Handelsangebot verfällt, ein Gebot von ihm in einer Versteigerung gilt nicht mehr. Details: [online.md](online.md).
+- **Wiederverbinden** (online): Verliert ein Spieler die Verbindung, behält er seinen Platz und wartet das Spiel, wenn er entscheiden muss (mit Zeitlimit handelt der Server nach Ablauf für ihn). Nach 1 Minute Abwesenheit entscheidet der Host: warten, ein Computergegner spielt weiter (bis der Spieler zurück ist) oder der Spieler wird aus dem Spiel genommen. Dann geht sein Besitz wie bei einem Bankrott an die Bank: Gebäude zurück, Bargeld an die Bank, seine Felder sind wieder frei, sein offenes Handelsangebot verfällt. Details: [online.md](online.md).
 
 ## 16. Entscheide, die vom Original abweichen
 Diese bewussten Vereinfachungen sind hier festgehalten, damit sie später nicht verwundern:
 1. Bauen, Hypotheken und Handel nur auf dem eigenen Zug oder bei Schuld.
 2. Handel mit Gebäuden ist nicht erlaubt; sie müssen vorher verkauft werden.
-3. Versteigerung beginnt immer bei 10 CHF mit Mindeststufe 10 CHF.
-4. Einkommenssteuer ist fix 200 CHF (kein «10 %»-Wahlrecht).
+3. **Keine Versteigerungen** (Abschnitt 6): Nicht gekaufte Felder bleiben frei, Felder aus einem Bankrott an die Bank ebenfalls (Entscheid 2026-10-13).
+4. Steuern günstiger: Staats- und Gemeindesteuer fix **100 CHF** (kein «10 %»-Wahlrecht), Serafe-Rechnung **50 CHF** (Entscheid 2026-10-13, vorher 200 / 100).
 5. Das Zeitlimit und der Jackpot sind Lobby-Optionen und standardmässig aus.
-6. Keine Versteigerung von Häusern bei Häusermangel (nur der Spieler am Zug baut, siehe Abschnitt 8).
+6. Gefängnis: einen Zug aussetzen statt drei Pasch-Versuche; danach frei ohne Kaution (Abschnitt 9, Entscheid 2026-10-13).
 7. Doppelte Grundmiete nur, wenn **keine** Strasse der Farbgruppe belastet ist (im Original genügt der Besitz).
 8. Nach dem dritten Pasch oder einer Gefängniskarte darf der Spieler vor «Zug beenden» noch verwalten.
 9. Ein Handel darf keine Schuld erzeugen (Abschnitt 13).

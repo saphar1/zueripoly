@@ -30,7 +30,7 @@ import {
   JAIL_FINE,
   liquidationValue,
   MAX_DOUBLES,
-  MAX_JAIL_ROLLS,
+  JAIL_TURNS,
   MAX_PLAYERS,
   MIN_PLAYERS,
   mortgageInterest,
@@ -49,7 +49,6 @@ import {
   JACKPOT,
   type Action,
   type ActionError,
-  type AuctionOrigin,
   type Card,
   type Creditor,
   type Debt,
@@ -169,8 +168,6 @@ export function createGame(config: GameConfig, rng: Rng): GameState {
       event: shuffle(DECK_CARDS.event.map((c) => c.id), rng),
       community: shuffle(DECK_CARDS.community.map((c) => c.id), rng),
     },
-    auction: null,
-    auctionQueue: [],
     debts: [],
     mortgageDecision: null,
     trade: null,
@@ -236,10 +233,6 @@ function perform(ctx: Ctx, playerId: PlayerId, action: Action): void {
       return buyProperty(ctx, player);
     case "declineProperty":
       return declineProperty(ctx, player);
-    case "bid":
-      return placeBid(ctx, player, action.amount);
-    case "passBid":
-      return passBid(ctx, player);
     case "buildHouse":
       return buildHouse(ctx, player, action.space);
     case "sellBuilding":
@@ -274,8 +267,7 @@ function perform(ctx: Ctx, playerId: PlayerId, action: Action): void {
       return goBankrupt(ctx, player, debt.creditor, debt.reason);
     }
     case "endTurn":
-      emit(ctx, { type: "turnEnded", player: player.id });
-      return advanceTurn(ctx);
+      return endTurn(ctx, player);
     case "timeout":
       emit(ctx, { type: "timeout", player: player.id });
       return performTimeout(ctx, player);
@@ -347,25 +339,10 @@ function roll(ctx: Ctx): void {
   const dice = rollDice(ctx.rng);
   const doubles = dice[0] === dice[1];
   turn.dice = dice;
-  emit(ctx, { type: "diceRolled", player: player.id, dice, purpose: player.inJail ? "jail" : "move" });
+  emit(ctx, { type: "diceRolled", player: player.id, dice, purpose: "move" });
 
-  if (player.inJail) {
-    if (doubles) {
-      // Pasch im Gefängnis: frei und ziehen, aber kein weiterer Wurf.
-      leaveJail(ctx, player, "doubles");
-    } else {
-      player.jailTurns += 1;
-      emit(ctx, { type: "jailRollFailed", player: player.id, attempt: player.jailTurns });
-      if (player.jailTurns < MAX_JAIL_ROLLS) {
-        turn.phase = "postRoll";
-        return;
-      }
-      // Dritter Fehlversuch: 50 CHF zahlen und mit diesem Wurf ziehen.
-      addDebt(ctx, player, BANK, JAIL_FINE, "jailFine");
-      leaveJail(ctx, player, "forcedFine");
-    }
-    turn.extraRoll = false;
-  } else if (doubles) {
+  // Im Gefängnis wird nicht gewürfelt (validate.ts): erst Kaution, Freikarte oder einen Zug aussitzen.
+  if (doubles) {
     turn.doublesCount += 1;
     if (turn.doublesCount >= MAX_DOUBLES) {
       sendToJail(ctx, player, "doubles");
@@ -436,7 +413,7 @@ function sendToJail(ctx: Ctx, player: PlayerState, reason: "space" | "card" | "d
   emit(ctx, { type: "sentToJail", player: player.id, from, reason });
 }
 
-function leaveJail(ctx: Ctx, player: PlayerState, method: "fine" | "card" | "doubles" | "forcedFine"): void {
+function leaveJail(ctx: Ctx, player: PlayerState, method: "fine" | "card" | "served"): void {
   player.inJail = false;
   player.jailTurns = 0;
   emit(ctx, { type: "leftJail", player: player.id, method });
@@ -568,7 +545,7 @@ function othersInTurnOrder(s: GameState, playerId: PlayerId): PlayerState[] {
 }
 
 // ---------------------------------------------------------------------------
-// Kaufen und Versteigern
+// Kaufen
 // ---------------------------------------------------------------------------
 
 function buyProperty(ctx: Ctx, player: PlayerState): void {
@@ -581,62 +558,13 @@ function buyProperty(ctx: Ctx, player: PlayerState): void {
   continueTurn(turn);
 }
 
+/** Nicht kaufen: Das Feld bleibt frei (keine Versteigerung, docs/regeln.md Abschnitt 16). */
 function declineProperty(ctx: Ctx, player: PlayerState): void {
   const turn = ctx.s.turn;
   const space = turn.pendingBuy as SpaceIndex;
   emit(ctx, { type: "propertyDeclined", player: player.id, space });
   turn.pendingBuy = null;
   continueTurn(turn);
-  startAuction(ctx, space, "declined");
-}
-
-/** Alle Spieler im Spiel bieten, beginnend links vom Spieler am Zug. Der Spieler am Zug bietet zuletzt. */
-function startAuction(ctx: Ctx, space: SpaceIndex, origin: AuctionOrigin): void {
-  const s = ctx.s;
-  const bidders: PlayerId[] = [];
-  for (let i = 1; i <= s.players.length; i++) {
-    const p = s.players[(s.current + i) % s.players.length];
-    if (p && !p.bankrupt) bidders.push(p.id);
-  }
-  s.auction = { space, origin, bidders, next: 0, highestBid: 0, highestBidder: null };
-  emit(ctx, { type: "auctionStarted", space, origin, bidders: [...bidders] });
-}
-
-function placeBid(ctx: Ctx, player: PlayerState, amount: number): void {
-  const auction = ctx.s.auction;
-  if (!auction) throw new Error("Keine Versteigerung.");
-  auction.highestBid = amount;
-  auction.highestBidder = player.id;
-  emit(ctx, { type: "bidPlaced", player: player.id, space: auction.space, amount });
-  auction.next = (auction.next + 1) % auction.bidders.length;
-  checkAuctionEnd(ctx);
-}
-
-function passBid(ctx: Ctx, player: PlayerState): void {
-  const auction = ctx.s.auction;
-  if (!auction) throw new Error("Keine Versteigerung.");
-  auction.bidders.splice(auction.next, 1);
-  if (auction.next >= auction.bidders.length) auction.next = 0;
-  emit(ctx, { type: "bidPassed", player: player.id, space: auction.space });
-  checkAuctionEnd(ctx);
-}
-
-function checkAuctionEnd(ctx: Ctx): void {
-  const s = ctx.s;
-  const auction = s.auction;
-  if (!auction) return;
-  if (auction.bidders.length === 0) {
-    emit(ctx, { type: "auctionUnsold", space: auction.space });
-    s.auction = null;
-    return;
-  }
-  const winner = auction.highestBidder;
-  if (winner !== null && auction.bidders.length === 1 && auction.bidders[0] === winner) {
-    transfer(ctx, winner, BANK, auction.highestBid, "auction", auction.space);
-    getProperty(s, auction.space).owner = winner;
-    emit(ctx, { type: "auctionWon", player: winner, space: auction.space, amount: auction.highestBid });
-    s.auction = null;
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -814,8 +742,8 @@ function goBankrupt(ctx: Ctx, player: PlayerState, creditor: Creditor, reason: D
       const property = getProperty(s, index);
       property.owner = null;
       property.mortgaged = false;
+      // Das Feld ist wieder frei und kann zum vollen Preis gekauft werden (keine Versteigerung).
       emit(ctx, { type: "propertyReturned", space: index, from: player.id });
-      s.auctionQueue.push(index);
     }
     for (const card of player.jailCards) {
       s.decks[getCard(card).deck].push(card);
@@ -844,9 +772,8 @@ const NO_RANDOM: Rng = {
 /**
  * Nimmt einen Spieler aus dem Spiel, auch wenn das Spiel gerade nicht auf ihn wartet
  * (online: Der Host entscheidet so, wenn jemand nicht zurückkommt).
- * Sein offenes Handelsangebot verfällt, er scheidet aus einer Versteigerung aus (war er Höchstbietender,
- * gilt sein Gebot nicht mehr), ein Hypothekenentscheid von ihm verfällt. Danach geht er bankrott an die Bank:
- * Gebäude zurück, Bargeld an die Bank, seine Felder werden versteigert, Schulden von und an ihn verfallen.
+ * Sein offenes Handelsangebot verfällt, ein Hypothekenentscheid von ihm verfällt. Danach geht er bankrott
+ * an die Bank: Gebäude zurück, Bargeld an die Bank, seine Felder sind wieder frei, Schulden von und an ihn verfallen.
  */
 export function removePlayer(state: GameState, playerId: PlayerId): ActionResult {
   if (state.winner !== null) return { ok: false, error: makeError("gameOver") };
@@ -863,21 +790,6 @@ export function removePlayer(state: GameState, playerId: PlayerId): ActionResult
     closeTrade(ctx, s.trade.from === player.id ? "tradeCancelled" : "tradeRejected");
   }
   if (s.mortgageDecision?.player === player.id) s.mortgageDecision = null;
-
-  const auction = s.auction;
-  if (auction) {
-    const seat = auction.bidders.indexOf(player.id);
-    if (seat >= 0) {
-      auction.bidders.splice(seat, 1);
-      if (seat < auction.next) auction.next -= 1;
-      if (auction.next >= auction.bidders.length) auction.next = 0;
-    }
-    if (auction.highestBidder === player.id) {
-      auction.highestBid = 0;
-      auction.highestBidder = null;
-    }
-    checkAuctionEnd(ctx);
-  }
 
   // «rent» als Grund: Das Geld geht an die Bank, nie in den Jackpot.
   goBankrupt(ctx, player, BANK, "rent");
@@ -899,15 +811,14 @@ function performTimeout(ctx: Ctx, player: PlayerState): void {
     if (player.money + liquidationValue(s, player.id) >= debt.amount) return raiseMoney(ctx, player, debt.amount);
     return goBankrupt(ctx, player, debt.creditor, debt.reason);
   }
-  if (s.auction) return passBid(ctx, player);
   switch (s.turn.phase) {
     case "preRoll":
-      return roll(ctx);
+      // Im Gefängnis: den Zug aussitzen (kostet nichts).
+      return player.inJail ? endTurn(ctx, player) : roll(ctx);
     case "buy":
       return declineProperty(ctx, player);
     case "postRoll":
-      emit(ctx, { type: "turnEnded", player: player.id });
-      return advanceTurn(ctx);
+      return endTurn(ctx, player);
   }
 }
 
@@ -936,7 +847,7 @@ function raiseMoney(ctx: Ctx, player: PlayerState, target: number): void {
 }
 
 // ---------------------------------------------------------------------------
-// Nach jeder Aktion: Schulden begleichen, Versteigerungen starten, Zug weitergeben, Gewinner
+// Nach jeder Aktion: Schulden begleichen, Zug weitergeben, Gewinner
 // ---------------------------------------------------------------------------
 
 function settle(ctx: Ctx): void {
@@ -955,9 +866,6 @@ function settle(ctx: Ctx): void {
       payDebt(ctx, debt);
       continue;
     }
-    if (s.auction) return;
-    const next = s.auctionQueue.shift();
-    if (next !== undefined) return startAuction(ctx, next, "bankruptcy");
     if (getCurrentPlayer(s).bankrupt) {
       advanceTurn(ctx);
       continue;
@@ -974,9 +882,20 @@ function declareWinner(ctx: Ctx, winner: PlayerState | undefined): void {
   s.trade = null;
   s.mortgageDecision = null;
   s.debts = [];
-  s.auction = null;
-  s.auctionQueue = [];
   emit(ctx, { type: "gameWon", player: winner.id });
+}
+
+/**
+ * Zug beenden. Im Gefängnis vor dem Würfeln heisst das: einen Zug aussitzen (statt Kaution oder Freikarte);
+ * zu Beginn des nächsten eigenen Zugs ist man dann frei (advanceTurn).
+ */
+function endTurn(ctx: Ctx, player: PlayerState): void {
+  if (player.inJail && ctx.s.turn.phase === "preRoll") {
+    player.jailTurns = JAIL_TURNS;
+    emit(ctx, { type: "jailTurnServed", player: player.id });
+  }
+  emit(ctx, { type: "turnEnded", player: player.id });
+  advanceTurn(ctx);
 }
 
 function advanceTurn(ctx: Ctx): void {
@@ -990,5 +909,8 @@ function advanceTurn(ctx: Ctx): void {
   }
   s.turnNumber += 1;
   s.turn = freshTurn();
-  emit(ctx, { type: "turnStarted", player: getCurrentPlayer(s).id, turnNumber: s.turnNumber });
+  const player = getCurrentPlayer(s);
+  emit(ctx, { type: "turnStarted", player: player.id, turnNumber: s.turnNumber });
+  // Zug im Gefängnis ausgesessen: frei, dieser Zug läuft normal.
+  if (player.inJail && player.jailTurns >= JAIL_TURNS) leaveJail(ctx, player, "served");
 }

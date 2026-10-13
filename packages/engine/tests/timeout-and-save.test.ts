@@ -17,10 +17,8 @@ describe("Zeitlimit (timeout)", () => {
     ({ state } = act(state, "p1", { type: "timeout" }, dice([1, 2])));
     expect(state.turn.phase).toBe("buy");
     ({ state } = act(state, "p1", { type: "timeout" }));
-    expect(state.auction?.space).toBe(3);
-    ({ state } = act(state, "p2", { type: "timeout" }));
-    ({ state } = act(state, "p1", { type: "timeout" }));
     expect(state.properties[3]?.owner).toBeNull();
+    expect(state.turn.phase).toBe("postRoll");
     const { state: after, events } = act(state, "p1", { type: "timeout" });
     expect(eventsOfType(events, "timeout")).toHaveLength(1);
     expect(eventsOfType(events, "turnEnded")).toHaveLength(1);

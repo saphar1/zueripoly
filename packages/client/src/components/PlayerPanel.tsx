@@ -6,7 +6,6 @@ import {
   COLOR_GROUPS,
   GROUP_STREETS,
   JAIL_INDEX,
-  MAX_JAIL_ROLLS,
   STATION_INDICES,
   UTILITY_INDICES,
   countBuildings,
@@ -180,7 +179,7 @@ export function PlayerPanel({
             {player.bankrupt ? (
               "Ausgeschieden"
             ) : player.inJail ? (
-              `Versuch ${player.jailTurns + 1} von ${MAX_JAIL_ROLLS}`
+              player.jailTurns > 0 ? "Im nächsten Zug frei" : "Sitzt im Gefängnis"
             ) : (
               <>
                 <span className="panel__label">Feld</span>{" "}
