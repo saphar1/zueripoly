@@ -104,7 +104,11 @@ Teil B: Freunde spielen von eigenen Geräten
 Verschoben auf Phase 6: Spielstände auf dem Server speichern (zusammen mit «Spielstand fortsetzen»).
 
 ## Phase 6: Feinschliff
-- [ ] Zuerst: Rückmeldungen aus dem ersten Spiel mit Freunden (Handy über Mobilfunk auf der Pages-Adresse, Handy im WLAN mit `npm start`) aufnehmen und beheben
+Zuerst: Rückmeldungen aus dem ersten Spiel mit Freunden (2026-10-13, iPhone, Safari, Render-Adresse):
+- [ ] Zoom-Leiste (− 100 % +) liegt auf dem Brett und verdeckt die untere rechte Ecke (Felder um «Start»). Sie muss neben/unter das Brett, nicht darüber (`BoardViewport`).
+- [ ] Handy-Ansicht wirkt gedrängt und unübersichtlich: Tafel, Haltestellentafel, Feldkarte und Spielerliste stapeln sich lang untereinander. Vorschlag machen (z. B. eine kompakte Tafel direkt unter dem Brett, Haltestellentafel und Feldkarte zusammenlegen, Spielerliste einklappbar), als Entwurf zeigen und Okay abwarten.
+- [ ] Zurück: Im Spiel gibt es keinen Weg zurück ins Hauptmenü, und die Zurück-Geste/-Taste des Browsers verlässt die Seite. Browser-Verlauf je Bildschirm (`history.pushState` in `App.tsx`), im Spiel «Spiel verlassen» mit Rückfrage.
+- [ ] Bauen ist schwer zu finden: Es geht nur über das Antippen eines eigenen Felds (Besitzkarte → «Haus bauen»). Sichtbarer Hinweis, sobald man eine ganze Farbgruppe besitzt (z. B. Knopf «Bauen» auf der Tafel, der die passende Besitzkarte öffnet), und kurzer Hinweis in der Spielanleitung.
 - [ ] Animationen (Würfel, Figurenzug, Karte, Geldfluss), `prefers-reduced-motion`
 - [ ] Sounds und Stummschalter
 - [ ] Mobile-Feinschliff
