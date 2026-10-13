@@ -78,7 +78,7 @@ Liegt die Seite woanders als der Server (GitHub Pages → Render), wird die Serv
 | `VITE_ZUERIPOLY_SERVER` | Bauen | Adresse des Spielservers, wenn nicht dieselbe wie die Seite |
 | `ZUERIPOLY_SERVER` | Entwickeln | Ziel der Vite-Weiterleitung (Tests) |
 
-Weitere HTTP-Adressen des Servers neben `/socket.io`: `/healthz` (immer «ok», für Render), `/api/lan-addresses` (WLAN-Adressen, nur für Anfragen vom eigenen PC, sonst wie jede unbekannte Adresse), sonst die gebaute Seite (`static-files.ts`: nur GET/HEAD, nur Dateien im Ordner, `/assets/*` ein Jahr zwischenspeichern, alles andere `no-cache`). Ohne gebaute Seite (oder mit `--dev` aus `npm run dev`) antwortet er mit einem kurzen Text.
+Weitere HTTP-Adressen des Servers neben `/socket.io`: `/healthz` (immer «ok», für Render), `/api/lan-addresses` (WLAN-Adressen, nur für Anfragen vom eigenen PC: Loopback, ohne Proxy-Kopfzeilen, Host `localhost`; sonst wie jede unbekannte Adresse), sonst die gebaute Seite (`static-files.ts`: nur GET/HEAD, nur Dateien im Ordner, `/assets/*` ein Jahr zwischenspeichern, alles andere `no-cache`). Ohne gebaute Seite (oder mit `--dev` aus `npm run dev`) antwortet er mit einem kurzen Text.
 
 Anfragen haben immer eine Antwort (Socket.IO «ack»): `{ ok: true, … }` oder `{ ok: false, error }`. Die Typen stehen in `packages/server/src/protocol.ts`; der Client importiert sie über `@zueripoly/server/protocol`.
 

@@ -73,7 +73,7 @@ Vorarbeit: `docs/engine.md` (Ablauf, `getWaitingFor`, `getLegalActions`, `canPro
 
 **Ergebnis Bot-Liga** (200 Partien je Paarung, alle beendet): clever gegen einfach 88 % Siege für clever, 1 clever gegen 3 einfach 79 % (gleich stark wären 25 %). Tabelle in `docs/bots.md`.
 
-## Phase 5: Server und Online  ← Teil A fertig, Teil B: Code fertig, Hochladen und Einrichten läuft
+## Phase 5: Server und Online  ✓ abgeschlossen
 Vorarbeit: `docs/online.md` (Ablauf, Nachrichten, Grenzen), `docs/engine.md` (`removePlayer`).
 
 Teil A: lokal lauffähig (Server und Client auf einem PC, mehrere Browserfenster) ✓
@@ -95,15 +95,16 @@ Teil B: Freunde spielen von eigenen Geräten
 - [x] WLAN: Startmeldung und Lobby zeigen die Adresse des Wegs ins Internet (virtuelle Adapter stören nicht), `/api/lan-addresses` nur für den eigenen PC
 - [x] GitHub Pages: Pfad `/zueripoly/` (`ZUERIPOLY_BASE`), Serveradresse beim Bauen (`VITE_ZUERIPOLY_SERVER`), Text beim Aufwecken des Servers, Workflow `.github/workflows/pages.yml` (testet, baut, veröffentlicht)
 - [x] Render: `render.yaml` (Gratisstufe, Frankfurt), `.node-version`; Server erlaubt fremde Seiten nur aus `ZUERIPOLY_ORIGINS`
-- [x] Tests: `static.test.ts`, `lan.test.ts`, `origin.test.ts` (65 Server-Tests), Durchspiel-Test `--online --prod` (Pages + Render nachgespielt) bis zum Gewinner
-- [ ] Commits auf die neue E-Mail umschreiben, GitHub-Repository (öffentlich) anlegen und hochladen
-- [ ] Pages und Render einrichten (Anleitung in `docs/online.md`), beide Adressen prüfen
-- [ ] Mit Freunden testen: Handy über Mobilfunk (Internet), Handy im WLAN (`npm start`)
-- [ ] Abschluss: Doku, Commit «Phase 5: …»
+- [x] Tests: `static.test.ts`, `lan.test.ts`, `origin.test.ts` (67 Server-Tests), Durchspiel-Test `--online --prod` (Pages + Render nachgespielt) bis zum Gewinner
+- [x] Commits auf `eekk7439@gmail.com` umgeschrieben, Repository `github.com/saphar1/zueripoly` (öffentlich) hochgeladen
+- [x] Pages (**https://saphar1.github.io/zueripoly/**) und Render (**https://zueripoly.onrender.com**) eingerichtet; Serveradresse fest im Workflow
+- [x] Live geprüft: Solo auf Pages; Online mit zwei Fenstern (Desktop + Handy) über Pages und Render, Beitritt über den Link, beide sehen denselben Stand, keine Konsolenfehler. Gefunden und behoben: Hinter dem Proxy von Render galt jede Anfrage als «eigener PC» (`isLocalRequest`)
+- [x] Abschluss: Doku, Commit «Phase 5: …»
 
 Verschoben auf Phase 6: Spielstände auf dem Server speichern (zusammen mit «Spielstand fortsetzen»).
 
 ## Phase 6: Feinschliff
+- [ ] Zuerst: Rückmeldungen aus dem ersten Spiel mit Freunden (Handy über Mobilfunk auf der Pages-Adresse, Handy im WLAN mit `npm start`) aufnehmen und beheben
 - [ ] Animationen (Würfel, Figurenzug, Karte, Geldfluss), `prefers-reduced-motion`
 - [ ] Sounds und Stummschalter
 - [ ] Mobile-Feinschliff
