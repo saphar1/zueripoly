@@ -47,3 +47,39 @@
   font-size: max(11px, calc(var(--u) * 0.19));
   line-height: 1.3;
 }
+
+/* Schmal (Handy, über der Tafel): Figur links, daneben Kopfzeile, Halt und Hinweis. */
+.sign--compact {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+}
+
+.sign--compact .sign__head {
+  display: contents;
+  --token-size: 34px;
+}
+
+.sign--compact .token {
+  grid-row: 1 / span 3;
+  align-self: start;
+  margin-top: 2px;
+}
+
+.sign--compact .sign__line {
+  font-size: 13px;
+}
+
+.sign--compact .sign__label {
+  display: none;
+}
+
+.sign--compact .sign__stop {
+  font-size: 20px;
+}
+
+.sign--compact .sign__note {
+  margin-top: 2px;
+  font-size: 13px;
+}

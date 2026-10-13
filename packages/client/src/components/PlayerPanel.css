@@ -238,22 +238,50 @@
   white-space: nowrap;
 }
 
+/* Auf-/Zuklappen gibt es nur auf dem Handy. */
+.panel__toggle {
+  display: none;
+}
+
 @media (max-width: 899px) {
   .panel__head,
   .panel__deeds {
     padding-inline: var(--space-3);
   }
 
+  /* Zugeklappt: eine Zeile mit Figur, Name, wichtigen Zuständen und Geld. */
   .panel__head {
-    --token-size: 40px;
+    gap: var(--space-2);
+    padding-block: var(--space-2);
+    cursor: pointer;
+    --token-size: 32px;
   }
 
   .panel__name,
   .panel__money {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .panel__money {
     min-width: 0;
+  }
+
+  .panel:not(.panel--open) :is(.panel__where, .panel__deeds, .chip--bot, .chip--turn) {
+    display: none;
+  }
+
+  .panel__toggle {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: var(--line-thin) solid currentColor;
+    background: transparent;
+    color: inherit;
+    font-size: 16px;
+    cursor: pointer;
+    --icon-stroke: currentColor;
   }
 }

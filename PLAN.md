@@ -104,13 +104,27 @@ Teil B: Freunde spielen von eigenen Geräten
 Verschoben auf Phase 6: Spielstände auf dem Server speichern (zusammen mit «Spielstand fortsetzen»).
 
 ## Phase 6: Feinschliff
-Zuerst: Rückmeldungen aus dem ersten Spiel mit Freunden (2026-10-13, iPhone, Safari, Render-Adresse):
-- [ ] Zoom-Leiste (− 100 % +) liegt auf dem Brett und verdeckt die untere rechte Ecke (Felder um «Start»). Sie muss neben/unter das Brett, nicht darüber (`BoardViewport`).
-- [ ] Handy-Ansicht wirkt gedrängt und unübersichtlich: Tafel, Haltestellentafel, Feldkarte und Spielerliste stapeln sich lang untereinander. Vorschlag machen (z. B. eine kompakte Tafel direkt unter dem Brett, Haltestellentafel und Feldkarte zusammenlegen, Spielerliste einklappbar), als Entwurf zeigen und Okay abwarten.
-- [ ] Zurück: Im Spiel gibt es keinen Weg zurück ins Hauptmenü, und die Zurück-Geste/-Taste des Browsers verlässt die Seite. Browser-Verlauf je Bildschirm (`history.pushState` in `App.tsx`), im Spiel «Spiel verlassen» mit Rückfrage.
-- [ ] Bauen ist schwer zu finden: Es geht nur über das Antippen eines eigenen Felds (Besitzkarte → «Haus bauen»). Sichtbarer Hinweis, sobald man eine ganze Farbgruppe besitzt (z. B. Knopf «Bauen» auf der Tafel, der die passende Besitzkarte öffnet), und kurzer Hinweis in der Spielanleitung.
-- [ ] Animationen (Würfel, Figurenzug, Karte, Geldfluss), `prefers-reduced-motion`
-- [ ] Sounds und Stummschalter
-- [ ] Mobile-Feinschliff
-- [ ] Spielstand speichern und fortsetzen (lokal und online; online: Server speichert Räume als JSON in `saves/`)
-- [ ] Hosting verfeinern: Räume über Neustarts von Render retten (Spielstände speichern), eventuell eigene Domain (ca. CHF 7–12 pro Jahr), eigenes Favicon
+Plan in Teilen (jeder Teil lauffähig, Zwischenstand-Commit). **Entscheide 2026-10-13:** Online-Räume überleben Neustarts über einen verschlüsselten Spielstand im Browser der Spieler (AES-GCM, Schlüssel nur auf dem Server); Töne im Browser erzeugt (Web Audio, keine Dateien); keine eigene Domain.
+
+Teil A: Rückmeldungen aus dem ersten Spiel mit Freunden (2026-10-13, iPhone, Safari) ✓
+- [x] Zoom-Leiste verdeckte die Ecke um «Start»: jetzt eigene Zeile unter dem Brett (`BoardViewport`)
+- [x] Handy-Ansicht neu (Entwurf `entwurf.html?ansicht=spiel` am 2026-10-13 freigegeben): Kopfleiste «ZüriPoly · Zug n» mit «Menü», Brett, schmale Haltestellentafel, kompakte Tafel, ein Platz für Karte/Besitzkarte, Spieler als aufklappbare Zeilen, Protokoll eingeklappt
+- [x] Zurück: Browser-Verlauf mit zwei Einträgen (`screen-history.ts`); Zurück-Geste führt ins Menü, im Spiel und Online-Raum zuerst Rückfrage; «Menü» in der Kopfleiste (Handy)
+- [x] Bauen sichtbar: Knopf «Bauen · Farbe» auf der Tafel öffnet die Besitzkarte; Satz in der Kurzanleitung (README)
+- [x] Durchspiel-Tests (lokal, solo, online) prüfen Zurück-Geste und bauen über den neuen Knopf
+
+Teil R: Regeländerungen (Wunsch des Entwicklers, 2026-10-13)
+- [ ] Steuerfelder günstiger: Staats- und Gemeindesteuer 100 CHF (statt 200), Serafe-Rechnung 50 CHF (statt 100)
+- [ ] Gefängnis: einen Zug ganz aussetzen (kein Pasch-Versuch), danach frei; Kaution oder Freikarte holen sofort raus
+- [ ] Versteigerungen ganz abschaffen: nicht gekaufte Felder bleiben frei; bei Bankrott an die Bank gehen Felder frei zurück
+- [ ] Bots, Client, Server, Tests, Doku (`regeln.md`, `brett.md`, `engine.md`, `bots.md`) anpassen; Bot-Liga prüfen
+
+Teil B: Spielstand speichern und fortsetzen
+- [ ] Lokal und Solo: automatisch in `localStorage`, «Fortsetzen» im Hauptmenü, Neuladen führt zurück ins Spiel
+- [ ] Online: verschlüsselter Spielstand (`room-save.ts`, `ZUERIPOLY_SAVE_KEY`), Wiederherstellen nach Server-Neustart, Tests, Durchspiel-Test `--restart`
+
+Teil C: Ton, Bewegung, Handy, Kleines
+- [ ] Töne (Web Audio) und Stummschalter (Kopfleiste und Hauptmenü)
+- [ ] Bewegung: Betragsmarke beim Kontostand, Häuser setzen sich; `prefers-reduced-motion`
+- [ ] Mobile-Feinschliff Safari (`100dvh`, Safe Area, Eingabefelder ≥ 16 px), alle Bildschirme bei 390 × 844 und 375 × 667
+- [ ] Favicon, Bot-Tempo «normal / schnell» in der Solo-Lobby

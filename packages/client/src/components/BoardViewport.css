@@ -18,12 +18,18 @@
   touch-action: pan-x pan-y;
 }
 
-.viewport__controls {
-  position: absolute;
-  right: var(--space-3);
-  bottom: var(--space-3);
-  z-index: 10;
+.viewport--zoomable {
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+/* Eigene Zeile unter dem Brett, nicht darüber: sonst verdeckt sie die Felder um «Start». */
+.viewport__controls {
+  display: flex;
+  /* Rechter Rand bündig mit dem Brett (der Rahmen hat 6 px Platz für den Versatz). */
+  margin-right: 6px;
   align-items: center;
   border: var(--line-thick) solid var(--color-ink);
   background: var(--color-paper);

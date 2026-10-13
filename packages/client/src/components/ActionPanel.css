@@ -107,9 +107,18 @@
 
 .tafel__more {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-3);
   padding-top: var(--space-3);
   border-top: var(--line-thin) solid var(--color-ink);
+}
+
+/* «Bauen · Farbe»: Farbstreifen wie auf dem Feld, öffnet die Besitzkarte */
+.tafel__swatch {
+  width: 14px;
+  height: 14px;
+  border: var(--line-thin) solid var(--color-ink);
+  background: var(--group);
 }
 
 /* Angebot: zwei Zeilen wie im Fahrplan */
@@ -153,4 +162,30 @@
 .offer__lift input {
   margin-top: 2px;
   accent-color: var(--color-tram);
+}
+
+/* Handy: Tafel kompakter, damit Entscheid und Knöpfe ohne Scrollen unter dem Brett stehen. */
+@media (max-width: 899px) {
+  .tafel__head {
+    padding: var(--space-2) var(--space-3);
+    --token-size: 34px;
+  }
+
+  .tafel__name {
+    font-size: 20px;
+  }
+
+  .tafel__body {
+    gap: var(--space-2);
+    padding: var(--space-3);
+  }
+
+  .tafel__prompt {
+    font-size: 15px;
+  }
+
+  .tafel__more {
+    gap: var(--space-2);
+    padding-top: var(--space-2);
+  }
 }

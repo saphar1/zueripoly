@@ -1,6 +1,6 @@
 // Bildschirme der App: Hauptmenü → Lobby (lokal oder solo) → Spiel, oder Online-Start → Raum.
-// Einfacher Zustand, kein Router nötig.
-import { useState } from "react";
+// Einfacher Zustand, kein Router nötig; die Zurück-Geste regelt screen-history.ts.
+import { useEffect, useRef, useState } from "react";
 import type { GameConfig } from "@zueripoly/engine";
 import { createGame, createRandomSeed, createSeededRng } from "@zueripoly/engine";
 import type { SeatGrant } from "@zueripoly/server/protocol";
@@ -8,6 +8,7 @@ import { ROOM_LINK_PARAM } from "@zueripoly/server/protocol";
 import type { GameSession } from "./game/use-local-game";
 import { closeOnlineClient, openOnlineClient } from "./online/connection";
 import { loadWindowSeat } from "./online/seat-storage";
+import { useScreenHistory } from "./screen-history";
 import { GameScreen } from "./screens/GameScreen";
 import { Lobby, type LobbyMode } from "./screens/Lobby";
 import { MainMenu } from "./screens/MainMenu";
@@ -40,6 +41,10 @@ export function App() {
   const [screen, setScreen] = useState<Screen>(firstScreen);
   // Letzte Einstellungen je Spielart bleiben für «Nochmals spielen» und die Lobby erhalten.
   const [lastConfig, setLastConfig] = useState<Record<LobbyMode, GameConfig | null>>({ local: null, solo: null });
+  // Zurück-Geste im Spiel oder Raum: Rückfrage «Spiel verlassen?» öffnen (jede Erhöhung einmal).
+  const [leaveAsk, setLeaveAsk] = useState(0);
+  const screenRef = useRef(screen);
+  screenRef.current = screen;
 
   const start = (mode: LobbyMode, config: GameConfig) => {
     setLastConfig((current) => ({ ...current, [mode]: config }));
@@ -50,6 +55,16 @@ export function App() {
     closeOnlineClient();
     setScreen({ kind: "menu" });
   };
+
+  const syncHistory = useScreenHistory({
+    inMenu: () => screenRef.current.kind === "menu",
+    onBack: () => {
+      const kind = screenRef.current.kind;
+      if (kind === "game" || kind === "room") setLeaveAsk((n) => n + 1);
+      else toMenu();
+    },
+  });
+  useEffect(() => syncHistory(screen.kind !== "menu"), [screen.kind, syncHistory]);
 
   switch (screen.kind) {
     case "menu":
@@ -78,6 +93,7 @@ export function App() {
           session={screen.session}
           onNewGame={() => (config ? start(screen.mode, config) : setScreen({ kind: "lobby", mode: screen.mode }))}
           onMenu={toMenu}
+          leaveAsk={leaveAsk}
         />
       );
     }
@@ -91,6 +107,13 @@ export function App() {
         />
       );
     case "room":
-      return <OnlineRoom client={openOnlineClient()} resume={screen.resume} onExit={() => setScreen({ kind: "online", code: "" })} />;
+      return (
+        <OnlineRoom
+          client={openOnlineClient()}
+          resume={screen.resume}
+          leaveAsk={leaveAsk}
+          onExit={() => setScreen({ kind: "online", code: "" })}
+        />
+      );
   }
 }

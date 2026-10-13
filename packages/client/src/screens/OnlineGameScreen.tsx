@@ -11,7 +11,7 @@ import type { PlayerPresence } from "../components/PlayerPanel";
 import { useOnlineGame } from "../game/use-online-game";
 import type { OnlineClient } from "../online/connection";
 import { useServerClock } from "../online/use-server-clock";
-import { GameView, LeaveGame } from "./GameView";
+import { GameView } from "./GameView";
 
 interface OnlineGameScreenProps {
   client: OnlineClient;
@@ -19,9 +19,11 @@ interface OnlineGameScreenProps {
   /** Erster Spielstand (beim Start oder nach dem Wiederverbinden). */
   first: GameUpdate;
   onLeave: () => void;
+  /** Zurück-Geste des Browsers (Zähler). */
+  leaveAsk: number;
 }
 
-export function OnlineGameScreen({ client, room, first, onLeave }: OnlineGameScreenProps) {
+export function OnlineGameScreen({ client, room, first, onLeave, leaveAsk }: OnlineGameScreenProps) {
   const game = useOnlineGame(client, first);
   const { state, online, act } = game;
   const me = room.you;
@@ -85,12 +87,13 @@ export function OnlineGameScreen({ client, room, first, onLeave }: OnlineGameScr
         </>
       }
       leave={
-        state.winner ? null : (
-          <LeaveGame
-            onLeave={onLeave}
-            warning={`Wirklich aussteigen? Du kommst nicht mehr auf deinen Platz zurück. ${isHost ? "Ein anderer Spieler wird Host und " : ""}${isHost ? "entscheidet" : `${host?.name ?? "Der Host"} entscheidet`}, ob ein Computer für dich weiterspielt.`}
-          />
-        )
+        state.winner
+          ? null
+          : {
+              onLeave,
+              askToken: leaveAsk,
+              warning: `Wirklich aussteigen? Du kommst nicht mehr auf deinen Platz zurück. ${isHost ? "Ein anderer Spieler wird Host und " : ""}${isHost ? "entscheidet" : `${host?.name ?? "Der Host"} entscheidet`}, ob ein Computer für dich weiterspielt.`,
+            }
       }
     />
   );

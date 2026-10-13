@@ -3,11 +3,22 @@
   background: var(--color-paper);
 }
 
+/* Kopfzeile = Knopf zum Auf- und Zuklappen (summary ohne Browser-Pfeil). */
 .log__head {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
   padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  list-style: none;
+}
+
+.log__head::-webkit-details-marker {
+  display: none;
+}
+
+.log[open] .log__head {
   border-bottom: var(--line-thick) solid var(--color-ink);
 }
 
@@ -15,8 +26,25 @@
   font-size: 20px;
 }
 
-.log__head span {
+.log__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   font-size: 13px;
+}
+
+.log__toggle .icon {
+  font-size: 16px;
+}
+
+/* Zugeklappt: die letzte Meldung, eine Zeile */
+.log__latest {
+  flex-basis: 100%;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .log__list {

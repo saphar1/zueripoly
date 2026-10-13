@@ -69,6 +69,14 @@ try {
   for (let money = 1500; money < START_MONEY; money += 100) await page.getByRole("button", { name: "+100", exact: true }).click();
   await page.getByRole("button", { name: "Losfahren" }).click();
 
+  // Zurück-Geste im Spiel: Rückfrage statt Seite verlassen, «Weiterspielen» bleibt im Spiel.
+  await page.goBack();
+  const ask = page.locator(".game__leave-side .game__leave-ask");
+  await ask.waitFor({ timeout: 5000 });
+  await ask.getByRole("button", { name: "Weiterspielen" }).click();
+  if ((await page.locator(".tafel").count()) === 0) throw new Error("Nach der Zurück-Geste ist das Spiel weg.");
+  console.log("Zurück-Geste: Rückfrage erscheint, Weiterspielen bleibt im Spiel.");
+
   if (SOLO) {
     // Erste Bot-Tafel mit normaler Denkpause festhalten, danach im Test schnell weiter.
     for (let i = 0; i < 30; i++) {

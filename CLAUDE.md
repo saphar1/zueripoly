@@ -81,7 +81,16 @@ Design-Prüfung (Phase 3 und später): Screenshots (Playwright als Dev-Abhängig
 - **Phase 3 abgeschlossen**: Design freigegeben (2026-10-12), lokal spielbar von Anfang bis Gewinner (Menü, Lobby, Spiel mit allen Entscheidungen, Handel, Zoom auf dem Handy). Durchspiel-Test der Oberfläche: `npm run playtest -w @zueripoly/client`.
 - **Phase 4 abgeschlossen**: Computergegner «einfach» und «clever», Solomodus mit 1–5 Bots. 200 Bot-Partien in `npm test` (alle enden, clever schlägt einfach im Zweikampf in rund 90 %). Details in `docs/bots.md`.
 - **Phase 5, Teil A abgeschlossen**: Spielserver mit Räumen, Lobby, Wiederverbinden und Host-Entscheiden; Online-Spiel im Browser, lokal mit mehreren Fenstern getestet. Details in `docs/online.md`.
-- **Phase 5 abgeschlossen** (Teil B 2026-10-13): Freunde spielen von eigenen Geräten, alles gratis: Seite auf GitHub Pages (https://saphar1.github.io/zueripoly/), Spielserver auf Render (https://zueripoly.onrender.com, Frankfurt), dazu gleiches WLAN (`npm start`). Live mit zwei Fenstern geprüft. **Nächster Schritt: Phase 6** (zuerst Rückmeldungen vom Spiel mit Freunden).
+- **Phase 5 abgeschlossen** (Teil B 2026-10-13): Freunde spielen von eigenen Geräten, alles gratis: Seite auf GitHub Pages (https://saphar1.github.io/zueripoly/), Spielserver auf Render (https://zueripoly.onrender.com, Frankfurt), dazu gleiches WLAN (`npm start`). Live mit zwei Fenstern geprüft.
+- **Phase 6 läuft**: Teil A (Rückmeldungen vom Spiel mit Freunden) fertig. Nächster Schritt: Teil R (Regeländerungen), siehe `PLAN.md`.
+
+### Feinschliff (Phase 6)
+- Stand: Teil A (Rückmeldungen) fertig; als Nächstes Teil R (Regeländerungen), dann B (Speichern), C (Ton, Bewegung, Handy). Details in `PLAN.md`.
+- Zurück-Geste: `screen-history.ts` hält genau zwei Verlaufseinträge, «base» (Hauptmenü) und «inner» (alles andere). `App.tsx` ruft `syncHistory` bei jedem Bildschirmwechsel; die Zurück-Geste im Spiel/Raum erhöht `leaveAsk`, die Bildschirme reagieren mit `useSignal` (Rückfrage öffnen, nach Spielende direkt ins Menü, in der Online-Lobby Raum verlassen).
+- `GameView` bekommt `leave` als Daten (`LeaveOptions`), nicht als Element, und zeigt «Spiel verlassen» zweimal: Handy in der Kopfleiste (`.game__bar`, Knopf «Menü»), Desktop rechts unten (`.game__leave-side`); CSS blendet je eines aus.
+- Handy-Ansicht (unter 900 px): Reihenfolge `bar, board, news, panel, below, side` in `GameScreen.css`. `Sign compact` = schmale Haltestellentafel; `PlayerPanel` zugeklappt nur Figur/Name/Geld (`.panel--open`, Knopf `.panel__toggle`); `GameLog` ist ein `<details>`, auf dem Handy zu Beginn zu.
+- Bauen: `ActionPanel` zeigt «Bauen · Farbe» (`.tafel__build`) für jede Gruppe mit legalem `buildHouse`, Klick → `onShowSpace` → `GameView` wählt das Feld (Besitzkarte mit `PropertyActions`). Der Durchspiel-Test baut über diesen Knopf.
+- Entwurf der ganzen Spielansicht mit Beispielstand: `entwurf.html?ansicht=spiel` (`screens/GameDraft.tsx`); Screenshots: `npm run screenshots -w @zueripoly/client -- "entwurf.html?ansicht=spiel"` (dazu Handy-Zustände bauen, offen, Menü).
 
 ### Freunde spielen (Phase 5, Teil B)
 - Server (`server.ts`): neben `/socket.io` noch `/healthz` (für Render), `/api/lan-addresses` (nur für Anfragen vom eigenen PC, `isLocalRequest`) und mit `clientDir` die gebaute Seite (`static-files.ts`, ohne Bibliothek: nur GET/HEAD, nur Dateien im Ordner, `/assets/*` immutable, sonst `no-cache`). `index.ts` liefert `packages/client/dist` aus, ausser mit `--dev` (aus `npm run dev`).

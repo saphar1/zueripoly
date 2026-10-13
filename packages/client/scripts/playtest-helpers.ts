@@ -77,9 +77,32 @@ export async function randomStep(page: Page, state: Exclude<Readiness, "end">): 
   if (Math.random() < 0.05 && (await page.getByRole("button", { name: "Handeln" }).count()) > 0) {
     return { traded: await trade(page) };
   }
-  // Oft bauen (falls möglich), selten auslösen: so endet eine Partie schneller.
-  if (Math.random() < 0.3 && (await page.locator(".tafel__hint", { hasText: "Feld auf dem Brett anklicken" }).count()) > 0) {
-    if (await manage(page, Math.random() < 0.9 ? /bauen/ : /Auslösen/, true)) return { traded: false };
+  // Oft bauen über den Knopf «Bauen · Farbe» der Tafel (öffnet die Besitzkarte): so endet eine Partie schneller.
+  const build = page.locator(".tafel__build:not(:disabled)");
+  const groups = await build.count();
+  if (Math.random() < 0.3 && groups > 0) {
+    await build.nth(Math.floor(Math.random() * groups)).click();
+    const house = page.locator(".center__overlay .property-actions .button:not(:disabled)", { hasText: /bauen/ });
+    const shown = await house
+      .first()
+      .waitFor({ timeout: 3000 })
+      .then(() => true)
+      .catch(() => false);
+    if (!shown) {
+      // Online kann inzwischen etwas anderes passiert sein (Angebot, Zug der anderen). Nur ein Fehler,
+      // wenn die Tafel unverändert «Bauen» anbietet.
+      const stillOffered = (await build.count()) > 0 && (await page.locator('.tafel[aria-busy="true"]').count()) === 0;
+      if (stillOffered) throw new Error("«Bauen» auf der Tafel, aber auf der Besitzkarte kein Bauknopf.");
+      await page.keyboard.press("Escape");
+      return { traded: false };
+    }
+    await house.first().click();
+    await page.keyboard.press("Escape");
+    return { traded: false };
+  }
+  // Selten belastete Felder auslösen.
+  if (Math.random() < 0.03 && (await page.locator(".tafel__hint", { hasText: "Feld auf dem Brett anklicken" }).count()) > 0) {
+    if (await manage(page, /Auslösen/, true)) return { traded: false };
   }
   const buttons = page.locator(".tafel .tafel__actions .button:not(:disabled)");
   const labels = await buttons.allInnerTexts();

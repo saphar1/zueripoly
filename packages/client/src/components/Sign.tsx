@@ -15,9 +15,10 @@ export interface SignMessage {
   note?: string;
 }
 
-export function Sign({ token, line, label, stop, note }: SignMessage) {
+/** `compact`: schmale Zeile über der Tafel (Handy), ohne die kleine Zeile über dem Halt. */
+export function Sign({ token, line, label, stop, note, compact = false }: SignMessage & { compact?: boolean }) {
   return (
-    <div className="sign" role="status">
+    <div className={`sign${compact ? " sign--compact" : ""}`} role="status">
       <div className="sign__head">
         <Token token={token} />
         <span className="sign__line">{line}</span>

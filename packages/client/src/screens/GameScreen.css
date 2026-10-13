@@ -34,12 +34,11 @@
   min-width: 0;
 }
 
+/* Nur auf dem Handy: Kopfleiste, schmale Haltestellentafel und Platz für Karten unter dem Brett. */
+.game__bar,
+.game__news,
 .game__below {
   display: none;
-}
-
-.game__leave {
-  align-self: flex-start;
 }
 
 .game__leave-ask {
@@ -56,17 +55,21 @@
   font-weight: 600;
 }
 
-/* Handy und schmale Fenster: Brett, Tafel, dann Haltestellentafel und Karten, dann Spieler. */
+/* Handy und schmale Fenster, von oben nach unten: Kopfleiste (bleibt stehen), Brett mit Zoom,
+   Haltestellentafel, Tafel mit dem Entscheid, gezogene Karte oder Besitzkarte, Spieler, Protokoll. */
 @media (max-width: 899px) {
   .game {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;
     grid-template-areas:
+      "bar"
       "board"
+      "news"
       "panel"
       "below"
       "side";
-    padding: var(--space-4);
+    gap: var(--space-3);
+    padding: 0 var(--space-4) var(--space-5);
     --board-fit: calc(100vw - 2 * var(--space-4) - 10px);
   }
 
@@ -74,16 +77,69 @@
     position: static;
   }
 
+  .game__bar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-3);
+    grid-area: bar;
+    margin-inline: calc(-1 * var(--space-4));
+    padding: var(--space-2) var(--space-4);
+    border-bottom: var(--line-thick) solid var(--color-ink);
+    background: var(--color-paper);
+  }
+
+  .game__bar-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 800;
+  }
+
+  .game__bar-title .num {
+    font-weight: 600;
+  }
+
+  .game__bar .game__leave {
+    padding-block: var(--space-1);
+  }
+
+  .game__bar .game__leave-ask {
+    flex-basis: 100%;
+  }
+
+  /* Tafel und Karten rechnen in Feldbreiten; ausserhalb des Bretts eine feste Grösse. */
+  .game__news {
+    display: block;
+    grid-area: news;
+    --u: 46px;
+  }
+
+  .game__news:empty,
+  .game__below:empty {
+    display: none;
+  }
+
   .game__below {
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
     grid-area: below;
-    /* Tafel und Karten rechnen in Feldbreiten; ausserhalb des Bretts eine feste Grösse. */
     --u: 46px;
   }
 
   .game__below .deed-card {
     width: auto;
+  }
+
+  .game__side {
+    gap: var(--space-4);
+  }
+
+  .game__leave-side {
+    display: none;
   }
 }

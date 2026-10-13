@@ -4,15 +4,18 @@ import { getWaitingFor } from "@zueripoly/engine";
 import { useBotTurns } from "../game/use-bot-turns";
 import { type GameSession, useLocalGame } from "../game/use-local-game";
 import { useTurnTimer } from "../game/use-turn-timer";
-import { GameView, LeaveGame } from "./GameView";
+import { useSignal } from "../screen-history";
+import { GameView } from "./GameView";
 
 interface GameScreenProps {
   session: GameSession;
   onNewGame: () => void;
   onMenu: () => void;
+  /** Zurück-Geste des Browsers (Zähler): fragt nach, ob man aussteigen will. */
+  leaveAsk: number;
 }
 
-export function GameScreen({ session, onNewGame, onMenu }: GameScreenProps) {
+export function GameScreen({ session, onNewGame, onMenu, leaveAsk }: GameScreenProps) {
   const game = useLocalGame(session);
   const { state, act } = game;
   const waiting = getWaitingFor(state);
@@ -23,6 +26,11 @@ export function GameScreen({ session, onNewGame, onMenu }: GameScreenProps) {
   // Das Zeitlimit gilt nur für Menschen (docs/regeln.md, Abschnitt 14).
   const secondsLeft = useTurnTimer(state.options.turnTimeLimit, state, game.busy || state.winner !== null || !human, () => {
     if (waiting && human) act(waiting, { type: "timeout" });
+  });
+
+  // Nach Spielende braucht es keine Rückfrage mehr.
+  useSignal(leaveAsk, () => {
+    if (state.winner) onMenu();
   });
 
   return (
@@ -45,7 +53,7 @@ export function GameScreen({ session, onNewGame, onMenu }: GameScreenProps) {
           </button>
         </div>
       }
-      leave={state.winner ? null : <LeaveGame onLeave={onMenu} warning="Wirklich aussteigen? Der Spielstand geht verloren." />}
+      leave={state.winner ? null : { onLeave: onMenu, askToken: leaveAsk, warning: "Wirklich aussteigen? Der Spielstand geht verloren." }}
     />
   );
 }

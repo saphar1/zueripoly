@@ -2,12 +2,13 @@
 // Zeigt, auf wen das Spiel wartet und was diese Person jetzt tun kann. Angeboten wird nur, was die Engine erlaubt.
 // Lokal bedient jeder Mensch am Gerät die Tafel. Online (`me` gesetzt) nur der eigene Platz;
 // wartet das Spiel auf jemand anderen, steht dort ein Satz zur Lage (wie bei Computergegnern).
-import { useEffect, useState, type ReactNode } from "react";
-import type { Action, GameState, PlayerId, PlayerState, SpaceIndex, TradeOffer, TradeSide } from "@zueripoly/engine";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import type { Action, ColorGroup, GameState, PlayerId, PlayerState, SpaceIndex, TradeOffer, TradeSide } from "@zueripoly/engine";
 import {
   BANK,
   BID_STEP,
   BOT_LEVEL_NAMES,
+  GROUP_NAMES,
   JAIL_FINE,
   MAX_JAIL_ROLLS,
   canProposeTrade,
@@ -41,6 +42,8 @@ interface ActionPanelProps {
   onAct: (action: Action, as?: PlayerId) => void;
   /** Knöpfe nach Spielende (Nochmals spielen, Hauptmenü …). */
   endActions: ReactNode;
+  /** Besitzkarte eines Felds öffnen (Knopf «Bauen»). */
+  onShowSpace?: (index: SpaceIndex) => void;
 }
 
 interface Choice {
@@ -68,6 +71,17 @@ function describeSide(side: TradeSide): string {
 
 function clock(seconds: number): string {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+/** Je Farbgruppe, in der jetzt gebaut werden darf, das erste baubare Feld. */
+function buildableGroups(legal: Action[]): [ColorGroup, SpaceIndex][] {
+  const groups = new Map<ColorGroup, SpaceIndex>();
+  for (const action of legal) {
+    if (action.type !== "buildHouse") continue;
+    const space = getPropertySpace(action.space);
+    if (space.kind === "street" && !groups.has(space.group)) groups.set(space.group, action.space);
+  }
+  return [...groups];
 }
 
 function ChoiceButtons({ choices, legal, disabled, onAct }: { choices: Choice[]; legal: Action[]; disabled: boolean; onAct: (a: Action) => void }) {
@@ -288,7 +302,18 @@ function watchStatus({ state, bot, disabled, canCancel, onAct }: WatchStatusProp
   return { label: "Am Zug", body: <p className="tafel__prompt">{name} verwaltet den Besitz und beendet dann den Zug.</p> };
 }
 
-export function ActionPanel({ state, busy, error, secondsLeft, me = null, waitingLabel, waitingNote, onAct, endActions }: ActionPanelProps) {
+export function ActionPanel({
+  state,
+  busy,
+  error,
+  secondsLeft,
+  me = null,
+  waitingLabel,
+  waitingNote,
+  onAct,
+  endActions,
+  onShowSpace,
+}: ActionPanelProps) {
   const waitingId = getWaitingFor(state);
   const [composing, setComposing] = useState(false);
   // Neuer Entscheid (anderer Spieler, Angebot verschickt): Handels-Tafel schliessen.
@@ -320,7 +345,14 @@ export function ActionPanel({ state, busy, error, secondsLeft, me = null, waitin
   const legal = getLegalActions(state, player.id);
   const disabled = busy;
   const ownsSomething = Object.values(state.properties).some((p) => p.owner === player.id);
-  const manageHint = ownsSomething ? "Bauen, verkaufen oder belasten: Feld auf dem Brett anklicken." : null;
+  // Bauen ist der wichtigste Schritt im Spiel, aber nur über die Besitzkarte erreichbar: darum ein Knopf je Farbgruppe.
+  const buildGroups = !watching && onShowSpace && (state.turn.phase === "preRoll" || state.turn.phase === "postRoll") ? buildableGroups(legal) : [];
+  const manageHint =
+    buildGroups.length > 0
+      ? `Alle Felder einer Farbe gehören ${player.name}: Mit Häusern steigt die Miete.`
+      : ownsSomething
+        ? "Bauen, verkaufen oder belasten: Feld auf dem Brett anklicken."
+        : null;
 
   let label = "Am Zug";
   let body: ReactNode;
@@ -468,11 +500,26 @@ export function ActionPanel({ state, busy, error, secondsLeft, me = null, waitin
       </header>
       <div className="tafel__body">
         {body}
-        {tradeAllowed && !composing && (
+        {!composing && (tradeAllowed || buildGroups.length > 0) && (
           <div className="tafel__more">
-            <button type="button" className="button" disabled={disabled} onClick={() => setComposing(true)}>
-              Handeln
-            </button>
+            {buildGroups.map(([group, space]) => (
+              <button
+                key={group}
+                type="button"
+                className="button tafel__build"
+                style={{ "--group": `var(--group-${group})` } as CSSProperties}
+                disabled={disabled}
+                onClick={() => onShowSpace?.(space)}
+              >
+                <span className="tafel__swatch" aria-hidden="true" />
+                Bauen · {GROUP_NAMES[group]}
+              </button>
+            ))}
+            {tradeAllowed && (
+              <button type="button" className="button" disabled={disabled} onClick={() => setComposing(true)}>
+                Handeln
+              </button>
+            )}
           </div>
         )}
         {error && <p className="tafel__error">{error}</p>}

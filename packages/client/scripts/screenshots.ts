@@ -18,13 +18,47 @@ if (args.includes("--online")) {
 }
 const details = args.includes("--details");
 const page = args.find((a) => !a.startsWith("--")) ?? "entwurf.html";
-const name = path.basename(page, ".html");
+// «entwurf.html?ansicht=spiel» → Bilder «entwurf-spiel-…».
+const [pageFile = page, pageQuery = ""] = page.split("?");
+const name = [path.basename(pageFile, ".html"), ...new URLSearchParams(pageQuery).values()].join("-");
 
 const VIEWS = [
   { file: `${name}-desktop.png`, width: 1440, height: 900, scale: 1, mobile: false, fullPage: false },
   { file: `${name}-handy.png`, width: 390, height: 844, scale: 2, mobile: true, fullPage: false },
   { file: `${name}-handy-ganz.png`, width: 390, height: 844, scale: 2, mobile: true, fullPage: true },
+  { file: `${name}-handy-klein.png`, width: 375, height: 667, scale: 2, mobile: true, fullPage: false },
 ];
+
+/** Spielansicht auf dem Handy: «Bauen» antippen (Besitzkarte), Spieler aufklappen, Protokoll öffnen, Menü. */
+async function saveMobileGameStates(browser: Browser, url: string) {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+    isMobile: true,
+    hasTouch: true,
+    locale: "de-CH",
+  });
+  const tab = await context.newPage();
+  await tab.goto(url, { waitUntil: "networkidle" });
+  await tab.evaluate(() => document.fonts.ready);
+  const shot = async (label: string, fullPage = false) => {
+    const file = path.join(outDir, `${name}-handy-${label}.png`);
+    await tab.screenshot({ path: file, fullPage });
+    console.log(`Gespeichert: ${file}`);
+  };
+  await tab.getByRole("button", { name: /^Bauen · / }).first().click();
+  await tab.waitForTimeout(400);
+  await shot("bauen");
+  await tab.getByRole("button", { name: "Details zu Ben" }).click();
+  await tab.locator(".log__head").click();
+  await tab.waitForTimeout(300);
+  await shot("offen", true);
+  await tab.evaluate(() => window.scrollTo(0, 0));
+  await tab.getByRole("button", { name: "Menü" }).click();
+  await tab.waitForTimeout(200);
+  await shot("menue");
+  await context.close();
+}
 
 /** Brett in vier Vierteln, Desktopgrösse mit doppelter Auflösung. */
 async function saveBoardQuarters(browser: Browser, url: string) {
@@ -112,6 +146,7 @@ try {
     console.log(`Gespeichert: ${file}`);
     await context.close();
   }
+  if (name === "entwurf-spiel") await saveMobileGameStates(browser, new URL(page, base).href);
   if (details) {
     await saveBoardQuarters(browser, new URL(page, base).href);
     await saveStates(browser, new URL(page, base).href);

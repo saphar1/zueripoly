@@ -1,5 +1,5 @@
 // Spielerpanel im Stil einer Fahrplanzeile: Figur, Name, Kontostand, Besitzstreifen, Zustand.
-import type { CSSProperties, PointerEvent } from "react";
+import { type CSSProperties, type PointerEvent, useState } from "react";
 import type { BotLevel, ColorGroup, GameState, PlayerId, PlayerState, SpaceIndex } from "@zueripoly/engine";
 import {
   BOT_LEVEL_NAMES,
@@ -132,7 +132,10 @@ export function PlayerPanel({
   onPlayerHover,
   onSpaceHover,
 }: PlayerPanelProps) {
+  // Handy: eine Zeile je Spieler (Figur, Name, Geld); Antippen klappt Feld, Besitz und Zusätze auf.
+  const [open, setOpen] = useState(false);
   const classes = ["panel"];
+  if (open) classes.push("panel--open");
   if (active) classes.push("panel--active");
   if (player.bankrupt) classes.push("panel--bankrupt");
   if (linked) classes.push("panel--linked");
@@ -149,7 +152,7 @@ export function PlayerPanel({
       onFocus={interactive ? () => onPlayerHover?.(player.id) : undefined}
       onBlur={interactive ? () => onPlayerHover?.(null) : undefined}
     >
-      <header className="panel__head">
+      <header className="panel__head" onClick={() => setOpen((o) => !o)}>
         <Token token={player.token} />
         <div className="panel__who">
           <div className="panel__title">
@@ -187,6 +190,20 @@ export function PlayerPanel({
           </p>
         </div>
         {!player.bankrupt && <Money amount={player.money} className="panel__money" />}
+        {!player.bankrupt && (
+          <button
+            type="button"
+            className="panel__toggle"
+            aria-expanded={open}
+            aria-label={`Details zu ${player.name}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              setOpen((o) => !o);
+            }}
+          >
+            <Icon name={open ? "minus" : "plus"} />
+          </button>
+        )}
       </header>
       {!player.bankrupt && (
         <div className="panel__deeds">

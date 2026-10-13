@@ -2,7 +2,7 @@
 // Spieler und Protokoll. Wer gerade entscheidet, sagt die Engine (getWaitingFor); angeboten wird nur,
 // was getLegalActions erlaubt. Woher der Spielstand kommt (Engine im Browser oder Server), regelt der
 // Bildschirm darüber (GameScreen, OnlineGameScreen).
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Action, CardId, Dice, GameState, PlayerId, SpaceIndex } from "@zueripoly/engine";
 import { getLegalActions, getWaitingFor } from "@zueripoly/engine";
 import { ActionPanel } from "../components/ActionPanel";
@@ -15,6 +15,7 @@ import { PlayerList, type PlayerPresence } from "../components/PlayerPanel";
 import { PropertyActions } from "../components/PropertyActions";
 import { Sign, type SignMessage } from "../components/Sign";
 import type { LogEntry } from "../game/use-game-playback";
+import { useSignal } from "../screen-history";
 import { ownerOf } from "../space-text";
 import "./GameScreen.css";
 
@@ -52,8 +53,8 @@ interface GameViewProps {
   notice?: ReactNode;
   /** Ganz oben, z. B. «Verbindung unterbrochen». */
   banner?: ReactNode;
-  /** Unter dem Protokoll: Spiel verlassen. */
-  leave?: ReactNode;
+  /** «Spiel verlassen» mit Rückfrage (nach Spielende null). */
+  leave?: LeaveOptions | null;
 }
 
 export function GameView({
@@ -97,6 +98,16 @@ export function GameView({
     return () => window.removeEventListener("keydown", onKey);
   }, [dismissCard]);
 
+  // Knopf «Bauen» auf der Tafel: Besitzkarte öffnen. Auf dem Handy steht sie unter dem Brett, also ins Bild holen.
+  const below = useRef<HTMLDivElement>(null);
+  const showSpace = useCallback((index: SpaceIndex) => {
+    setSelected(index);
+    requestAnimationFrame(() => {
+      const card = below.current?.querySelector(".deed-card");
+      if (card && card.getClientRects().length > 0) card.scrollIntoView({ block: "nearest" });
+    });
+  }, []);
+
   const canRoll = canAct && !game.busy && waiting !== null && getLegalActions(state, waiting).some((a) => a.type === "rollDice");
 
   const deedCard = (index: SpaceIndex) => (
@@ -116,6 +127,14 @@ export function GameView({
   return (
     <main className="game">
       {banner}
+      {/* Nur auf dem Handy: schmale Kopfleiste mit Zug und Menü (auf dem Desktop steht «Spiel verlassen» rechts unten). */}
+      <header className="game__bar">
+        <p className="game__bar-title">
+          ZüriPoly <span className="num">· Zug {view.turnNumber}</span>
+        </p>
+        {leave && <LeaveGame {...leave} label="Menü" />}
+      </header>
+
       <div className="game__board">
         <BoardViewport>
           <Board
@@ -145,14 +164,15 @@ export function GameView({
           waitingNote={waitingNote}
           onAct={onAct}
           endActions={endActions}
+          onShowSpace={canAct ? showSpace : undefined}
         />
       </div>
 
-      {/* Auf dem Handy ist die Brettmitte zu klein: Tafel, Karte und Besitzkarte stehen dort unter dem Brett. */}
-      <div className="game__below">
-        {game.message && <Sign {...game.message} />}
-        {game.card && <EventCard cardId={game.card} onClose={dismissCard} />}
-        {selected !== null && deedCard(selected)}
+      {/* Auf dem Handy ist die Brettmitte zu klein: Haltestellentafel (schmal, über der Tafel) und
+          gezogene Karte oder gewählte Besitzkarte (ein Platz unter der Tafel) stehen dort ausserhalb. */}
+      <div className="game__news">{game.message && <Sign {...game.message} compact />}</div>
+      <div ref={below} className="game__below">
+        {game.card ? <EventCard cardId={game.card} onClose={dismissCard} /> : selected !== null ? deedCard(selected) : null}
       </div>
 
       <div className="game__side">
@@ -166,24 +186,46 @@ export function GameView({
           onSpaceHover={setHovered}
         />
         <GameLog entries={game.log} />
-        {leave}
+        {leave && (
+          <div className="game__leave-side">
+            <LeaveGame {...leave} />
+          </div>
+        )}
       </div>
     </main>
   );
 }
 
-/** «Spiel verlassen» mit Rückfrage. */
-export function LeaveGame({ onLeave, warning }: { onLeave: () => void; warning: string }) {
+export interface LeaveOptions {
+  onLeave: () => void;
+  warning: string;
+  /** Jede Erhöhung öffnet die Rückfrage von aussen (Zurück-Geste des Browsers). */
+  askToken?: number;
+}
+
+/**
+ * «Spiel verlassen» mit Rückfrage. Steht zweimal in der Ansicht (Handy: Kopfleiste, Desktop: rechts
+ * unten); CSS blendet je eines aus, beide öffnen sich bei der Zurück-Geste.
+ */
+function LeaveGame({ onLeave, warning, askToken = 0, label = "Spiel verlassen" }: LeaveOptions & { label?: string }) {
   const [asking, setAsking] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useSignal(askToken, () => setAsking(true));
+  // Von aussen geöffnet: Rückfrage ins Bild holen. Ausgeblendet (getClientRects leer): nichts tun.
+  useEffect(() => {
+    const element = box.current;
+    if (asking && element && element.getClientRects().length > 0) element.scrollIntoView({ block: "nearest" });
+  }, [asking, askToken]);
+
   if (!asking) {
     return (
       <button type="button" className="button game__leave" onClick={() => setAsking(true)}>
-        Spiel verlassen
+        {label}
       </button>
     );
   }
   return (
-    <div className="game__leave-ask" role="group" aria-label="Spiel verlassen?">
+    <div ref={box} className="game__leave-ask" role="group" aria-label="Spiel verlassen?">
       <p>{warning}</p>
       <button type="button" className="button button--danger" onClick={onLeave}>
         Ja, aussteigen

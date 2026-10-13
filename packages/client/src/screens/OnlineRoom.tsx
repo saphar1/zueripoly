@@ -4,6 +4,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import type { SeatGrant } from "@zueripoly/server/protocol";
 import { ConnectionBanner } from "../components/ConnectionBanner";
 import type { OnlineClient } from "../online/connection";
+import { useSignal } from "../screen-history";
 import { OnlineGameScreen } from "./OnlineGameScreen";
 import { OnlineLobby } from "./OnlineLobby";
 import "./Lobby.css";
@@ -14,6 +15,8 @@ interface OnlineRoomProps {
   resume: SeatGrant | null;
   /** Zurück zum Online-Start. */
   onExit: () => void;
+  /** Zurück-Geste des Browsers (Zähler): im Spiel Rückfrage, in der Lobby Raum verlassen. */
+  leaveAsk: number;
 }
 
 function Message({ title, text, action, onAction }: { title: string; text: string; action: string; onAction: () => void }) {
@@ -37,7 +40,7 @@ function Message({ title, text, action, onAction }: { title: string; text: strin
   );
 }
 
-export function OnlineRoom({ client, resume, onExit }: OnlineRoomProps) {
+export function OnlineRoom({ client, resume, onExit, leaveAsk }: OnlineRoomProps) {
   const online = useSyncExternalStore(client.subscribe, client.getSnapshot);
 
   useEffect(() => {
@@ -47,6 +50,12 @@ export function OnlineRoom({ client, resume, onExit }: OnlineRoomProps) {
   const leave = () => {
     void client.leave().then(onExit);
   };
+
+  // Im laufenden Spiel fragt OnlineGameScreen nach. In der Lobby kann man jederzeit wieder beitreten.
+  useSignal(leaveAsk, () => {
+    if (online.closed || !online.room) onExit();
+    else if (online.room.phase !== "game" || online.latest?.state.winner) leave();
+  });
 
   if (online.closed) {
     return <Message title="Nicht mehr im Raum" text={online.closed} action="Zurück zum Online-Menü" onAction={onExit} />;
@@ -62,7 +71,7 @@ export function OnlineRoom({ client, resume, onExit }: OnlineRoomProps) {
   }
   if (online.room.phase === "game") {
     if (!online.latest) return <Message title={`Raum ${online.room.code}`} text="Spielstand wird geladen …" action="Abbrechen" onAction={onExit} />;
-    return <OnlineGameScreen client={client} room={online.room} first={online.latest} onLeave={leave} />;
+    return <OnlineGameScreen client={client} room={online.room} first={online.latest} onLeave={leave} leaveAsk={leaveAsk} />;
   }
   return (
     <>
