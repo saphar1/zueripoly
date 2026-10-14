@@ -5,8 +5,10 @@ import {
   getSpace,
   GROUP_STREETS,
   isPropertySpace,
+  mortgageInterest,
   PROPERTY_INDICES,
   type StreetSpace,
+  unmortgageCost,
 } from "../src";
 
 describe("Brett", () => {
@@ -62,9 +64,33 @@ describe("Brett", () => {
   });
 
   it("stimmt bei einigen Stichproben mit docs/brett.md überein", () => {
-    expect(getSpace(1)).toMatchObject({ name: "Albisrieden", price: 60, rents: [2, 10, 30, 90, 160, 250] });
-    expect(getSpace(14)).toMatchObject({ name: "Höngg", price: 160, rents: [12, 60, 180, 500, 700, 900] });
-    expect(getSpace(24)).toMatchObject({ name: "Rennweg", price: 240, rents: [20, 100, 300, 750, 925, 1100] });
-    expect(getSpace(39)).toMatchObject({ name: "Bahnhofstrasse", price: 400, rents: [50, 200, 600, 1400, 1700, 2000] });
+    expect(getSpace(1)).toMatchObject({ name: "Albisrieden", price: 60, rents: [5, 25, 45, 140, 240, 380] });
+    expect(getSpace(14)).toMatchObject({ name: "Höngg", price: 160, rents: [20, 80, 230, 650, 900, 1150] });
+    expect(getSpace(24)).toMatchObject({ name: "Rennweg", price: 240, rents: [30, 120, 360, 900, 1100, 1350] });
+    expect(getSpace(39)).toMatchObject({ name: "Bahnhofstrasse", price: 400, rents: [75, 225, 600, 1400, 1700, 2000] });
+  });
+
+  it("hat nur runde Beträge und eine sinnvolle Mietstaffel (Balance 2026-10-14)", () => {
+    for (const space of BOARD) {
+      if (!isPropertySpace(space)) continue;
+      expect(space.price % 5, space.name).toBe(0);
+      expect(space.mortgage % 5, space.name).toBe(0);
+      expect(mortgageInterest(space) % 5, space.name).toBe(0);
+      expect(unmortgageCost(space) % 5, space.name).toBe(0);
+      if (space.kind !== "street") continue;
+      const [base, ...houses] = space.rents;
+      for (const rent of space.rents) expect(rent % 5, space.name).toBe(0);
+      // Grundmiete mindestens 8 % des Preises, erstes Haus mindestens 3 × Grundmiete, Staffel steigt.
+      expect(base, space.name).toBeGreaterThanOrEqual(space.price * 0.08);
+      expect(houses[0], space.name).toBeGreaterThanOrEqual(base * 3);
+      for (let i = 1; i < space.rents.length; i++) expect(space.rents[i]!, space.name).toBeGreaterThan(space.rents[i - 1]!);
+    }
+    // Eine teurere Strasse bringt auf keiner Stufe weniger Miete als die billigere davor.
+    const streets = BOARD.filter((s): s is StreetSpace => s.kind === "street");
+    for (let i = 1; i < streets.length; i++) {
+      const [cheap, dear] = [streets[i - 1]!, streets[i]!];
+      expect(dear.price).toBeGreaterThanOrEqual(cheap.price);
+      dear.rents.forEach((rent, level) => expect(rent, `${dear.name} Stufe ${level}`).toBeGreaterThanOrEqual(cheap.rents[level]!));
+    }
   });
 });

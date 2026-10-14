@@ -23,8 +23,9 @@ Wer als Letzter noch Geld und Besitz hat, gewinnt. Alle anderen gehen nach und n
 Bauen, Hypotheken und Handel sind nur auf dem **eigenen Zug** möglich, sowie in jedem Moment, in dem ein Spieler Geld auftreiben muss, um eine Schuld zu bezahlen (Abschnitt 11). *(Vereinfachung gegenüber dem Original, damit Online-Spiele ohne Chaos laufen.)*
 
 ### Pasch
-- Ein **Pasch** (beide Würfel gleich) gibt nach dem Auswerten des Feldes **einen weiteren Wurf**.
+- Ein **Pasch** (beide Würfel gleich) gibt **einen weiteren Wurf**. Die Figur **fährt nur durch**: Das Feld, auf dem sie nach dem Pasch steht, **zählt nicht** (keine Miete, kein Kauf, keine Karte, keine Steuer, auch «Gehe ins Gefängnis» nicht). Start-Geld beim Vorbeiziehen gibt es trotzdem. Erst das Feld nach dem Wurf **ohne** Pasch wird ausgewertet; nur dort darf man kaufen.
 - Der **dritte Pasch in Folge** schickt den Spieler **sofort ins Gefängnis**, ohne dass er zieht.
+- Ein Pasch ist in ZüriPoly etwas **seltener** als mit echten Würfeln: **1 von 7** Würfen statt 1 von 6. Jeder einzelne Würfel zeigt weiterhin jede Zahl gleich oft.
 
 ## 4. Start
 - Beim **Vorbeiziehen oder Landen** auf Start erhält man **200 CHF**. Man erhält nicht doppelt, wenn man genau darauf landet.
@@ -49,7 +50,7 @@ Landet man auf einem Feld, das einem anderen Spieler gehört (und nicht hypothek
   - Mit 1 bis 4 Häusern oder 1 Hotel: Mietstaffel aus brett.md.
   - Innerhalb einer Farbgruppe bleibt die Verdopplung für unbebaute Strassen auch dann bestehen, wenn eine andere Strasse der Gruppe bebaut ist.
 - **Bahnhöfe:** 25 / 50 / 100 / 200 CHF bei 1 / 2 / 3 / 4 Bahnhöfen im Besitz des Eigentümers. Gezählt werden alle Bahnhöfe im Besitz, auch belastete (diese bringen selbst aber keine Miete).
-- **Versorger:** Besitzt der Eigentümer **einen** Versorger: **4 ×** die gewürfelte Augensumme; beide: **10 ×** die Augensumme. Auch hier zählen belastete Versorger beim Zählen mit.
+- **Versorger:** Besitzt der Eigentümer **einen** Versorger: **5 ×** die gewürfelte Augensumme; beide: **10 ×** die Augensumme. Auch hier zählen belastete Versorger beim Zählen mit.
   - Wer wegen einer Ereigniskarte zum Versorger muss, würfelt neu und zahlt **10 ×** die neue Augensumme.
   - Wer wegen einer Ereigniskarte zum nächsten Bahnhof muss, zahlt dem Besitzer die **doppelte** Miete.
 
@@ -82,7 +83,9 @@ Im Gefängnis darf man weiterhin **Miete einfordern, bauen, handeln** und Hypoth
 
 ## 10. Steuerfelder, Ereignis- und Gemeindefelder, Ferien
 - **Steuerfelder** (Feld 4: 100 CHF, Feld 38: 50 CHF): Der Betrag geht an die Bank (mit Jackpot an den Jackpot, siehe 14).
-- **Ereignis-** und **Gemeindefelder:** Oberste Karte des entsprechenden Stapels ziehen, vorlesen, ausführen und **unter den Stapel** legen. Ausnahme: **Freikarte**, die der Spieler behält, bis er sie einsetzt oder verkauft/tauscht; sie wird erst dann wieder unter den Stapel gelegt.
+- **Ereignis-** und **Gemeindefelder:** Oberste Karte des entsprechenden Stapels ziehen, vorlesen, ausführen und **unter den Stapel** legen. Ausnahmen, die der Spieler behält:
+  - **Freikarte**: bis er sie einsetzt oder verkauft/tauscht; erst dann kommt sie wieder unter den Stapel.
+  - **Baubewilligung** (Ereigniskarte E06): Im eigenen Zug gratis ein Haus oder Hotel bauen, nach den normalen Bauregeln (ganze, unbelastete Farbgruppe, gleichmässig, Vorrat der Bank). Nicht handelbar. Danach und bei Bankrott kommt sie unter den Stapel.
 - Bei Karten mit Bewegung gelten die normalen Regeln für das Zielfeld (Kaufen, Miete, Karte, Steuer). Ein Spieler, der per Karte auf ein Karten- oder Steuerfeld rückt, führt auch dieses aus.
 - **Ferien am Zürichsee** (Feld 20): Ohne Jackpot-Option **passiert nichts**. Mit Jackpot-Option siehe Abschnitt 14.
 
@@ -98,7 +101,7 @@ Wer zahlen **kann**, muss zahlen (kein Aufschieben). Die Engine bucht jede Zahlu
 ### Hypotheken
 - Ein unbebautes Grundstück kann von der Bank belastet werden und bringt den **Hypothekenwert** (½ des Preises) in bar.
 - **Belastete Felder** bringen **keine Miete**; Karten bleiben im Besitz des Spielers.
-- **Zurückzahlen:** Hypothekenwert plus **10 % Zins** (aufgerundet auf den nächsten ganzen Franken).
+- **Zurückzahlen:** Hypothekenwert plus **10 % Zins**, aufgerundet auf **5 CHF** (z. B. 30 → 35, 75 → 85).
 - Hat der Spieler weitere Strassen der Gruppe und löst eine Hypothek nicht ein, bleibt die Verdopplung wegen belasteter Strasse **aus**.
 - Beim Handel mit belasteten Feldern: Der Käufer zahlt sofort **10 %** des Hypothekenwerts als Zins und darf entscheiden, ob er die Hypothek **sofort ablöst** (Hypothekenwert + 10 %) oder belastet lässt (dann nur die 10 % Zins).
 
@@ -154,3 +157,7 @@ Diese bewussten Vereinfachungen sind hier festgehalten, damit sie später nicht 
 9. Ein Handel darf keine Schuld erzeugen (Abschnitt 13).
 10. Mehrere Schulden aus einer Karte werden der Reihe nach beglichen; geht der Zahler dabei bankrott, verfallen die übrigen (Abschnitt 11).
 11. Online kann der Host einen abwesenden Spieler aus dem Spiel nehmen; sein Besitz geht wie bei einem Bankrott an die Bank (Abschnitt 15, Wiederverbinden).
+12. Nach einem Pasch fährt die Figur nur durch; das Zwischenfeld zählt nicht, gekauft wird erst am Ende des Zugs (Abschnitt 3, Entscheid 2026-10-14).
+13. Pasch seltener: 1 von 7 statt 1 von 6 (Abschnitt 3, Entscheid 2026-10-14).
+14. Eigene Mietstaffel mit höherer Grundmiete, Versorger 5 × / 10 ×, Hypothekenzins auf 5 CHF aufgerundet: nur runde Beträge (`docs/brett.md`, Entscheid 2026-10-14).
+15. Ereigniskarte «Baubewilligung» statt der zweiten «Tram verpasst»-Karte (Abschnitt 10, Entscheid 2026-10-14).

@@ -39,13 +39,39 @@ export function createRandomSeed(): number {
   return Math.floor(Math.random() * 4294967296) >>> 0;
 }
 
-export function rollDie(rng: Rng): number {
-  return rng.nextInt(6) + 1;
+/**
+ * Gewichte der 36 Würfelpaare: Ein Pasch ist etwas seltener als bei echten Würfeln
+ * (Wunsch des Entwicklers, 2026-10-14). Pasch 5, sonst 6 → 6 × 5 / (6 × 5 + 30 × 6) = 1 von 7.
+ */
+export const DOUBLES_WEIGHT = 5;
+export const OTHER_WEIGHT = 6;
+
+/** Alle Würfelpaare, jedes so oft, wie sein Gewicht sagt (210 Einträge). */
+const DICE_TABLE: readonly Dice[] = (() => {
+  const table: Dice[] = [];
+  for (let a = 1; a <= 6; a++) {
+    for (let b = 1; b <= 6; b++) {
+      for (let w = 0; w < (a === b ? DOUBLES_WEIGHT : OTHER_WEIGHT); w++) table.push([a, b]);
+    }
+  }
+  return table;
+})();
+
+/** Wirft beide Würfel mit einer einzigen Zufallszahl aus der gewichteten Tabelle. */
+export function rollDice(rng: Rng): Dice {
+  const [a, b] = DICE_TABLE[rng.nextInt(DICE_TABLE.length)] as Dice;
+  return [a, b];
 }
 
-export function rollDice(rng: Rng): Dice {
-  return [rollDie(rng), rollDie(rng)];
+/** Index in der Tabelle, der genau diesen Wurf ergibt (für Tests mit vorgegebenen Würfen). */
+export function diceRollIndex(dice: Dice): number {
+  const index = DICE_TABLE.findIndex(([a, b]) => a === dice[0] && b === dice[1]);
+  if (index < 0) throw new Error(`Ungültiger Wurf ${dice[0]} + ${dice[1]}.`);
+  return index;
 }
+
+/** Anzahl Einträge der Würfeltabelle (Obergrenze für `nextInt` beim Würfeln). */
+export const DICE_OUTCOMES = DICE_TABLE.length;
 
 /** Mischt eine Kopie der Liste (Fisher-Yates). Die Eingabe bleibt unverändert. */
 export function shuffle<T>(items: readonly T[], rng: Rng): T[] {

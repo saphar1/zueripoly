@@ -60,7 +60,7 @@ const SIMPLE = [
   "declareBankruptcy",
   "endTurn",
 ] as const;
-const ON_SPACE = ["buildHouse", "sellBuilding", "mortgage", "unmortgage"] as const;
+const ON_SPACE = ["buildHouse", "useBuildPermit", "sellBuilding", "mortgage", "unmortgage"] as const;
 
 /**
  * Spielzug prüfen und neu bauen. `null` = unbekannt oder falsch aufgebaut.

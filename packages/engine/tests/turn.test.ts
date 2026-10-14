@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getLegalActions, getWaitingFor } from "../src";
-import { act, cardOnTop, dice, eventsOfType, expectRejected, newGame, placeAt, player } from "./helpers";
+import { act, dice, eventsOfType, expectRejected, newGame, own, placeAt, player } from "./helpers";
 
 describe("Würfeln und Ziehen", () => {
   it("zieht um die Augensumme und wechselt nach Zug beenden zum nächsten Spieler", () => {
@@ -28,8 +28,9 @@ describe("Würfeln und Ziehen", () => {
 
   it("zahlt 200 CHF beim Überqueren von Start", () => {
     const state = placeAt(newGame(2), "p1", 36);
-    const { state: after, events } = act(state, "p1", { type: "rollDice" }, dice([3, 3])); // 36 + 6 = 2
+    const { state: after, events } = act(state, "p1", { type: "rollDice" }, dice([3, 3])); // 36 + 6 = 2, Pasch: durchfahren
     expect(player(after, "p1").position).toBe(2);
+    expect(eventsOfType(events, "passedThrough")).toEqual([{ type: "passedThrough", player: "p1", space: 2 }]);
     expect(eventsOfType(events, "moved")[0]).toMatchObject({ from: 36, to: 2, passedStart: true });
     expect(eventsOfType(events, "moneyTransferred").find((e) => e.reason === "start")?.amount).toBe(200);
   });
@@ -42,9 +43,9 @@ describe("Würfeln und Ziehen", () => {
     expect(eventsOfType(events, "moneyTransferred").filter((e) => e.reason === "start")).toHaveLength(1);
   });
 
-  it("gibt nach einem Pasch einen weiteren Wurf", () => {
-    let { state } = act(newGame(2), "p1", { type: "rollDice" }, dice([2, 2])); // Feld 4: Steuer 100
-    expect(player(state, "p1").money).toBe(1400);
+  it("nach einem Pasch: durchfahren (das Feld zählt nicht) und nochmals würfeln", () => {
+    let { state } = act(newGame(2), "p1", { type: "rollDice" }, dice([2, 2])); // Feld 4: Steuer, zählt nicht
+    expect(player(state, "p1")).toMatchObject({ position: 4, money: 1500 });
     expect(state.turn.phase).toBe("preRoll");
     expect(state.turn.doublesCount).toBe(1);
     expectRejected(state, "p1", { type: "endTurn" }, "wrongPhase");
@@ -53,12 +54,12 @@ describe("Würfeln und Ziehen", () => {
   });
 
   it("schickt beim dritten Pasch sofort ins Gefängnis, ohne zu ziehen", () => {
-    let state = cardOnTop(newGame(2), "community", "G16");
-    ({ state } = act(state, "p1", { type: "rollDice" }, dice([1, 1]))); // Feld 2: Gemeindekarte +10
-    ({ state } = act(state, "p1", { type: "rollDice" }, dice([1, 1]))); // Feld 4: Steuer 100
+    let state = newGame(2);
+    ({ state } = act(state, "p1", { type: "rollDice" }, dice([1, 1]))); // Feld 2: durchfahren
+    ({ state } = act(state, "p1", { type: "rollDice" }, dice([1, 1]))); // Feld 4: durchfahren
     expect(state.turn).toMatchObject({ phase: "preRoll", doublesCount: 2 });
     const result = act(state, "p1", { type: "rollDice" }, dice([4, 4]));
-    expect(player(result.state, "p1")).toMatchObject({ position: 10, inJail: true, money: 1410 });
+    expect(player(result.state, "p1")).toMatchObject({ position: 10, inJail: true, money: 1500 });
     expect(eventsOfType(result.events, "sentToJail")[0]).toMatchObject({ reason: "doubles", from: 4 });
     expect(eventsOfType(result.events, "moved")).toHaveLength(0);
     expect(result.state.turn.phase).toBe("postRoll");
@@ -67,9 +68,23 @@ describe("Würfeln und Ziehen", () => {
 
   it("schickt beim Landen auf «Gehe ins Gefängnis» ins Gefängnis, ohne Start-Geld und ohne weiteren Wurf", () => {
     const state = placeAt(newGame(2), "p1", 26);
-    const { state: after } = act(state, "p1", { type: "rollDice" }, dice([2, 2]));
+    const { state: after } = act(state, "p1", { type: "rollDice" }, dice([1, 3]));
     expect(player(after, "p1")).toMatchObject({ position: 10, inJail: true, money: 1500 });
     expect(after.turn.phase).toBe("postRoll");
+  });
+
+  it("nach einem Pasch wirkt «Gehe ins Gefängnis» nicht (nur durchfahren)", () => {
+    const state = placeAt(newGame(2), "p1", 26);
+    const { state: after } = act(state, "p1", { type: "rollDice" }, dice([2, 2]));
+    expect(player(after, "p1")).toMatchObject({ position: 30, inJail: false });
+    expect(after.turn.phase).toBe("preRoll");
+  });
+
+  it("nach einem Pasch kostet ein fremdes Feld keine Miete", () => {
+    const state = own(newGame(2), "p2", 6);
+    const { state: after, events } = act(state, "p1", { type: "rollDice" }, dice([3, 3])); // Seebach von p2
+    expect(eventsOfType(events, "moneyTransferred")).toEqual([]);
+    expect(after.players.map((p) => p.money)).toEqual([1500, 1500]);
   });
 
   it("lässt Besucher auf Feld 10 normal weiterspielen", () => {
@@ -120,11 +135,16 @@ describe("Kaufen und Versteigern", () => {
     expect(player(state, "p2").money).toBe(1300);
   });
 
-  it("nach einem Pasch geht es auch ohne Kauf mit dem nächsten Wurf weiter", () => {
-    let { state } = act(newGame(2), "p1", { type: "rollDice" }, dice([3, 3])); // Feld 6 Seebach
-    ({ state } = act(state, "p1", { type: "declineProperty" }));
+  it("nach einem Pasch wird nicht gekauft; erst das Feld, auf dem der Zug endet", () => {
+    let { state } = act(newGame(2), "p1", { type: "rollDice" }, dice([3, 3])); // Feld 6 Seebach, frei
+    expect(state.turn).toMatchObject({ phase: "preRoll", pendingBuy: null });
+    expectRejected(state, "p1", { type: "buyProperty" }, "wrongPhase");
+    ({ state } = act(state, "p1", { type: "rollDice" }, dice([1, 2]))); // Feld 9 Affoltern
+    expect(state.turn).toMatchObject({ phase: "buy", pendingBuy: 9 });
+    ({ state } = act(state, "p1", { type: "buyProperty" }));
     expect(state.properties[6]?.owner).toBeNull();
-    expect(state.turn.phase).toBe("preRoll");
+    expect(state.properties[9]?.owner).toBe("p1");
+    expect(state.turn.phase).toBe("postRoll");
     expect(getWaitingFor(state)).toBe("p1");
   });
 });

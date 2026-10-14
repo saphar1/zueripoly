@@ -106,7 +106,7 @@ describe("Online-Spiel mit simulierten Clients", () => {
         for (const deck of ["event", "community"] as const) {
           const cards = update.state.decks[deck];
           expect(cards).toEqual([...cards].sort());
-          const held = update.state.players.flatMap((pl) => pl.jailCards).filter((c) => DECK_CARDS[deck].some((k) => k.id === c));
+          const held = update.state.players.flatMap((pl) => [...pl.jailCards, ...pl.buildPermits]).filter((c) => DECK_CARDS[deck].some((k) => k.id === c));
           expect(cards.length + held.length).toBe(16);
         }
       }

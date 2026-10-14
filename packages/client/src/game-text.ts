@@ -155,6 +155,12 @@ export function formatEvent(state: GameState, event: GameEvent): string | null {
       return `Die Freikarte geht von ${who(event.from)} an ${who(event.to)}.`;
     case "jailCardReturned":
       return "Die Freikarte kommt zurück unter den Stapel.";
+    case "buildPermitUsed":
+      return `${who(event.player)} setzt die Baubewilligung ein und baut gratis.`;
+    case "buildPermitReturned":
+      return "Die Baubewilligung kommt zurück unter den Stapel.";
+    case "passedThrough":
+      return `Pasch: ${capitalize(spaceNom(event.space))} zählt nicht, ${who(event.player)} fährt durch und würfelt nochmals.`;
     case "mortgageDecisionRequired":
       return `${who(event.player)} übernimmt belastete Felder: sofort auslösen oder vorerst nur Zins zahlen.`;
     case "mortgagesResolved": {

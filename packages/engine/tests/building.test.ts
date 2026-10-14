@@ -118,14 +118,14 @@ describe("Gebäude verkaufen", () => {
 });
 
 describe("Hypotheken", () => {
-  it("bringt den Hypothekenwert und kostet beim Zurückzahlen 10 % Zins (aufgerundet)", () => {
+  it("bringt den Hypothekenwert und kostet beim Zurückzahlen 10 % Zins (aufgerundet auf 5 CHF)", () => {
     let state = own(newGame(2), "p1", 12);
     ({ state } = act(state, "p1", { type: "mortgage", space: 12 }));
     expect(player(state, "p1").money).toBe(1575);
     expect(state.properties[12]?.mortgaged).toBe(true);
     expectRejected(state, "p1", { type: "mortgage", space: 12 }, "alreadyMortgaged");
     ({ state } = act(state, "p1", { type: "unmortgage", space: 12 }));
-    expect(player(state, "p1").money).toBe(1575 - 83);
+    expect(player(state, "p1").money).toBe(1575 - 85); // 75 + 10 % (aufgerundet auf 5)
     expectRejected(state, "p1", { type: "unmortgage", space: 12 }, "notMortgaged");
   });
 

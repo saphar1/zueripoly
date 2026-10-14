@@ -40,6 +40,7 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   notInJail: "Du bist nicht im Gefängnis.",
   inJail: "Im Gefängnis wird nicht gewürfelt: Zug aussetzen, Kaution zahlen oder Freikarte zeigen.",
   noJailCard: "Du hast keine Freikarte.",
+  noBuildPermit: "Du hast keine Baubewilligung.",
   notEnoughMoney: "Dafür reicht dein Bargeld nicht.",
   invalidSpace: "Dieses Feld ist dafür nicht geeignet.",
   notOwner: "Dieses Feld gehört dir nicht.",
@@ -99,6 +100,7 @@ export function getLegalActions(state: GameState, playerId: PlayerId): Action[] 
     if (getProperty(state, space).owner !== playerId) continue;
     candidates.push(
       { type: "buildHouse", space },
+      { type: "useBuildPermit", space },
       { type: "sellBuilding", space },
       { type: "mortgage", space },
       { type: "unmortgage", space },
@@ -187,6 +189,9 @@ function checkAction(state: GameState, playerId: PlayerId, action: Action): Erro
       return phase === "postRoll" || (phase === "preRoll" && player.inJail) ? null : "wrongPhase";
     case "buildHouse":
       return checkBuild(state, playerId, action.space);
+    case "useBuildPermit":
+      if (player.buildPermits.length === 0) return "noBuildPermit";
+      return checkBuild(state, playerId, action.space, true);
     case "sellBuilding":
       return checkSellBuilding(state, playerId, action.space);
     case "mortgage":

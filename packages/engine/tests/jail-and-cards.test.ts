@@ -18,12 +18,12 @@ describe("Gefängnis", () => {
     expectRejected(state, "p1", { type: "rollDice" }, "inJail");
   });
 
-  it("50 CHF zahlen, dann normal würfeln (Pasch gibt weiteren Wurf)", () => {
+  it("50 CHF zahlen, dann normal würfeln (Pasch: durchfahren und nochmals würfeln)", () => {
     let { state } = act(jailed(), "p1", { type: "payJailFine" });
     expect(player(state, "p1")).toMatchObject({ inJail: false, money: 1450 });
     ({ state } = act(state, "p1", { type: "rollDice" }, dice([3, 3])));
     expect(player(state, "p1").position).toBe(16);
-    expect(state.turn.extraRoll || state.turn.phase === "buy").toBe(true);
+    expect(state.turn).toMatchObject({ phase: "preRoll", doublesCount: 1, pendingBuy: null });
   });
 
   it("Freikarte abgeben: Karte geht unter den Stapel", () => {
@@ -105,11 +105,11 @@ describe("Steuern, Ferien und Jackpot", () => {
 
 describe("Karten", () => {
   it("Karten kommen unter den Stapel, Freikarten bleiben beim Spieler", () => {
-    let state = cardOnTop(newGame(2), "community", "G09");
-    ({ state } = act(state, "p1", { type: "rollDice" }, dice([1, 1])));
+    let state = cardOnTop(placeAt(newGame(2), "p1", 14), "community", "G09");
+    ({ state } = act(state, "p1", { type: "rollDice" }, dice([1, 2]))); // Feld 17
     expect(state.decks.community.at(-1)).toBe("G09");
     expect(player(state, "p1").money).toBe(1520);
-    cardOnTop(state, "event", "E08");
+    state = cardOnTop(placeAt(newGame(2), "p1", 2), "event", "E08");
     ({ state } = act(state, "p1", { type: "rollDice" }, dice([2, 3]))); // Feld 7
     expect(player(state, "p1").jailCards).toEqual(["E08"]);
     expect(state.decks.event).not.toContain("E08");
@@ -117,8 +117,8 @@ describe("Karten", () => {
   });
 
   it("E01 / G01: auf Start vorrücken und 200 CHF", () => {
-    const state = cardOnTop(placeAt(newGame(2), "p1", 31), "community", "G01");
-    const { state: after } = act(state, "p1", { type: "rollDice" }, dice([1, 1])); // Feld 33
+    const state = cardOnTop(placeAt(newGame(2), "p1", 30), "community", "G01");
+    const { state: after } = act(state, "p1", { type: "rollDice" }, dice([1, 2])); // Feld 33
     expect(player(after, "p1")).toMatchObject({ position: 0, money: 1700 });
   });
 
@@ -168,9 +168,9 @@ describe("Karten", () => {
     expect(player(after, "p1")).toMatchObject({ position: 4, money: 1400 });
   });
 
-  it("E10 / G06: direkt ins Gefängnis, auch nach einem Pasch kein weiterer Wurf", () => {
-    const state = cardOnTop(newGame(2), "community", "G06");
-    const { state: after } = act(state, "p1", { type: "rollDice" }, dice([1, 1]));
+  it("E10 / G06: direkt ins Gefängnis, kein weiterer Wurf", () => {
+    const state = cardOnTop(placeAt(newGame(2), "p1", 14), "community", "G06");
+    const { state: after } = act(state, "p1", { type: "rollDice" }, dice([1, 2])); // Feld 17
     expect(player(after, "p1")).toMatchObject({ position: 10, inJail: true, money: 1500 });
     expect(after.turn.phase).toBe("postRoll");
   });
@@ -190,8 +190,8 @@ describe("Karten", () => {
     const pay = cardOnTop(newGame(4), "event", "E13");
     const { state: a } = act(pay, "p1", { type: "rollDice" }, dice([3, 4]));
     expect(a.players.map((p) => p.money)).toEqual([1350, 1550, 1550, 1550]);
-    const collect = cardOnTop(newGame(4), "community", "G10");
-    const { state: b } = act(collect, "p1", { type: "rollDice" }, dice([1, 1]));
+    const collect = cardOnTop(placeAt(newGame(4), "p1", 14), "community", "G10");
+    const { state: b } = act(collect, "p1", { type: "rollDice" }, dice([1, 2])); // Feld 17
     expect(b.players.map((p) => p.money)).toEqual([1530, 1490, 1490, 1490]);
   });
 

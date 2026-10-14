@@ -39,12 +39,12 @@ describe("Zeitlimit (timeout)", () => {
     player(start, "p2").money = 0;
     start.current = 1;
     placeAt(start, "p2", 35);
-    let { state } = act(start, "p2", { type: "rollDice" }, dice([1, 3])); // Miete 50
+    let { state } = act(start, "p2", { type: "rollDice" }, dice([1, 3])); // Miete 75
     ({ state } = act(state, "p2", { type: "timeout" }));
     expect(state.debts).toEqual([]);
     expect(state.properties[15]?.mortgaged).toBe(true);
     expect([6, 8, 9].map((s) => state.properties[s]?.houses)).toEqual([2, 2, 2]);
-    expect(player(state, "p2").money).toBe(50);
+    expect(player(state, "p2").money).toBe(25); // Hypothek Stadelhofen 100 − Miete 75
   });
 
   it("erklärt Bankrott, wenn nichts mehr reicht", () => {

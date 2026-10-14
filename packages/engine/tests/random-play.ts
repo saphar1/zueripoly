@@ -120,6 +120,8 @@ function chooseAction(state: GameState, playerId: PlayerId, rng: Rng): Action {
     const trade = randomTrade(state, playerId, rng);
     if (trade) return trade;
   }
+  const permit = pick(rng, of("useBuildPermit"));
+  if (permit && chance(rng, 0.5)) return permit;
   const build = pick(rng, of("buildHouse"));
   if (build && chance(rng, 0.6)) return build;
   const unmortgage = pick(rng, of("unmortgage"));

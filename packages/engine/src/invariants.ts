@@ -28,7 +28,7 @@ export function checkInvariants(state: GameState): string[] {
     if (p.jailTurns < 0 || p.jailTurns > JAIL_TURNS) fail(`${p.id}: ungültige Gefängnisrunden ${p.jailTurns}.`);
     if (!p.inJail && p.jailTurns !== 0) fail(`${p.id}: nicht im Gefängnis, aber Gefängnisrunden ${p.jailTurns}.`);
     if (p.inJail && p.position !== 10) fail(`${p.id}: im Gefängnis, aber nicht auf Feld 10.`);
-    if (p.bankrupt && (p.money !== 0 || p.jailCards.length > 0 || p.inJail)) {
+    if (p.bankrupt && (p.money !== 0 || p.jailCards.length > 0 || p.buildPermits.length > 0 || p.inJail)) {
       fail(`${p.id}: ausgeschieden, hat aber noch Geld, Karten oder sitzt im Gefängnis.`);
     }
   }
@@ -74,9 +74,9 @@ export function checkInvariants(state: GameState): string[] {
     if (mortgaged && levels.some((l) => l > 0)) fail(`Gruppe ${group}: belastet und bebaut zugleich.`);
   }
 
-  // Karten: jede Karte genau einmal, entweder im Stapel oder als Freikarte bei einem Spieler.
+  // Karten: jede Karte genau einmal, entweder im Stapel oder bei einem Spieler (Freikarte, Baubewilligung).
   for (const deck of ["event", "community"] as DeckId[]) {
-    const held = players.flatMap((p) => p.jailCards).filter((c) => c.startsWith(deck === "event" ? "E" : "G"));
+    const held = players.flatMap((p) => [...p.jailCards, ...p.buildPermits]).filter((c) => c.startsWith(deck === "event" ? "E" : "G"));
     const all = [...state.decks[deck], ...held].sort();
     const expected = DECK_CARDS[deck].map((c) => c.id).sort();
     if (all.join() !== expected.join()) fail(`Stapel ${deck}: Karten fehlen oder sind doppelt.`);

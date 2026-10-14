@@ -124,9 +124,9 @@ export function countBuildings(state: GameState, playerId: PlayerId): { houses: 
 // Geld
 // ---------------------------------------------------------------------------
 
-/** 10 % Zins auf den Hypothekenwert, aufgerundet auf ganze Franken. */
+/** 10 % Zins auf den Hypothekenwert, aufgerundet auf 5 CHF (nur runde Beträge im Spiel). */
 export function mortgageInterest(space: PropertySpace): number {
-  return Math.ceil(space.mortgage / 10);
+  return Math.ceil(space.mortgage / 50) * 5;
 }
 
 /** Hypothek zurückzahlen: Hypothekenwert plus 10 % Zins. */
@@ -197,7 +197,8 @@ export function calculateRent(state: GameState, index: SpaceIndex, diceSum: numb
 // Prüfungen für Bauen, Verkaufen und Hypotheken (geben einen Fehlercode oder null zurück)
 // ---------------------------------------------------------------------------
 
-export function checkBuild(state: GameState, playerId: PlayerId, index: unknown): ErrorCode | null {
+/** Darf der Spieler hier bauen? Mit `free` (Baubewilligung) zählt das Bargeld nicht. */
+export function checkBuild(state: GameState, playerId: PlayerId, index: unknown, free = false): ErrorCode | null {
   const space = findPropertySpace(index);
   if (!space || space.kind !== "street") return "invalidSpace";
   const property = getProperty(state, space.index);
@@ -212,6 +213,7 @@ export function checkBuild(state: GameState, playerId: PlayerId, index: unknown)
   } else if (state.bank.houses < 1) {
     return "noHousesLeft";
   }
+  if (free) return null;
   const player = getPlayer(state, playerId);
   if (player.money < space.housePrice) return "notEnoughMoney";
   return null;

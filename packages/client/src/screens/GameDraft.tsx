@@ -12,7 +12,7 @@ function demoLog(): LogEntry[] {
     [22, "Clara landet im Gefängnis."],
     [22, "Elif würfelt 6 + 1 und fährt weiter."],
     [23, "Anna würfelt 4 + 3 und fährt zur Langstrasse."],
-    [23, "Anna zahlt Ben 550 CHF Miete für die Langstrasse."],
+    [23, "Anna zahlt Ben 700 CHF Miete für die Langstrasse."],
   ];
   return lines.map(([turn, text], id) => ({ id, turn, text }));
 }

@@ -13,7 +13,7 @@ describe("Schulden", () => {
   it("wer zahlen kann, zahlt sofort", () => {
     const state = landOnBahnhofstrasse(own(newGame(2), "p1", 39));
     expect(state.debts).toEqual([]);
-    expect(player(state, "p2").money).toBe(1450);
+    expect(player(state, "p2").money).toBe(1425);
   });
 
   it("wer nicht bar zahlen kann, muss Geld auftreiben; danach wird automatisch bezahlt", () => {
@@ -22,18 +22,18 @@ describe("Schulden", () => {
     setHouses(start, 37, 1);
     setHouses(start, 1, 2);
     setHouses(start, 3, 2);
-    player(start, "p2").money = 100;
-    let state = landOnBahnhofstrasse(start); // Miete 200
-    expect(state.debts).toEqual([{ debtor: "p2", creditor: "p1", amount: 200, reason: "rent", space: 39 }]);
+    player(start, "p2").money = 125;
+    let state = landOnBahnhofstrasse(start); // Miete 225
+    expect(state.debts).toEqual([{ debtor: "p2", creditor: "p1", amount: 225, reason: "rent", space: 39 }]);
     expect(getWaitingFor(state)).toBe("p2");
     expect(getLegalActions(state, "p2").map((a) => a.type).sort()).toEqual(["mortgage", "sellBuilding", "sellBuilding"]);
     expectRejected(state, "p2", { type: "declareBankruptcy" }, "canStillPay");
     expectRejected(state, "p2", { type: "endTurn" }, "wrongPhase");
     expectRejected(state, "p1", { type: "rollDice" }, "notYourTurn");
-    ({ state } = act(state, "p2", { type: "mortgage", space: 5 })); // +100 = 200 → bezahlt
+    ({ state } = act(state, "p2", { type: "mortgage", space: 5 })); // +100 = 225 → bezahlt
     expect(state.debts).toEqual([]);
     expect(player(state, "p2").money).toBe(0);
-    expect(player(state, "p1").money).toBe(1700);
+    expect(player(state, "p1").money).toBe(1725);
     expect(state.turn.phase).toBe("postRoll");
   });
 
@@ -41,7 +41,8 @@ describe("Schulden", () => {
     let state = cardOnTop(newGame(3), "community", "G07");
     player(state, "p2").money = 20;
     own(state, "p2", 39);
-    ({ state } = act(state, "p1", { type: "rollDice" }, dice([1, 1])));
+    placeAt(state, "p1", 14);
+    ({ state } = act(state, "p1", { type: "rollDice" }, dice([1, 2]))); // Feld 17: Gemeindekarte
     expect(state.debts.map((d) => d.debtor)).toEqual(["p2", "p3"]);
     expect(getWaitingFor(state)).toBe("p2");
     ({ state } = act(state, "p2", { type: "mortgage", space: 39 }));
@@ -56,7 +57,7 @@ describe("Bankrott", () => {
     const state = own(own(newGame(3), "p1", 39), "p2", 1);
     player(state, "p2").money = 10;
     expect(liquidationValue(state, "p2")).toBe(30);
-    const after = landOnBahnhofstrasse(state); // Miete 50, möglich: 10 + 30 = 40
+    const after = landOnBahnhofstrasse(state); // Miete 75, möglich: 10 + 30 = 40
     expect(getLegalActions(after, "p2").map((a) => a.type)).toContain("declareBankruptcy");
   });
 
@@ -84,7 +85,7 @@ describe("Bankrott", () => {
     expect(getWaitingFor(state)).toBe("p1");
     expectRejected(state, "p1", { type: "rollDice" }, "wrongPhase");
     ({ state } = act(state, "p1", { type: "resolveMortgages", lift: [] }));
-    expect(player(state, "p1").money).toBe(1750 - 8);
+    expect(player(state, "p1").money).toBe(1750 - 10); // 10 % von 75, aufgerundet auf 5
     expect(state.properties[12]?.mortgaged).toBe(true);
     // p2 war am Zug: jetzt ist p3 dran.
     expect(getWaitingFor(state)).toBe("p3");

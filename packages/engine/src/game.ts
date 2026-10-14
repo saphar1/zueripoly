@@ -148,6 +148,7 @@ export function createGame(config: GameConfig, rng: Rng): GameState {
     inJail: false,
     jailTurns: 0,
     jailCards: [],
+    buildPermits: [],
     bankrupt: false,
   }));
 
@@ -181,7 +182,7 @@ export function createGame(config: GameConfig, rng: Rng): GameState {
 }
 
 function freshTurn(): TurnState {
-  return { phase: "preRoll", doublesCount: 0, extraRoll: false, dice: null, pendingBuy: null };
+  return { phase: "preRoll", doublesCount: 0, dice: null, pendingBuy: null };
 }
 
 // ---------------------------------------------------------------------------
@@ -235,6 +236,8 @@ function perform(ctx: Ctx, playerId: PlayerId, action: Action): void {
       return declineProperty(ctx, player);
     case "buildHouse":
       return buildHouse(ctx, player, action.space);
+    case "useBuildPermit":
+      return useBuildPermit(ctx, player, action.space);
     case "sellBuilding":
       return sellBuilding(ctx, player, action.space);
     case "mortgage":
@@ -349,9 +352,12 @@ function roll(ctx: Ctx): void {
       finishMove(ctx);
       return;
     }
-    turn.extraRoll = true;
-  } else {
-    turn.extraRoll = false;
+    // Pasch: Die Figur fährt nur durch (Start-Geld gibt es trotzdem), das Feld zählt nicht.
+    // Erst der Wurf ohne Pasch wertet das Feld aus, auf dem der Zug endet (docs/regeln.md, Abschnitt 3).
+    moveForward(ctx, player, dice[0] + dice[1]);
+    emit(ctx, { type: "passedThrough", player: player.id, space: player.position });
+    turn.phase = "preRoll";
+    return;
   }
 
   moveForward(ctx, player, dice[0] + dice[1]);
@@ -365,7 +371,6 @@ function finishMove(ctx: Ctx): void {
   const player = getCurrentPlayer(ctx.s);
   if (player.inJail) {
     turn.phase = "postRoll";
-    turn.extraRoll = false;
     turn.pendingBuy = null;
     return;
   }
@@ -376,9 +381,9 @@ function finishMove(ctx: Ctx): void {
   continueTurn(turn);
 }
 
+/** Nach dem Auswerten des Endfelds (und einem allfälligen Kauf) ist nur noch Verwalten und «Zug beenden» möglich. */
 function continueTurn(turn: TurnState): void {
-  turn.phase = turn.extraRoll ? "preRoll" : "postRoll";
-  turn.extraRoll = false;
+  turn.phase = "postRoll";
 }
 
 function moveForward(ctx: Ctx, player: PlayerState, steps: number): void {
@@ -408,7 +413,6 @@ function sendToJail(ctx: Ctx, player: PlayerState, reason: "space" | "card" | "d
   player.position = JAIL_INDEX;
   player.inJail = true;
   player.jailTurns = 0;
-  ctx.s.turn.extraRoll = false;
   ctx.s.turn.pendingBuy = null;
   emit(ctx, { type: "sentToJail", player: player.id, from, reason });
 }
@@ -482,8 +486,9 @@ function drawCard(ctx: Ctx, player: PlayerState, deck: DeckId): void {
   if (!id) throw new Error(`Der Stapel ${deck} ist leer.`);
   const card = getCard(id);
   emit(ctx, { type: "cardDrawn", player: player.id, deck, card: id });
-  // Die Karte kommt gleich unter den Stapel, ausser der Spieler behält sie (Freikarte).
+  // Die Karte kommt gleich unter den Stapel, ausser der Spieler behält sie (Freikarte, Baubewilligung).
   if (card.effect.kind === "getOutOfJailFree") player.jailCards.push(id);
+  else if (card.effect.kind === "buildPermit") player.buildPermits.push(id);
   else ctx.s.decks[deck].push(id);
   applyCard(ctx, player, card);
 }
@@ -521,6 +526,7 @@ function applyCard(ctx: Ctx, player: PlayerState, card: Card): void {
     case "goToJail":
       return sendToJail(ctx, player, "card");
     case "getOutOfJailFree":
+    case "buildPermit":
       return;
   }
 }
@@ -572,8 +578,22 @@ function declineProperty(ctx: Ctx, player: PlayerState): void {
 // ---------------------------------------------------------------------------
 
 function buildHouse(ctx: Ctx, player: PlayerState, index: SpaceIndex): void {
+  transfer(ctx, player.id, BANK, getStreet(index).housePrice, "build", index);
+  placeBuilding(ctx, player, index);
+}
+
+/** Baubewilligung: wie bauen, aber gratis. Die Karte kommt unter ihren Stapel. */
+function useBuildPermit(ctx: Ctx, player: PlayerState, index: SpaceIndex): void {
+  const card = player.buildPermits.shift();
+  if (!card) throw new Error("Keine Baubewilligung vorhanden.");
+  ctx.s.decks[getCard(card).deck].push(card);
+  emit(ctx, { type: "buildPermitUsed", player: player.id, card, space: index });
+  placeBuilding(ctx, player, index);
+}
+
+/** Eine Stufe höher bauen (Haus oder Hotel) mit Gebäuden aus dem Bankvorrat. */
+function placeBuilding(ctx: Ctx, player: PlayerState, index: SpaceIndex): void {
   const s = ctx.s;
-  const space = getStreet(index);
   const property = getProperty(s, index);
   if (property.houses === HOTEL_LEVEL - 1) {
     // Hotel: die 4 Häuser gehen zurück an die Bank.
@@ -583,7 +603,6 @@ function buildHouse(ctx: Ctx, player: PlayerState, index: SpaceIndex): void {
     s.bank.houses -= 1;
   }
   property.houses += 1;
-  transfer(ctx, player.id, BANK, space.housePrice, "build", index);
   emit(ctx, { type: "houseBuilt", player: player.id, space: index, level: property.houses });
 }
 
@@ -751,6 +770,12 @@ function goBankrupt(ctx: Ctx, player: PlayerState, creditor: Creditor, reason: D
     }
     player.jailCards = [];
   }
+  // Baubewilligungen sind nicht handelbar und gehen immer unter den Stapel, auch bei einem Gläubiger.
+  for (const card of player.buildPermits) {
+    s.decks[getCard(card).deck].push(card);
+    emit(ctx, { type: "buildPermitReturned", card, from: player.id });
+  }
+  player.buildPermits = [];
 
   player.bankrupt = true;
   player.inJail = false;

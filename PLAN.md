@@ -119,6 +119,13 @@ Teil R: Regeländerungen (Wunsch des Entwicklers, 2026-10-13) ✓
 - [x] Versteigerungen ganz abschaffen: nicht gekaufte Felder bleiben frei; bei Bankrott an die Bank gehen Felder frei zurück
 - [x] Bots, Client, Server, Tests, Doku (`regeln.md` Abschnitte 5, 6, 9, 10, 12, 16; `brett.md`, `engine.md`, `bots.md`) angepasst; Bot-Liga: alle 1200 Partien enden, clever gegen einfach 79 %
 
+Teil R2: Balance und Wünsche aus weiteren Runden (2026-10-14) ✓
+- [x] Mieten ausbalanciert, nur runde Beträge: Grundmiete etwa 8–19 % des Preises, 1. Haus mindestens 3 × Grundmiete, Häuser billiger Gruppen stärker (Hotel Braun +50 % … Dunkelblau ±0), teurer nie weniger Miete; Versorger 5 × / 10 ×; Hypothekenzins auf 5 CHF aufgerundet
+- [x] Pasch seltener: 1 von 7 (gewichtete Würfeltabelle, eine Zufallszahl pro Wurf)
+- [x] Nach einem Pasch nur durchfahren: Zwischenfeld zählt nicht (keine Miete, kein Kauf, keine Karte), erst das Endfeld
+- [x] Ereigniskarte «Baubewilligung» (E06 statt zweiter «Tram verpasst»): behalten, gratis ein Haus oder Hotel bauen, nicht handelbar; Bots setzen sie sofort ein
+- [x] Bot-Liga: alle Partien enden, clever gegen einfach 84 %, Spieldauer etwa wie vorher (Versuche in `docs/bots.md`); «einfach» kauft jetzt mit 80 % (keine Versteigerungen mehr)
+
 Teil B: Spielstand speichern und fortsetzen
 - [ ] Lokal und Solo: automatisch in `localStorage`, «Fortsetzen» im Hauptmenü, Neuladen führt zurück ins Spiel
 - [ ] Online: verschlüsselter Spielstand (`room-save.ts`, `ZUERIPOLY_SAVE_KEY`), Wiederherstellen nach Server-Neustart, Tests, Durchspiel-Test `--restart`

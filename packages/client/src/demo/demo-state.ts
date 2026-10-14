@@ -10,13 +10,14 @@ interface DemoPlayer {
   inJail?: boolean;
   jailTurns?: number;
   jailCards?: string[];
+  buildPermits?: string[];
   bankrupt?: boolean;
   /** Feld → Häuser (0–4, 5 = Hotel); negativ = mit Hypothek belastet. */
   owns: Record<SpaceIndex, number>;
 }
 
 const SEATS: Record<PlayerId, DemoPlayer> = {
-  anna: { money: 1240, position: 18, owns: { 1: 2, 3: 2, 5: 0, 6: 0, 15: 0 } },
+  anna: { money: 1240, position: 18, buildPermits: ["E06"], owns: { 1: 2, 3: 2, 5: 0, 6: 0, 15: 0 } },
   ben: { money: 860, position: 24, owns: { 12: 0, 16: 3, 18: 3, 19: 3 } },
   clara: { money: 310, position: 10, inJail: true, jailTurns: 1, jailCards: ["E08"], owns: { 11: -1, 21: 0, 23: 0 } },
   dario: { money: 1575, position: 10, owns: { 26: 0, 31: 4, 32: 4, 34: 5 } },
@@ -45,7 +46,7 @@ export function createDemoState(): GameState {
   state.players.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
   state.current = 0;
   state.turnNumber = 23;
-  state.turn = { phase: "postRoll", doublesCount: 0, extraRoll: false, dice: [4, 3], pendingBuy: null };
+  state.turn = { phase: "postRoll", doublesCount: 0, dice: [4, 3], pendingBuy: null };
   state.jackpot = 350;
 
   let houses = 0;
@@ -58,6 +59,7 @@ export function createDemoState(): GameState {
     player.inJail = seat.inJail ?? false;
     player.jailTurns = seat.jailTurns ?? 0;
     player.jailCards = seat.jailCards ?? [];
+    player.buildPermits = seat.buildPermits ?? [];
     player.bankrupt = seat.bankrupt ?? false;
     for (const [index, level] of Object.entries(seat.owns)) {
       const property = state.properties[Number(index)];
@@ -70,8 +72,8 @@ export function createDemoState(): GameState {
     }
   }
   state.bank = { houses: TOTAL_HOUSES - houses, hotels: TOTAL_HOTELS - hotels };
-  // Gehaltene Freikarten liegen nicht mehr im Stapel.
-  const held = new Set(state.players.flatMap((p) => p.jailCards));
+  // Gehaltene Karten (Freikarten, Baubewilligungen) liegen nicht mehr im Stapel.
+  const held = new Set(state.players.flatMap((p) => [...p.jailCards, ...p.buildPermits]));
   state.decks.event = state.decks.event.filter((id) => !held.has(id));
   state.decks.community = state.decks.community.filter((id) => !held.has(id));
   return state;
@@ -83,5 +85,5 @@ export const DEMO_MESSAGE: SignMessage = {
   line: "Anna · 4 + 3",
   label: "Nächster Halt",
   stop: "Langstrasse",
-  note: "Ben kassiert 550 CHF Miete. Das wird teuer.",
+  note: "Ben kassiert 700 CHF Miete. Das wird teuer.",
 };

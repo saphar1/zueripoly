@@ -1,4 +1,4 @@
-// Knöpfe auf der Besitzkarte: bauen, Gebäude verkaufen, Hypothek aufnehmen, auslösen.
+// Knöpfe auf der Besitzkarte: bauen (auch gratis mit Baubewilligung), Gebäude verkaufen, Hypothek aufnehmen, auslösen.
 // Angeboten wird nur, was die Engine jetzt erlaubt. Geht Bauen nicht, steht der Grund darunter.
 import type { Action, ErrorCode, GameState, PlayerId, SpaceIndex } from "@zueripoly/engine";
 import { HOTEL_LEVEL, getPropertySpace, unmortgageCost, validateAction } from "@zueripoly/engine";
@@ -35,11 +35,11 @@ export function PropertyActions({ state, actor, index, disabled, onAct }: Proper
 
   const options: Option[] = [];
   const build: Action = { type: "buildHouse", space: index };
+  const permit: Action = { type: "useBuildPermit", space: index };
   if (space.kind === "street") {
-    options.push({
-      action: build,
-      label: `${property.houses === HOTEL_LEVEL - 1 ? "Hotel" : "Haus"} bauen · ${formatChf(space.housePrice)}`,
-    });
+    const building = property.houses === HOTEL_LEVEL - 1 ? "Hotel" : "Haus";
+    options.push({ action: permit, label: `${building} gratis bauen · Baubewilligung` });
+    options.push({ action: build, label: `${building} bauen · ${formatChf(space.housePrice)}` });
     options.push({
       action: { type: "sellBuilding", space: index },
       label: `${property.houses === HOTEL_LEVEL ? "Hotel" : "Haus"} verkaufen · +${formatChf(space.housePrice / 2)}`,
@@ -49,7 +49,9 @@ export function PropertyActions({ state, actor, index, disabled, onAct }: Proper
   options.push({ action: { type: "unmortgage", space: index }, label: `Auslösen · ${formatChf(unmortgageCost(space))}` });
 
   const legal = options.filter((o) => validateAction(state, actor, o.action) === null);
-  const buildError = space.kind === "street" && property.houses < HOTEL_LEVEL ? validateAction(state, actor, build) : null;
+  // Mit Baubewilligung ist fehlendes Bargeld kein Grund, nicht zu bauen.
+  const permitOk = legal.some((o) => o.action.type === "useBuildPermit");
+  const buildError = space.kind === "street" && property.houses < HOTEL_LEVEL && !permitOk ? validateAction(state, actor, build) : null;
   const reason = buildError && BUILD_REASONS.includes(buildError.code) ? buildError.message : null;
   if (legal.length === 0 && !reason) return null;
 

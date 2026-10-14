@@ -173,6 +173,12 @@ export function PlayerPanel({
                 <span className="visually-hidden"> Freikarte</span>
               </span>
             )}
+            {player.buildPermits.length > 0 && (
+              <span className="chip chip--card" title="Baubewilligung: gratis ein Haus oder Hotel bauen">
+                <Icon name="house" /> {player.buildPermits.length}
+                <span className="visually-hidden"> Baubewilligung</span>
+              </span>
+            )}
             {player.bankrupt && <span className="chip chip--bankrupt">Bankrott</span>}
           </div>
           <p className="panel__where">

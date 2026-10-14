@@ -35,8 +35,8 @@ export const EVENT_CARDS: readonly Card[] = [
   {
     id: "E06",
     deck: "event",
-    text: "Tram verpasst, zweiter Versuch: Fahre zum nächsten Bahnhof. Gehört er jemandem, zahle die doppelte Miete. Sonst darfst du ihn kaufen.",
-    effect: { kind: "moveToNearest", target: "station" },
+    text: "Das Amt für Baubewilligungen ist ausnahmsweise schnell: Baue gratis ein Haus oder ein Hotel auf einer deiner Strassen. Behalte die Karte, bis du sie brauchst.",
+    effect: { kind: "buildPermit" },
   },
   {
     id: "E07",

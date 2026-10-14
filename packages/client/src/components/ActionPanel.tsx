@@ -70,11 +70,11 @@ function clock(seconds: number): string {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
-/** Je Farbgruppe, in der jetzt gebaut werden darf, das erste baubare Feld. */
+/** Je Farbgruppe, in der jetzt gebaut werden darf (mit Geld oder Baubewilligung), das erste baubare Feld. */
 function buildableGroups(legal: Action[]): [ColorGroup, SpaceIndex][] {
   const groups = new Map<ColorGroup, SpaceIndex>();
   for (const action of legal) {
-    if (action.type !== "buildHouse") continue;
+    if (action.type !== "buildHouse" && action.type !== "useBuildPermit") continue;
     const space = getPropertySpace(action.space);
     if (space.kind === "street" && !groups.has(space.group)) groups.set(space.group, action.space);
   }
@@ -233,7 +233,7 @@ function watchStatus({ state, bot, disabled, canCancel, onAct }: WatchStatusProp
     const text = bot.inJail
       ? `${name} sitzt im Gefängnis und entscheidet: Kaution, Freikarte oder einen Zug aussetzen.`
       : state.turn.doublesCount > 0
-        ? `Pasch! ${name} würfelt nochmals.`
+        ? `Pasch! ${name} fährt durch und würfelt nochmals.`
         : `${name} würfelt gleich.`;
     return { label: "Am Zug", body: <p className="tafel__prompt">{text}</p> };
   }
@@ -385,7 +385,7 @@ export function ActionPanel({
     const prompt = player.inJail
       ? "Im Gefängnis. Einen Zug aussetzen (danach frei), Kaution zahlen oder Freikarte zeigen und sofort würfeln."
       : state.turn.doublesCount > 0
-        ? "Pasch! Nochmals würfeln."
+        ? "Pasch! Das Feld zählt nicht: nochmals würfeln, gekauft wird erst am Ende des Zugs."
         : "Bereit? Würfeln und losfahren.";
     body = (
       <>

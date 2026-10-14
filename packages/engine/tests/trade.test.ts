@@ -64,11 +64,11 @@ describe("Handel", () => {
   it("belastete Felder: Empfänger zahlt 10 % Zins oder löst sofort ab", () => {
     let state = own(own(newGame(2), "p1", 39), "p2", 37);
     state.properties[39]!.mortgaged = true; // Hypothek 200, Zins 20
-    state.properties[37]!.mortgaged = true; // Hypothek 175, Zins 18
-    // p1 gibt 39, bekommt 37 und löst 37 sofort ab (175 + 18 = 193).
+    state.properties[37]!.mortgaged = true; // Hypothek 175, Zins 20 (aufgerundet auf 5)
+    // p1 gibt 39, bekommt 37 und löst 37 sofort ab (175 + 20 = 195).
     ({ state } = act(state, "p1", offer("p2", side([39]), side([37]), [37])));
     const { state: after } = act(state, "p2", { type: "acceptTrade", lift: [] });
-    expect(player(after, "p1").money).toBe(1500 - 193);
+    expect(player(after, "p1").money).toBe(1500 - 195);
     expect(player(after, "p2").money).toBe(1500 - 20);
     expect(after.properties[37]).toMatchObject({ owner: "p1", mortgaged: false });
     expect(after.properties[39]).toMatchObject({ owner: "p2", mortgaged: true });
@@ -91,14 +91,14 @@ describe("Handel", () => {
     state.current = 1;
     player(state, "p2").money = 10;
     player(state, "p2").position = 35;
-    ({ state } = act(state, "p2", { type: "rollDice" }, dice([1, 3]))); // Miete 50 an p1
+    ({ state } = act(state, "p2", { type: "rollDice" }, dice([1, 3]))); // Miete 75 an p1
     expect(state.debts).toHaveLength(1);
     expect(canProposeTrade(state, "p2")).toBe(true);
     expect(canProposeTrade(state, "p1")).toBe(false);
     ({ state } = act(state, "p2", offer("p1", side([37]), side([], 200))));
     const { state: after } = act(state, "p1", { type: "acceptTrade" });
     expect(after.debts).toEqual([]);
-    expect(player(after, "p2").money).toBe(10 + 200 - 50);
-    expect(player(after, "p1").money).toBe(1500 - 200 + 50);
+    expect(player(after, "p2").money).toBe(10 + 200 - 75);
+    expect(player(after, "p1").money).toBe(1500 - 200 + 75);
   });
 });

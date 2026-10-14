@@ -80,7 +80,9 @@ export type CardEffect =
   | { kind: "collectEach"; amount: number }
   | { kind: "repairs"; perHouse: number; perHotel: number }
   | { kind: "goToJail" }
-  | { kind: "getOutOfJailFree" };
+  | { kind: "getOutOfJailFree" }
+  /** Baubewilligung: behalten, später gratis ein Haus oder Hotel bauen. */
+  | { kind: "buildPermit" };
 
 export interface Card {
   id: CardId;
@@ -133,6 +135,8 @@ export interface PlayerState {
   jailTurns: number;
   /** Gehaltene Freikarten («Aus dem Gefängnis frei»). */
   jailCards: CardId[];
+  /** Gehaltene Baubewilligungen (gratis ein Haus oder Hotel bauen, nicht handelbar). */
+  buildPermits: CardId[];
   bankrupt: boolean;
 }
 
@@ -153,10 +157,8 @@ export type TurnPhase = "preRoll" | "buy" | "postRoll";
 
 export interface TurnState {
   phase: TurnPhase;
-  /** Pasch in Folge in diesem Zug. */
+  /** Pasch in Folge in diesem Zug. Nach einem Pasch bleibt die Phase `preRoll` (nochmals würfeln). */
   doublesCount: number;
-  /** Nach dem Auswerten des Feldes darf (muss) nochmals gewürfelt werden. */
-  extraRoll: boolean;
   /** Letzter Bewegungswurf in diesem Zug. */
   dice: Dice | null;
   /** Freies Grundstück, über dessen Kauf entschieden wird (Phase buy). */
@@ -266,6 +268,7 @@ export type Action =
   | { type: "buyProperty" }
   | { type: "declineProperty" }
   | { type: "buildHouse"; space: SpaceIndex }
+  | { type: "useBuildPermit"; space: SpaceIndex }
   | { type: "sellBuilding"; space: SpaceIndex }
   | { type: "mortgage"; space: SpaceIndex }
   | { type: "unmortgage"; space: SpaceIndex }
@@ -289,6 +292,7 @@ export type ErrorCode =
   | "notInJail"
   | "inJail"
   | "noJailCard"
+  | "noBuildPermit"
   | "notEnoughMoney"
   | "invalidSpace"
   | "notOwner"
@@ -327,6 +331,8 @@ export type GameEvent =
   | { type: "turnStarted"; player: PlayerId; turnNumber: number }
   | { type: "diceRolled"; player: PlayerId; dice: Dice; purpose: "move" | "utilityRent" }
   | { type: "moved"; player: PlayerId; from: SpaceIndex; to: SpaceIndex; direction: "forward" | "backward"; passedStart: boolean }
+  /** Nach einem Pasch nur durchgefahren: Das Feld zählt nicht, es wird nochmals gewürfelt. */
+  | { type: "passedThrough"; player: PlayerId; space: SpaceIndex }
   | { type: "moneyTransferred"; from: MoneyParty; to: MoneyParty; amount: number; reason: MoneyReason; space: SpaceIndex | null }
   | { type: "propertyBought"; player: PlayerId; space: SpaceIndex; price: number }
   | { type: "propertyDeclined"; player: PlayerId; space: SpaceIndex }
@@ -348,6 +354,10 @@ export type GameEvent =
   | { type: "propertyReturned"; space: SpaceIndex; from: PlayerId }
   | { type: "jailCardTransferred"; card: CardId; from: PlayerId; to: PlayerId }
   | { type: "jailCardReturned"; card: CardId; from: PlayerId }
+  /** Baubewilligung eingesetzt (danach folgt `houseBuilt`); die Karte kommt unter den Stapel. */
+  | { type: "buildPermitUsed"; player: PlayerId; card: CardId; space: SpaceIndex }
+  /** Baubewilligung eines Ausgeschiedenen geht unter den Stapel. */
+  | { type: "buildPermitReturned"; card: CardId; from: PlayerId }
   | { type: "mortgageDecisionRequired"; player: PlayerId; spaces: SpaceIndex[] }
   | { type: "mortgagesResolved"; player: PlayerId; lifted: SpaceIndex[]; kept: SpaceIndex[] }
   | { type: "bankrupt"; player: PlayerId; creditor: Creditor }

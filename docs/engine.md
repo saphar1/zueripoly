@@ -9,6 +9,7 @@ Die Regeln selbst stehen in [regeln.md](regeln.md), Felder und Karten in [brett.
 - Eine **Aktion** erzeugt einen neuen Spielstand:
   `applyAction(state, playerId, action, rng)` → `{ ok: true, state, events }` oder `{ ok: false, error }`.
 - **Zufall** (Würfel, Mischen) kommt immer von aussen über `rng`. `createSeededRng(seed)` liefert eine seedbare Quelle; `getState()` speichert ihren Stand.
+- **Würfel** (`rollDice` in `random.ts`): **eine** Zufallszahl pro Wurf aus einer gewichteten Tabelle der 36 Paare (Pasch Gewicht 5, sonst 6, zusammen 210 = `DICE_OUTCOMES`). Pasch also 1 von 7; jeder einzelne Würfel bleibt gleich verteilt. Tests geben Würfe mit `diceRollIndex([a, b])` vor (Helfer `dice(...)`).
 - Das **Protokoll** besteht aus Ereignissen (`GameEvent`), nicht aus Text. Die Oberfläche macht daraus deutsche Sätze. Jede Geldbewegung ist ein Ereignis `moneyTransferred`. `state.log` hält die letzten 200 Ereignisse, `applyAction` liefert die neuen zusätzlich als `events`.
 - Fehlermeldungen kommen als `{ code, message }`; `message` ist auf Deutsch (de-CH).
 
@@ -31,7 +32,7 @@ Die Regeln selbst stehen in [regeln.md](regeln.md), Felder und Karten in [brett.
 ## Aktionen
 
 `rollDice`, `payJailFine`, `useJailCard`, `buyProperty`, `declineProperty`,
-`buildHouse {space}`, `sellBuilding {space}`, `mortgage {space}`, `unmortgage {space}`,
+`buildHouse {space}`, `useBuildPermit {space}` (Baubewilligung: bauen ohne Geld, Karte unter den Stapel; Ereignis `buildPermitUsed`), `sellBuilding {space}`, `mortgage {space}`, `unmortgage {space}`,
 `proposeTrade {offer}`, `acceptTrade {lift?}`, `rejectTrade`, `cancelTrade`,
 `resolveMortgages {lift}`, `declareBankruptcy`, `endTurn`, `timeout`.
 
@@ -43,7 +44,7 @@ Das Spiel wartet immer auf **genau einen** Spieler (`getWaitingFor`). Vorrang vo
 2. **Hypothekenentscheid** (`state.mortgageDecision`): Nach einem Bankrott wählt der Gläubiger, welche belasteten Felder er sofort ablöst.
 3. **Schuld** (`state.debts[0]`): Der Schuldner treibt Geld auf (verkaufen, belasten, handeln) oder erklärt Bankrott. Sobald das Bargeld reicht, zahlt die Engine automatisch.
 4. **Zug** des Spielers `players[current]`, Phase `state.turn.phase`:
-   - `preRoll`: würfeln, verwalten, handeln. Nach einem Pasch wieder `preRoll`. **Im Gefängnis** kein Würfeln (Fehler `inJail`), sondern `payJailFine` / `useJailCard` (danach würfeln) oder `endTurn` = einen Zug aussitzen (`jailTurns = 1`, Ereignis `jailTurnServed`). Zu Beginn des nächsten eigenen Zugs ist man frei (`leftJail`, `method: "served"`).
+   - `preRoll`: würfeln, verwalten, handeln. Nach einem Pasch (1. oder 2.) fährt die Figur nur durch: `moved` (und Start-Geld), dann Ereignis `passedThrough`, **kein** Auswerten des Feldes, wieder `preRoll`. Erst der Wurf ohne Pasch wertet das Feld aus (Kauf → `buy`, sonst `postRoll`). **Im Gefängnis** kein Würfeln (Fehler `inJail`), sondern `payJailFine` / `useJailCard` (danach würfeln) oder `endTurn` = einen Zug aussitzen (`jailTurns = 1`, Ereignis `jailTurnServed`). Zu Beginn des nächsten eigenen Zugs ist man frei (`leftJail`, `method: "served"`).
    - `buy`: freies Feld `turn.pendingBuy` kaufen oder ablehnen (das Feld bleibt frei, keine Versteigerung).
    - `postRoll`: verwalten, handeln, `endTurn`.
 

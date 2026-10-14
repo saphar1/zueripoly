@@ -3,6 +3,8 @@ import {
   checkInvariants,
   createGame,
   createSeededRng,
+  DICE_OUTCOMES,
+  diceRollIndex,
   getWaitingFor,
   validateGameConfig,
   type GameConfig,
@@ -88,11 +90,11 @@ describe("Spiel erstellen", () => {
 
 /** Würfe für die Startreihenfolge aus dem Drehbuch, alles andere (Mischen) aus einem festen Seed. */
 function scriptedStart(...rolls: [number, number][]): Rng {
-  const script = rolls.flatMap(([a, b]) => [a - 1, b - 1]);
+  const script = rolls.map((roll) => diceRollIndex(roll));
   const fallback = createSeededRng(1);
   return {
     nextInt(max: number): number {
-      const value = max === 6 ? script.shift() : undefined;
+      const value = max === DICE_OUTCOMES ? script.shift() : undefined;
       return value ?? fallback.nextInt(max);
     },
   };

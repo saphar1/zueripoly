@@ -101,7 +101,9 @@ function signFor(next: GameState, events: readonly GameEvent[]): SignMessage | n
   const sum = roll ? roll.dice[0] + roll.dice[1] : 0;
   const stop = last.to === JAIL_INDEX ? "Gefängnis, zu Besuch" : getSpace(last.to).name;
   const note = lines.length > 0 ? lines.join(" ") : landingNote(next, last.to, sum, player.id);
-  return { token: player.token, line, label: "Nächster Halt", stop, note };
+  // Nach einem Pasch fährt die Figur nur durch: Das Feld zählt nicht.
+  const label = after.some((e) => e.type === "passedThrough") ? "Durchfahrt" : "Nächster Halt";
+  return { token: player.token, line, label, stop, note };
 }
 
 /** Tafel vor dem ersten Wurf: wer beginnt, in welcher Reihenfolge. */

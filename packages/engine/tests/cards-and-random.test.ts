@@ -4,6 +4,7 @@ import {
   createSeededRng,
   EVENT_CARDS,
   getCard,
+  diceRollIndex,
   rollDice,
   shuffle,
 } from "../src";
@@ -65,6 +66,31 @@ describe("Zufallsquelle", () => {
       expect(counts[face]).toBeGreaterThan(1800);
       expect(counts[face]).toBeLessThan(2200);
     }
+  });
+
+  it("würfelt seltener einen Pasch: etwa 1 von 7, jedes Paar kommt vor", () => {
+    const rng = createSeededRng(7);
+    const pairs = new Set<string>();
+    let doubles = 0;
+    const rolls = 100_000;
+    for (let i = 0; i < rolls; i++) {
+      const [a, b] = rollDice(rng);
+      pairs.add(`${a}${b}`);
+      if (a === b) doubles++;
+    }
+    expect(pairs.size).toBe(36);
+    expect(doubles / rolls).toBeGreaterThan(1 / 7 - 0.005);
+    expect(doubles / rolls).toBeLessThan(1 / 7 + 0.005);
+  });
+
+  it("findet zu jedem Wurf den passenden Tabellenplatz (Testdrehbuch)", () => {
+    for (let a = 1; a <= 6; a++) {
+      for (let b = 1; b <= 6; b++) {
+        const index = diceRollIndex([a, b]);
+        expect(rollDice({ nextInt: () => index })).toEqual([a, b]);
+      }
+    }
+    expect(() => diceRollIndex([0, 7])).toThrow();
   });
 
   it("mischt eine Kopie, ohne Karten zu verlieren", () => {

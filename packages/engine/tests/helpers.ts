@@ -5,6 +5,8 @@ import {
   checkInvariants,
   createGame,
   createSeededRng,
+  DICE_OUTCOMES,
+  diceRollIndex,
   getProperty,
   TOKENS,
   type Action,
@@ -21,12 +23,13 @@ import {
 
 /** Zufallsquelle mit vorgegebenen Würfen. Wird mehr gewürfelt als vorgegeben, schlägt der Test fehl. */
 export function dice(...rolls: [number, number][]): Rng {
-  const values = rolls.flatMap(([a, b]) => [a - 1, b - 1]);
+  // Ein Wurf = eine Zufallszahl aus der gewichteten Würfeltabelle (random.ts).
+  const values = rolls.map((roll) => diceRollIndex(roll));
   return {
     nextInt(max: number): number {
       const value = values.shift();
       if (value === undefined) throw new Error("Testdrehbuch: keine Würfe mehr vorgegeben.");
-      if (max !== 6) throw new Error(`Testdrehbuch: unerwartete Zufallszahl bis ${max}.`);
+      if (max !== DICE_OUTCOMES) throw new Error(`Testdrehbuch: unerwartete Zufallszahl bis ${max}.`);
       return value;
     },
   };

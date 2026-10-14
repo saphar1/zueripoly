@@ -94,12 +94,22 @@ function playTurn(ctx: BotContext): Action {
   if (ctx.state.turn.phase === "buy") return decideBuy(ctx);
   const trade = proposeTrade(ctx);
   if (trade) return trade;
+  const permit = useBuildPermit(ctx);
+  if (permit) return permit;
   if (canManage(ctx)) {
     const manage = ctx.level === "clever" ? manageClever(ctx) : manageEasy(ctx);
     if (manage) return manage;
   }
   if (ctx.state.turn.phase === "preRoll") return leaveJailOrRoll(ctx);
   return { type: "endTurn" };
+}
+
+/** Baubewilligung sofort einsetzen, sobald irgendwo gebaut werden darf (gratis ist immer gut). */
+function useBuildPermit(ctx: BotContext): Action | null {
+  const permits = legalOf(ctx, "useBuildPermit");
+  if (permits.length === 0) return null;
+  if (ctx.level === "easy") return pick(ctx.rng, permits) ?? null;
+  return best(permits, (a) => buildScore(ctx.state, a.space)) ?? null;
 }
 
 /** Punkte für ein Haus auf diesem Feld: Mietzuwachs pro Franken. Bis 3 Häuser zählt der Schnitt (dort lohnt es sich am meisten). */
@@ -230,7 +240,7 @@ function decideBuy(ctx: BotContext): Action {
   const buy = legalOf(ctx, "buyProperty")[0];
   const decline: Action = { type: "declineProperty" };
 
-  if (ctx.level === "easy") return buy && chance(rng, 0.65) ? buy : decline;
+  if (ctx.level === "easy") return buy && chance(rng, 0.8) ? buy : decline;
 
   // Wichtig: vollendet eine eigene oder blockiert eine fremde Farbgruppe.
   const important = propertyWorth(state, me.id, index) >= price * 1.4;

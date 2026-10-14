@@ -18,18 +18,18 @@ function rentPaid(state: ReturnType<typeof newGame>, from: number, roll: [number
 describe("Miete", () => {
   it("Strasse ohne Haus: Grundmiete", () => {
     const state = own(newGame(2), "p1", 39);
-    expect(rentPaid(state, 35, [1, 3]).amount).toBe(50);
+    expect(rentPaid(state, 35, [1, 3]).amount).toBe(75);
   });
 
   it("ganze Farbgruppe ohne Häuser: doppelte Miete", () => {
     const state = own(newGame(2), "p1", 37, 39);
-    expect(rentPaid(state, 35, [1, 3]).amount).toBe(100);
+    expect(rentPaid(state, 35, [1, 3]).amount).toBe(150);
   });
 
   it("keine Verdopplung, wenn eine Strasse der Gruppe belastet ist", () => {
     const state = own(newGame(2), "p1", 37, 39);
     state.properties[37]!.mortgaged = true;
-    expect(rentPaid(state, 35, [1, 3]).amount).toBe(50);
+    expect(rentPaid(state, 35, [1, 3]).amount).toBe(75);
   });
 
   it("belastetes Feld bringt keine Miete", () => {
@@ -42,7 +42,7 @@ describe("Miete", () => {
 
   it("Häuser und Hotel nach Mietstaffel", () => {
     for (const [level, expected] of [
-      [1, 200],
+      [1, 225],
       [2, 600],
       [3, 1400],
       [4, 1700],
@@ -59,21 +59,21 @@ describe("Miete", () => {
   it("unbebaute Strasse behält die Verdopplung, wenn eine andere der Gruppe bebaut ist", () => {
     const state = own(newGame(2), "p1", 6, 8, 9);
     setHouses(state, 9, 1);
-    expect(calculateRent(state, 6, 0)).toBe(12);
-    expect(calculateRent(state, 9, 0)).toBe(40);
+    expect(calculateRent(state, 6, 0)).toBe(20);
+    expect(calculateRent(state, 9, 0)).toBe(60);
   });
 
   it("Bahnhöfe: 25 / 50 / 100 / 200", () => {
     const stations = [5, 15, 25, 35];
     for (let n = 1; n <= 4; n++) {
       const state = own(newGame(2), "p1", ...stations.slice(0, n));
-      expect(rentPaid(state, 1, [2, 2]).amount).toBe([25, 50, 100, 200][n - 1]);
+      expect(rentPaid(state, 1, [1, 3]).amount).toBe([25, 50, 100, 200][n - 1]);
     }
   });
 
-  it("Versorger: 4 × bzw. 10 × die Augensumme", () => {
+  it("Versorger: 5 × bzw. 10 × die Augensumme", () => {
     const one = own(newGame(2), "p1", 12);
-    expect(rentPaid(one, 7, [2, 3]).amount).toBe(20);
+    expect(rentPaid(one, 7, [2, 3]).amount).toBe(25);
     const both = own(newGame(2), "p1", 12, 28);
     expect(rentPaid(both, 7, [2, 3]).amount).toBe(50);
   });
@@ -86,6 +86,6 @@ describe("Miete", () => {
   it("Besitzer im Gefängnis erhält trotzdem Miete", () => {
     const state = own(newGame(2), "p1", 39);
     placeAt(state, "p1", 10).players[0]!.inJail = true;
-    expect(rentPaid(state, 35, [1, 3]).amount).toBe(50);
+    expect(rentPaid(state, 35, [1, 3]).amount).toBe(75);
   });
 });
