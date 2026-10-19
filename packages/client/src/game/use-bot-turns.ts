@@ -4,6 +4,7 @@
 import { useEffect } from "react";
 import type { Action, GameState, PlayerId, Rng } from "@zueripoly/engine";
 import { chooseBotAction, getWaitingFor } from "@zueripoly/engine";
+import { getPreferences } from "../preferences";
 import type { LocalGame } from "./use-local-game";
 
 /** Normale Denkpause vor einem Entscheid. */
@@ -14,6 +15,8 @@ const QUICK_MS = 500;
 const READ_CARD_MS = 2000;
 /** Spielen nur noch Bots, laufen sie im Zeitraffer zu Ende. */
 const NO_AUDIENCE_MS = 150;
+/** Tempo «schnell» (Solo-Lobby): alle Denkpausen so viel kürzer. */
+const FAST_FACTOR = 0.4;
 
 const QUICK: readonly Action["type"][] = ["buildHouse", "useBuildPermit", "sellBuilding", "mortgage", "unmortgage"];
 
@@ -33,8 +36,9 @@ function pauseFor(state: GameState, action: Action, cardShown: boolean): number 
   const dev = devPause();
   if (dev !== null) return dev;
   if (!state.players.some((p) => !p.bot && !p.bankrupt)) return NO_AUDIENCE_MS;
-  if (cardShown) return READ_CARD_MS;
-  return QUICK.includes(action.type) ? QUICK_MS : THINK_MS;
+  const factor = getPreferences().botSpeed === "fast" ? FAST_FACTOR : 1;
+  if (cardShown) return READ_CARD_MS * factor;
+  return (QUICK.includes(action.type) ? QUICK_MS : THINK_MS) * factor;
 }
 
 /**

@@ -5,6 +5,7 @@ import { type CSSProperties, type FormEvent, useRef, useState } from "react";
 import type { BotLevel, GameConfig, GameOptions, TokenId } from "@zueripoly/engine";
 import { BOT_NAMES, DEFAULT_OPTIONS, MAX_PLAYERS, MIN_PLAYERS, TOKENS, validateGameConfig } from "@zueripoly/engine";
 import { describeSave, loadLocalGame } from "../game/local-save";
+import { type BotSpeed, setPreference, usePreference } from "../preferences";
 import { GameOptionsForm } from "../components/GameOptionsForm";
 import { Icon } from "../components/Icon";
 import { TokenPicker } from "../components/TokenPicker";
@@ -29,6 +30,11 @@ interface LobbyProps {
 }
 
 const MAX_BOTS = MAX_PLAYERS - 1;
+const BOT_SPEEDS: { speed: BotSpeed; label: string }[] = [
+  { speed: "normal", label: "Normal" },
+  { speed: "fast", label: "Schnell" },
+];
+
 export const BOT_LEVELS: { level: BotLevel; label: string }[] = [
   { level: "easy", label: "Einfach" },
   { level: "clever", label: "Clever" },
@@ -62,6 +68,7 @@ export function Lobby({ mode, initial, onStart, onBack }: LobbyProps) {
   const [error, setError] = useState<string | null>(null);
   // Es gibt nur einen Speicherplatz: Ein neues Spiel ersetzt den gespeicherten Stand.
   const [save] = useState(loadLocalGame);
+  const botSpeed = usePreference("botSpeed");
   const nextKey = useRef(seats.length);
 
   const update = (key: number, change: Partial<Seat>) => {
@@ -180,7 +187,34 @@ export function Lobby({ mode, initial, onStart, onBack }: LobbyProps) {
           </p>
         )}
 
-        <GameOptionsForm options={options} onChange={(change) => setOptions((o) => ({ ...o, ...change }))} />
+        <GameOptionsForm
+          options={options}
+          onChange={(change) => setOptions((o) => ({ ...o, ...change }))}
+          extra={
+            solo && (
+              <div className="option">
+                <span className="option__label" id="speed-label">
+                  Tempo der Computergegner
+                </span>
+                <div className="segments" role="radiogroup" aria-labelledby="speed-label">
+                  {BOT_SPEEDS.map(({ speed, label }) => (
+                    <button
+                      key={speed}
+                      type="button"
+                      role="radio"
+                      aria-checked={botSpeed === speed}
+                      className="segments__item"
+                      onClick={() => setPreference("botSpeed", speed)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className="option__help">Wie lange die Computergegner vor jedem Zug überlegen. Schnell: weniger als die Hälfte.</p>
+              </div>
+            )
+          }
+        />
 
         {error && (
           <p className="lobby__error" role="alert">

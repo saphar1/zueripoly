@@ -1,5 +1,6 @@
 // Spieloptionen der Lobby: Startkapital, Topf am Zürichsee, Zeitlimit.
 // Ohne `onChange` nur zum Lesen (online sehen alle die Einstellungen, ändern darf nur der Host).
+import type { ReactNode } from "react";
 import type { GameOptions, TurnTimeLimit } from "@zueripoly/engine";
 import { START_MONEY_MAX, START_MONEY_MIN, START_MONEY_STEP, TURN_TIME_LIMITS } from "@zueripoly/engine";
 import { formatChf } from "../format";
@@ -11,13 +12,15 @@ interface GameOptionsFormProps {
   onChange?: (change: Partial<GameOptions>) => void;
   /** Hinweis unter dem Titel, z. B. «Nur der Host ändert die Optionen.» */
   note?: string;
+  /** Weitere Einstellung am Ende (z. B. Tempo der Computergegner im Solo). */
+  extra?: ReactNode;
 }
 
 const LIMITS: (TurnTimeLimit | null)[] = [null, ...TURN_TIME_LIMITS];
 const limitText = (limit: TurnTimeLimit | null) => (limit === null ? "Aus" : `${limit} s`);
 const JACKPOT_HELP = "Steuern, Bussen und Kautionen kommen in einen Topf. Wer auf «Ferien am Zürichsee» landet, kassiert ihn.";
 
-export function GameOptionsForm({ options, onChange, note }: GameOptionsFormProps) {
+export function GameOptionsForm({ options, onChange, note, extra }: GameOptionsFormProps) {
   if (!onChange) {
     return (
       <section className="options" aria-label="Optionen">
@@ -107,6 +110,7 @@ export function GameOptionsForm({ options, onChange, note }: GameOptionsFormProp
           ))}
         </div>
       </div>
+      {extra}
     </section>
   );
 }

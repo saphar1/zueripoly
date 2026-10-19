@@ -136,4 +136,4 @@ Teil C: Ton, Bewegung, Handy, Kleines
 - [ ] Töne (Web Audio) und Stummschalter (Kopfleiste und Hauptmenü)
 - [ ] Bewegung: Betragsmarke beim Kontostand, Häuser setzen sich; `prefers-reduced-motion`
 - [ ] Mobile-Feinschliff Safari (`100dvh`, Safe Area, Eingabefelder ≥ 16 px), alle Bildschirme bei 390 × 844 und 375 × 667
-- [ ] Favicon, Bot-Tempo «normal / schnell» in der Solo-Lobby
+- [x] Favicon (`public/favicon.svg`, `apple-touch-icon.png`), Bot-Tempo «normal / schnell» in der Solo-Lobby (`preferences.ts`, Pausen × 0,4)
