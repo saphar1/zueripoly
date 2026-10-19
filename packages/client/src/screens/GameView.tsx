@@ -99,14 +99,16 @@ export function GameView({
   }, [dismissCard]);
 
   // Knopf «Bauen» auf der Tafel: Besitzkarte öffnen. Auf dem Handy steht sie unter dem Brett, also ins Bild holen.
+  // Eine gezogene Karte liegt am selben Platz und würde sie verdecken: zuerst zurücklegen.
   const below = useRef<HTMLDivElement>(null);
   const showSpace = useCallback((index: SpaceIndex) => {
+    dismissCard();
     setSelected(index);
     requestAnimationFrame(() => {
       const card = below.current?.querySelector(".deed-card");
       if (card && card.getClientRects().length > 0) card.scrollIntoView({ block: "nearest" });
     });
-  }, []);
+  }, [dismissCard]);
 
   const canRoll = canAct && !game.busy && waiting !== null && getLegalActions(state, waiting).some((a) => a.type === "rollDice");
 
