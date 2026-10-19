@@ -132,8 +132,18 @@ Teil B: Spielstand speichern und fortsetzen (2026-10-19) ✓
 - [x] Tests: `room-save.test.ts`, `restore.test.ts`, Spielende ohne Stand (`game.test.ts`); Durchspiel-Tests lokal/solo (neu laden, verlassen und fortsetzen), online `--restart` (auch mit `--prod`)
 - [ ] Nach dem nächsten Push prüfen: Render hat `ZUERIPOLY_SAVE_KEY` (aus `render.yaml`, sonst im Dashboard unter Environment setzen); dann einmal live einen Neustart ausprobieren
 
-Teil C: Ton, Bewegung, Handy, Kleines
+Teil C: Ton, Bewegung, Handy, Kleines (2026-10-19) ✓
 - [x] Töne (Web Audio, `sound.ts`: Würfel, Karte, Tramglocke beim Kauf, Haus, Geld, Gefängnis, Sieg; erst nach dem ersten Klick, nicht bei verstecktem Tab) und Stummschalter `SoundToggle` (Hauptmenü, Handy-Kopfleiste, Desktop neben «Zug n»)
 - [x] Bewegung: Betragsmarke beim Kontostand (gab es schon, `Money`), neue Häuser und Hotels setzen sich (`tile__built`, Token `--motion-build` 350 ms, bei `prefers-reduced-motion` 1 ms, nicht beim Laden)
-- [ ] Mobile-Feinschliff Safari (`100dvh`, Safe Area, Eingabefelder ≥ 16 px), alle Bildschirme bei 390 × 844 und 375 × 667
+- [x] Mobile-Feinschliff Safari: `100dvh` (mit `100vh` davor als Rückfall), `viewport-fit=cover` + `env(safe-area-inset-*)` (Seiten, Home-Leiste, Kopfleiste, Verbindungshinweis), alle Texteingaben ≥ 16 px; alle Bildschirme bei 390 × 844 und 375 × 667 geprüft (kein seitliches Scrollen, Handy-Kopfleiste einzeilig)
 - [x] Favicon (`public/favicon.svg`, `apple-touch-icon.png`), Bot-Tempo «normal / schnell» in der Solo-Lobby (`preferences.ts`, Pausen × 0,4)
+
+Gefunden und behoben in Teil C: Die Sicherheitsprüfung meldete zweimal Lücken beim Wiederherstellen (alter Stand eines Ausgestiegenen, Version hochtreiben durch Neuverbinden, Wartezeit verlängern), behoben mit Versionen (`seq`, `rev`) und fester Wartezeit; «Bauen · Farbe» legt eine offene Karte zurück (sie verdeckte die Besitzkarte).
+
+**Phase 6 abgeschlossen (2026-10-19).** Alle geplanten Phasen sind fertig.
+
+## Ideen für später
+- Live prüfen: Render hat `ZUERIPOLY_SAVE_KEY`, Neustart mitten im Online-Spiel (siehe Teil B)
+- Pfeiltasten-Navigation über das Brett (heute 40 Tab-Halte)
+- Mehrere Speicherplätze für Lokal/Solo
+- Lautstärke einstellbar, eigene Töne für Miete zahlen und Start überqueren

@@ -11,8 +11,12 @@ body {
   padding: 0;
 }
 
+/* Handy: 100dvh = sichtbare Höhe (Safari blendet seine Leisten ein und aus; 100vh wäre zu hoch).
+   viewport-fit=cover (index.html): Seitenränder und Home-Leiste des iPhones freihalten. */
 body {
   min-height: 100vh;
+  min-height: 100dvh;
+  padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-text);

@@ -1,4 +1,4 @@
-// Screenshots des Online-Spiels (Desktop 1440×900 und Handy 390×844): Online-Start, Lobby (Host und Gast),
+// Screenshots des Online-Spiels (Desktop 1440×900, Handy 390×844 und klein 375×667): Online-Start, Lobby (Host und Gast),
 // Spiel aus Sicht der Wartenden, Störungsmeldung beim Host, Hinweis «Verbindung unterbrochen».
 // Start: npm run screenshots -w @zueripoly/client -- --online  →  screenshots/online-*.png
 // Startet dafür einen eigenen Spielserver (Abwesenheit schon nach 1 s) und einen Vite-Server.
@@ -20,6 +20,7 @@ const base = vite.resolvedUrls?.local[0] ?? "http://localhost:5197/";
 const VIEWS = [
   { suffix: "desktop", width: 1440, height: 900, scale: 1, mobile: false },
   { suffix: "handy", width: 390, height: 844, scale: 2, mobile: true },
+  { suffix: "handy-klein", width: 375, height: 667, scale: 2, mobile: true },
 ] as const;
 
 async function save(page: Page, name: string, fullPage = false): Promise<void> {

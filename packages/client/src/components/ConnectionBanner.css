@@ -1,7 +1,7 @@
 /* Verbindungshinweis: liegt oben über allem, gestrichelte Signallinie wie eine unterbrochene Strecke. */
 .connection {
   position: fixed;
-  top: var(--space-2);
+  top: calc(var(--space-2) + env(safe-area-inset-top));
   left: 50%;
   z-index: 50;
   width: max-content;

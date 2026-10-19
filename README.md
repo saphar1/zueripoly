@@ -55,3 +55,5 @@ Alle Details: [docs/regeln.md](docs/regeln.md). Das Brett: [docs/brett.md](docs/
 - **Solo** gegen 1 bis 5 Computergegner (einfach oder clever)
 - **Lokal** mit mehreren Spielern an einem Gerät
 - **Online** mit Raumcode
+
+Kleine Einstellungen: Ton an/aus (Lautsprecher im Hauptmenü und im Spiel), im Solo das Tempo der Computergegner («Normal» oder «Schnell»). Lokal und Solo werden nach jedem Zug gespeichert: Neu laden führt zurück ins Spiel, sonst «Spielstand fortsetzen» im Hauptmenü.
