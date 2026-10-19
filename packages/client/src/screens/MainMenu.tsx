@@ -1,5 +1,7 @@
 // Hauptmenü wie eine Linientafel: jede Spielart ist eine «Linie».
-// Was noch nicht gebaut ist, steht als «noch nicht in Betrieb» da (kein Platzhalter-Knopf).
+// Was gerade nicht geht, steht als stillgelegte Linie da (kein Platzhalter-Knopf).
+import { useState } from "react";
+import { describeSave, loadLocalGame } from "../game/local-save";
 import { Icon } from "../components/Icon";
 import { Logo } from "../components/Logo";
 import "./MainMenu.css";
@@ -9,21 +11,26 @@ interface Line {
   title: string;
   detail: string;
   onSelect?: () => void;
-  since?: string;
+  /** Grund, warum die Linie nicht fährt. */
+  off?: string;
 }
 
 interface MainMenuProps {
   onLocal: () => void;
   onSolo: () => void;
   onOnline: () => void;
+  onResume: () => void;
 }
 
-export function MainMenu({ onLocal, onSolo, onOnline }: MainMenuProps) {
+export function MainMenu({ onLocal, onSolo, onOnline, onResume }: MainMenuProps) {
+  const [save] = useState(loadLocalGame);
   const lines: Line[] = [
     { number: 1, title: "Lokal spielen", detail: "2 bis 6 Personen an einem Gerät", onSelect: onLocal },
     { number: 2, title: "Solo gegen den Computer", detail: "1 bis 5 Gegner, einfach oder clever", onSelect: onSolo },
     { number: 3, title: "Online mit Freunden", detail: "Raum eröffnen oder mit Raumcode beitreten", onSelect: onOnline },
-    { number: 4, title: "Spielstand fortsetzen", detail: "Gespeicherte Partie laden", since: "Phase 6" },
+    save
+      ? { number: 4, title: "Spielstand fortsetzen", detail: describeSave(save), onSelect: onResume }
+      : { number: 4, title: "Spielstand fortsetzen", detail: "Lokal und Solo werden laufend gespeichert", off: "Kein gespeichertes Spiel" },
   ];
 
   return (
@@ -51,7 +58,7 @@ export function MainMenu({ onLocal, onSolo, onOnline }: MainMenuProps) {
                 <strong>{line.title}</strong>
                 <span>{line.detail}</span>
               </span>
-              <span className="line__status">Noch nicht in Betrieb · {line.since}</span>
+              <span className="line__status">{line.off}</span>
             </div>
           ),
         )}

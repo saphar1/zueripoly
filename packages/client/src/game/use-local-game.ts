@@ -7,7 +7,7 @@
 import { useCallback, useRef, useState } from "react";
 import type { Action, GameState, PlayerId } from "@zueripoly/engine";
 import { applyAction } from "@zueripoly/engine";
-import type { Rng, SeededRng } from "@zueripoly/engine";
+import type { SeededRng } from "@zueripoly/engine";
 import { useGamePlayback } from "./use-game-playback";
 
 export type { LogEntry } from "./use-game-playback";
@@ -15,11 +15,14 @@ export type { LogEntry } from "./use-game-playback";
 export interface GameSession {
   initial: GameState;
   rng: SeededRng;
-  /** Eigene Zufallsquelle der Computergegner (nie die des Spiels). */
-  botRng: Rng;
+  /** Eigene Zufallsquelle der Computergegner (nie die des Spiels). Seedbar, damit sie mitgespeichert wird. */
+  botRng: SeededRng;
 }
 
-export function useLocalGame(session: GameSession) {
+/** `onCommit` bekommt nach jeder ausgeführten Aktion den neuen Stand (zum Speichern). */
+export function useLocalGame(session: GameSession, onCommit?: (state: GameState) => void) {
+  const commitRef = useRef(onCommit);
+  commitRef.current = onCommit;
   const rng = useRef(session.rng);
   const truth = useRef(session.initial);
   const playback = useGamePlayback(session.initial);
@@ -44,6 +47,7 @@ export function useLocalGame(session: GameSession) {
       setError(null);
       truth.current = result.state;
       setState(result.state);
+      commitRef.current?.(result.state);
       void play(previous, result.events, result.state);
       return true;
     },

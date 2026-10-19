@@ -5,6 +5,7 @@ import type { GameConfig } from "@zueripoly/engine";
 import { createGame, createRandomSeed, createSeededRng } from "@zueripoly/engine";
 import type { SeatGrant } from "@zueripoly/server/protocol";
 import { ROOM_LINK_PARAM } from "@zueripoly/server/protocol";
+import { type LocalSave, leaveLocalGame, loadLocalGame, sessionFromSave, wasPlayingHere } from "./game/local-save";
 import type { GameSession } from "./game/use-local-game";
 import { closeOnlineClient, openOnlineClient } from "./online/connection";
 import { loadWindowSeat } from "./online/seat-storage";
@@ -18,7 +19,7 @@ import { OnlineStart } from "./screens/OnlineStart";
 type Screen =
   | { kind: "menu" }
   | { kind: "lobby"; mode: LobbyMode }
-  | { kind: "game"; mode: LobbyMode; session: GameSession; id: number }
+  | { kind: "game"; mode: LobbyMode; config: GameConfig; session: GameSession; id: number }
   | { kind: "online"; code: string }
   | { kind: "room"; resume: SeatGrant | null };
 
@@ -28,10 +29,21 @@ function newSession(config: GameConfig): GameSession {
   return { initial: createGame(config, rng), rng, botRng: createSeededRng(createRandomSeed()) };
 }
 
-/** Beim Laden: zurück in den Online-Raum dieses Fensters, oder Raumcode aus dem Link, sonst Hauptmenü. */
+function resumeScreen(save: LocalSave): Screen {
+  return { kind: "game", mode: save.mode, config: save.config, session: sessionFromSave(save), id: Date.now() };
+}
+
+/**
+ * Beim Laden: zurück in den Online-Raum dieses Fensters, zurück ins lokale Spiel dieses Fensters,
+ * oder Raumcode aus dem Link, sonst Hauptmenü.
+ */
 function firstScreen(): Screen {
   const seat = loadWindowSeat();
   if (seat) return { kind: "room", resume: seat };
+  if (wasPlayingHere()) {
+    const save = loadLocalGame();
+    if (save) return resumeScreen(save);
+  }
   const code = new URLSearchParams(window.location.search).get(ROOM_LINK_PARAM);
   if (code) return { kind: "online", code };
   return { kind: "menu" };
@@ -40,7 +52,11 @@ function firstScreen(): Screen {
 export function App() {
   const [screen, setScreen] = useState<Screen>(firstScreen);
   // Letzte Einstellungen je Spielart bleiben für «Nochmals spielen» und die Lobby erhalten.
-  const [lastConfig, setLastConfig] = useState<Record<LobbyMode, GameConfig | null>>({ local: null, solo: null });
+  const [lastConfig, setLastConfig] = useState<Record<LobbyMode, GameConfig | null>>(() => {
+    const configs: Record<LobbyMode, GameConfig | null> = { local: null, solo: null };
+    if (screen.kind === "game") configs[screen.mode] = screen.config;
+    return configs;
+  });
   // Zurück-Geste im Spiel oder Raum: Rückfrage «Spiel verlassen?» öffnen (jede Erhöhung einmal).
   const [leaveAsk, setLeaveAsk] = useState(0);
   const screenRef = useRef(screen);
@@ -48,11 +64,19 @@ export function App() {
 
   const start = (mode: LobbyMode, config: GameConfig) => {
     setLastConfig((current) => ({ ...current, [mode]: config }));
-    setScreen({ kind: "game", mode, session: newSession(config), id: Date.now() });
+    setScreen({ kind: "game", mode, config, session: newSession(config), id: Date.now() });
+  };
+
+  const resume = () => {
+    const save = loadLocalGame();
+    if (!save) return;
+    setLastConfig((current) => ({ ...current, [save.mode]: save.config }));
+    setScreen(resumeScreen(save));
   };
 
   const toMenu = () => {
     closeOnlineClient();
+    leaveLocalGame();
     setScreen({ kind: "menu" });
   };
 
@@ -73,6 +97,7 @@ export function App() {
           onLocal={() => setScreen({ kind: "lobby", mode: "local" })}
           onSolo={() => setScreen({ kind: "lobby", mode: "solo" })}
           onOnline={() => setScreen({ kind: "online", code: "" })}
+          onResume={resume}
         />
       );
     case "lobby":
@@ -91,6 +116,8 @@ export function App() {
         <GameScreen
           key={screen.id}
           session={screen.session}
+          mode={screen.mode}
+          config={screen.config}
           onNewGame={() => (config ? start(screen.mode, config) : setScreen({ kind: "lobby", mode: screen.mode }))}
           onMenu={toMenu}
           leaveAsk={leaveAsk}

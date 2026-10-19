@@ -129,6 +129,12 @@
   font-weight: 600;
 }
 
+.lobby__note {
+  padding-left: var(--space-3);
+  border-left: var(--line-thick) solid var(--color-ink);
+  font-size: 15px;
+}
+
 .lobby__actions {
   display: flex;
   flex-wrap: wrap;

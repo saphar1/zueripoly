@@ -4,6 +4,8 @@
 // Start: npm run playtest -w @zueripoly/client   (optional: -- --steps 3000 --players 4 --money 500 --snapshot 150)
 // Solo: -- --solo --bots 3 (Computergegner abwechselnd einfach/clever; geklickt wird nur für «Anna»).
 // Online: -- --online --players 3 (eigener Spielserver, ein Browserfenster pro Person; siehe playtest-online.ts).
+// Spielstand: nach --reload Schritten (Standard 60) neu laden, nach doppelt so vielen über «Spiel verlassen»
+// ins Menü und «Spielstand fortsetzen»; beide Male muss der Stand gleich bleiben.
 // Strategie: meist der Hauptknopf (kaufen, würfeln, Zug beenden), oft bauen, belasten nur bei Schulden.
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -31,6 +33,8 @@ const BOT_PAUSE = 30;
 const START_MONEY = option("money", 1500);
 /** Bei diesem Schritt ein Bild mitten aus der Partie speichern (0 = keins). */
 const SNAPSHOT = option("snapshot", 0);
+/** Bei diesem Schritt neu laden, beim doppelten verlassen und fortsetzen (0 = nie). */
+const RELOAD = option("reload", 60);
 
 /** Solo: Ist «Anna» bankrott, spielen die Bots allein zu Ende; das kann dauern. */
 const ready = (page: Parameters<typeof waitReady>[0]) => waitReady(page, SOLO ? 600_000 : 15_000);
@@ -96,6 +100,29 @@ try {
     await page.evaluate((pause) => history.replaceState(null, "", `?botpause=${pause}`), BOT_PAUSE);
   }
 
+  /** Gespeicherter Stand (ohne Zeitstempel) aus dem Browser. */
+  const saved = () =>
+    page.evaluate(() => {
+      const raw = localStorage.getItem("zueripoly.localGame");
+      return raw ? (JSON.parse(raw) as { game: string }).game : null;
+    });
+  // Kontostand ohne die kurz eingeblendete Änderung («+40 CHF»).
+  const balances = async () => (await page.locator(".panel__money").allInnerTexts()).map((t) => t.split("\n")[0]);
+  /** Stand merken, `restore` ausführen, danach muss derselbe Stand angezeigt und gespeichert sein. */
+  const checkRestore = async (label: string, restore: () => Promise<void>) => {
+    const before = await saved();
+    if (!before) throw new Error(`${label}: kein gespeicherter Spielstand.`);
+    const money = await balances();
+    await restore();
+    await ready(page);
+    const after = await saved();
+    if (after !== before) throw new Error(`${label}: Der Spielstand hat sich verändert.`);
+    const moneyAfter = await balances();
+    if (moneyAfter.join("|") !== money.join("|")) throw new Error(`${label}: Kontostände anders (${money.join(", ")} → ${moneyAfter.join(", ")}).`);
+    const turn = (JSON.parse(before) as { state: { turnNumber: number } }).state.turnNumber;
+    console.log(`${label}: gleicher Stand (Zug ${turn}).`);
+  };
+
   let steps = 0;
   let trades = 0;
   let offers = 0;
@@ -113,10 +140,31 @@ try {
     }
     steps++;
     if (steps === SNAPSHOT) await page.screenshot({ path: path.join(outDir, "playtest-mitten.png") });
+    if (RELOAD > 0 && steps === RELOAD) {
+      await checkRestore("Neu laden", async () => {
+        await page.reload({ waitUntil: "networkidle" });
+      });
+      continue;
+    }
+    if (RELOAD > 0 && steps === 2 * RELOAD) {
+      await checkRestore("Verlassen und fortsetzen", async () => {
+        await page.locator(".game__leave-side").getByRole("button", { name: "Spiel verlassen" }).click();
+        await page.locator(".game__leave-side").getByRole("button", { name: "Ja, aussteigen" }).click();
+        const line = page.getByRole("button", { name: /Spielstand fortsetzen/ });
+        await line.waitFor({ timeout: 5000 });
+        await page.screenshot({ path: path.join(outDir, SOLO ? "solo-menu-fortsetzen.png" : "menu-fortsetzen.png") });
+        await line.click();
+      });
+      continue;
+    }
     if ((await randomStep(page, state)).traded) trades++;
   }
 
   await page.screenshot({ path: path.join(outDir, "playtest-ende.png") });
+  if (result !== "kein Gewinner") {
+    if ((await saved()) !== null) throw new Error("Nach dem Spielende ist der Spielstand noch gespeichert.");
+    console.log("Spielende: Spielstand gelöscht.");
+  }
   console.log(`Schritte: ${steps}, Handelsangebote: ${trades}, Ergebnis: ${result}`);
   const logLines = await page.locator(".log__text").count();
   console.log(`Protokollzeilen sichtbar: ${logLines}`);

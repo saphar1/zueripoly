@@ -4,6 +4,7 @@
 import { type CSSProperties, type FormEvent, useRef, useState } from "react";
 import type { BotLevel, GameConfig, GameOptions, TokenId } from "@zueripoly/engine";
 import { BOT_NAMES, DEFAULT_OPTIONS, MAX_PLAYERS, MIN_PLAYERS, TOKENS, validateGameConfig } from "@zueripoly/engine";
+import { describeSave, loadLocalGame } from "../game/local-save";
 import { GameOptionsForm } from "../components/GameOptionsForm";
 import { Icon } from "../components/Icon";
 import { TokenPicker } from "../components/TokenPicker";
@@ -59,6 +60,8 @@ export function Lobby({ mode, initial, onStart, onBack }: LobbyProps) {
   const [seats, setSeats] = useState<Seat[]>(() => initialSeats(mode, initial));
   const [options, setOptions] = useState<GameOptions>(() => ({ ...DEFAULT_OPTIONS, ...initial?.options }));
   const [error, setError] = useState<string | null>(null);
+  // Es gibt nur einen Speicherplatz: Ein neues Spiel ersetzt den gespeicherten Stand.
+  const [save] = useState(loadLocalGame);
   const nextKey = useRef(seats.length);
 
   const update = (key: number, change: Partial<Seat>) => {
@@ -184,6 +187,8 @@ export function Lobby({ mode, initial, onStart, onBack }: LobbyProps) {
             {error}
           </p>
         )}
+
+        {save && <p className="lobby__note">Losfahren ersetzt das gespeicherte Spiel ({describeSave(save)}).</p>}
 
         <div className="lobby__actions">
           <button type="submit" className="button button--primary lobby__start">
