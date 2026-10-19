@@ -63,7 +63,7 @@ Regeln:
 ## 5. Haptik und Bewegung
 - Leichte Papierstruktur als Hintergrund: ein kleines, selbst erzeugtes SVG-Rauschmuster (feTurbulence) bei sehr geringer Deckkraft.
 - Karten haben klare 2-px-Ränder und leichten Versatz, wie gestanzte Kartonkarten.
-- **Bewegung mit Sinn:** Würfel rollen (0,6 s), Figur hüpft Feld für Feld (0,15 s je Feld), Karte dreht sich um (0,5 s), Geld «fliesst» als Zahl, die hoch- oder runterzählt (0,6 s). **Keine Dauer-Animationen** aus reiner Dekoration.
+- **Bewegung mit Sinn:** Würfel rollen (0,6 s), Figur hüpft Feld für Feld (0,15 s je Feld), Karte dreht sich um (0,5 s), Geld «fliesst» als Zahl, die hoch- oder runterzählt (0,6 s), daneben kurz eine Betragsmarke («+200 CHF»), neue Häuser und Hotels setzen sich von oben auf den Farbbalken (0,35 s). **Keine Dauer-Animationen** aus reiner Dekoration.
 - `prefers-reduced-motion`: Alle Bewegungen werden zu kurzen Übergängen (Sprung statt Flug, Einblenden statt Drehen).
 - **Hover und Fokus (0,12 s):** Was man anklicken oder antippen kann, hebt sich unter dem Zeiger wie ein Kartonteil an (2 px nach oben links, harter Versatz wächst). Beim Drücken sinkt es ins Papier (Versatz 0). Tastaturfokus: 3 px Tram-Blau mit 2 px Abstand, nie ein Leuchtrand.
 - **Verknüpfte Hervorhebung:** Zeiger auf einem Feld markiert das Panel des Besitzers und zeigt die Besitzkarte in der Brettmitte. Zeiger auf einem Spielerpanel markiert dessen Felder auf dem Brett; alle anderen Felder liegen unter einem Papierschleier.
@@ -172,6 +172,7 @@ Dieser Block wird in Phase 3 nach `packages/client/src/styles/tokens.css` kopier
   --motion-step: 150ms;
   --motion-card: 500ms;
   --motion-count: 600ms;
+  --motion-build: 350ms;
   --motion-hover: 120ms;
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
@@ -182,6 +183,7 @@ Dieser Block wird in Phase 3 nach `packages/client/src/styles/tokens.css` kopier
     --motion-step: 1ms;
     --motion-card: 1ms;
     --motion-count: 1ms;
+    --motion-build: 1ms;
     --motion-hover: 1ms;
   }
 }

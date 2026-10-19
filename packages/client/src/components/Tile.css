@@ -65,6 +65,29 @@
   --icon-line: 2.4;
 }
 
+/* Neu gebaut: setzt sich von oben auf den Balken (eigene Eigenschaften translate/scale, damit die
+   Drehung der Seitenfelder in transform erhalten bleibt). */
+.tile__built {
+  animation: tile-built var(--motion-build) var(--ease-out) both;
+}
+
+@keyframes tile-built {
+  0% {
+    translate: 0 -60%;
+    scale: 1.4;
+    opacity: 0;
+  }
+  70% {
+    translate: 0 6%;
+    scale: 0.95;
+    opacity: 1;
+  }
+  100% {
+    translate: 0 0;
+    scale: 1;
+  }
+}
+
 .tile__hotel {
   position: relative;
   z-index: 1;

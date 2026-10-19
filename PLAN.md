@@ -134,6 +134,6 @@ Teil B: Spielstand speichern und fortsetzen (2026-10-19) ✓
 
 Teil C: Ton, Bewegung, Handy, Kleines
 - [x] Töne (Web Audio, `sound.ts`: Würfel, Karte, Tramglocke beim Kauf, Haus, Geld, Gefängnis, Sieg; erst nach dem ersten Klick, nicht bei verstecktem Tab) und Stummschalter `SoundToggle` (Hauptmenü, Handy-Kopfleiste, Desktop neben «Zug n»)
-- [ ] Bewegung: Betragsmarke beim Kontostand, Häuser setzen sich; `prefers-reduced-motion`
+- [x] Bewegung: Betragsmarke beim Kontostand (gab es schon, `Money`), neue Häuser und Hotels setzen sich (`tile__built`, Token `--motion-build` 350 ms, bei `prefers-reduced-motion` 1 ms, nicht beim Laden)
 - [ ] Mobile-Feinschliff Safari (`100dvh`, Safe Area, Eingabefelder ≥ 16 px), alle Bildschirme bei 390 × 844 und 375 × 667
 - [x] Favicon (`public/favicon.svg`, `apple-touch-icon.png`), Bot-Tempo «normal / schnell» in der Solo-Lobby (`preferences.ts`, Pausen × 0,4)

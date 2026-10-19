@@ -1,7 +1,7 @@
 // Bewegungsdauern für JavaScript-Abläufe. Quelle sind die CSS-Tokens (--motion-*),
 // damit CSS und JS dieselben Werte nutzen und `prefers-reduced-motion` überall gilt.
 
-export type MotionName = "dice" | "step" | "card" | "count" | "hover";
+export type MotionName = "dice" | "step" | "card" | "count" | "build" | "hover";
 
 /** Dauer in Millisekunden, z. B. motionMs("step") → 150 (bzw. 1 bei reduzierter Bewegung). */
 export function motionMs(name: MotionName): number {

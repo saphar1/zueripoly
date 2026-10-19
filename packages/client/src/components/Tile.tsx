@@ -1,11 +1,12 @@
 // Ein normales Feld am Brettrand (keine Ecke). Reine Anzeige; Zeiger und Klick behandelt das Brett.
 // Der Inhalt (`tile__face`) ist immer gleich aufgebaut: Balken innen, Name, Fuss aussen.
 // Je nach Seite wird er gedreht, damit der Balken zur Brettmitte zeigt.
-import type { CSSProperties } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import type { PlayerId, PlayerState, PropertyState, Space } from "@zueripoly/engine";
 import { HOTEL_LEVEL, TOKEN_NAMES } from "@zueripoly/engine";
 import type { Side } from "../board-layout";
 import { formatChf, hyphenate } from "../format";
+import { motionMs } from "../motion";
 import { Icon, type IconName } from "./Icon";
 import { Token } from "./Token";
 import "./Tile.css";
@@ -32,19 +33,44 @@ function iconFor(space: Space): IconName | null {
   return SPACE_ICONS[space.kind] ?? null;
 }
 
-function Buildings({ level }: { level: number }) {
-  if (level === HOTEL_LEVEL) return <Icon name="hotel" className="tile__hotel" />;
+/** `from`: so viele Gebäude standen vorher; neu dazugekommene setzen sich mit einer kurzen Bewegung. */
+function Buildings({ level, from }: { level: number; from: number }) {
+  if (level === HOTEL_LEVEL) return <Icon name="hotel" className={`tile__hotel${from < HOTEL_LEVEL ? " tile__built" : ""}`} />;
   return (
     <>
       {Array.from({ length: level }, (_, i) => (
-        <Icon key={i} name="house" className="tile__house" />
+        <Icon key={i} name="house" className={`tile__house${i >= from ? " tile__built" : ""}`} />
       ))}
     </>
   );
 }
 
+/**
+ * Ab welcher Stufe die Gebäude neu sind. Beim ersten Zeichnen die aktuelle (beim Laden setzt sich nichts).
+ * Nach dem Bauen bleibt die alte Stufe so lange stehen, bis die Bewegung fertig ist; sonst würde jedes
+ * neue Zeichnen (Zeiger über dem Brett …) die Klasse und damit die Bewegung abbrechen.
+ */
+function useBuiltFrom(level: number): number {
+  const [from, setFrom] = useState(level);
+  const last = useRef(level);
+  useEffect(() => {
+    const before = last.current;
+    last.current = level;
+    if (level <= before) {
+      setFrom(level);
+      return;
+    }
+    setFrom(before);
+    const timer = setTimeout(() => setFrom(level), motionMs("build") + 100);
+    return () => clearTimeout(timer);
+  }, [level]);
+  return Math.min(from, level);
+}
+
 export function Tile({ space, side, property, owner, visitors, movingPlayer, markedPlayer }: TileProps) {
   const icon = iconFor(space);
+  const houses = property?.houses ?? 0;
+  const builtFrom = useBuiltFrom(houses);
   const barColor =
     space.kind === "street"
       ? `var(--group-${space.group})`
@@ -59,7 +85,7 @@ export function Tile({ space, side, property, owner, visitors, movingPlayer, mar
       <div className="tile__face">
         {barColor && (
           <div className="tile__bar" style={{ "--bar": barColor } as CSSProperties}>
-            {property && property.houses > 0 && <Buildings level={property.houses} />}
+            {houses > 0 && <Buildings level={houses} from={builtFrom} />}
           </div>
         )}
         <div className="tile__body">
