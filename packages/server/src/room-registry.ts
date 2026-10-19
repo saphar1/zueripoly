@@ -3,6 +3,7 @@
 import { generateRoomCode } from "./room-code";
 import { Room, type RoomOutput, type Timing } from "./room";
 import type { Reply, SeatGrant } from "./protocol";
+import { type RoomSave, openRoom, sealRoom } from "./room-save";
 
 /** Höchstzahl gleichzeitiger Räume (Schutz vor Missbrauch). */
 export const MAX_ROOMS = 500;
@@ -20,6 +21,8 @@ export class RoomRegistry {
   constructor(
     private readonly timing: Timing,
     private readonly out: RegistryOutput,
+    /** Schlüssel für die aufbewahrten Spielstände (room-save.ts). */
+    private readonly saveKey: Buffer,
   ) {
     this.sweeper = setInterval(() => this.sweep(), timing.sweepMs);
     this.sweeper.unref?.();
@@ -45,6 +48,7 @@ export class RoomRegistry {
         this.out.emit(socketId, "room:closed", { reason });
       },
       log: (message) => this.out.log(message),
+      seal: (save) => sealRoom(save, this.saveKey),
     };
   }
 
@@ -91,6 +95,32 @@ export class RoomRegistry {
     return this.remember(socketId, room, room.resume(socketId, seatKey));
   }
 
+  /**
+   * Raum aus einem aufbewahrten Stand wiederherstellen (nach einem Neustart des Servers).
+   * Gibt es den Raum schon (ein anderer Browser war schneller), gilt der neuere Stand, solange seither
+   * noch nicht gespielt wurde. Danach meldet sich der Browser wie gewohnt mit «room:resume» an.
+   */
+  restore(blob: string): Reply<{ code: string }> {
+    let save: RoomSave;
+    try {
+      save = openRoom(blob, this.saveKey);
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : "Der Spielstand ist ungültig." };
+    }
+    const existing = this.rooms.get(save.code);
+    if (existing) {
+      if (existing.wasRestored) {
+        existing.adoptNewer(save);
+        return { ok: true, code: save.code };
+      }
+      return { ok: false, error: `Den Raum ${save.code} gibt es nicht mehr.` };
+    }
+    if (this.rooms.size >= MAX_ROOMS) return { ok: false, error: "Der Server ist gerade voll. Bitte später nochmals versuchen." };
+    this.rooms.set(save.code, Room.fromSave(save, this.timing, this.output()));
+    this.out.log(`Raum ${save.code} wiederhergestellt (Spielstand Nr. ${save.seq}, ${this.rooms.size} Räume).`);
+    return { ok: true, code: save.code };
+  }
+
   leave(socketId: string): Reply {
     const room = this.bySocket.get(socketId);
     if (!room) return { ok: false, error: "Du bist in keinem Raum." };
@@ -112,8 +142,8 @@ export class RoomRegistry {
     }
   }
 
-  private close(room: Room, reason: string): void {
-    room.dispose(reason);
+  private close(room: Room, reason: string, notify = true): void {
+    room.dispose(reason, notify);
     this.rooms.delete(room.code);
     for (const [socketId, r] of this.bySocket) if (r === room) this.bySocket.delete(socketId);
     this.out.log(`Raum ${room.code} aufgelöst: ${reason} (${this.rooms.size} Räume).`);
@@ -121,6 +151,6 @@ export class RoomRegistry {
 
   dispose(): void {
     clearInterval(this.sweeper);
-    for (const room of [...this.rooms.values()]) this.close(room, "Der Server wird beendet.");
+    for (const room of [...this.rooms.values()]) this.close(room, "Der Server wird beendet.", false);
   }
 }

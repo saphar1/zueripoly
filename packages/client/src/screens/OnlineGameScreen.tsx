@@ -69,7 +69,7 @@ export function OnlineGameScreen({ client, room, first, onLeave, leaveAsk }: Onl
       waitingLabel={waitingLabel}
       waitingNote={waitingNote}
       presence={presence}
-      banner={<ConnectionBanner status={online.status} />}
+      banner={<ConnectionBanner status={online.status} restoring={online.restoring} />}
       notice={<AbsentNotice room={room} roomAt={online.roomAt} disabled={online.status !== "online"} onDecide={(id, d) => void decide(id, d)} />}
       endActions={
         <>

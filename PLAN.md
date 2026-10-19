@@ -126,9 +126,11 @@ Teil R2: Balance und Wünsche aus weiteren Runden (2026-10-14) ✓
 - [x] Ereigniskarte «Baubewilligung» (E06 statt zweiter «Tram verpasst»): behalten, gratis ein Haus oder Hotel bauen, nicht handelbar; Bots setzen sie sofort ein
 - [x] Bot-Liga: alle Partien enden, clever gegen einfach 84 %, Spieldauer etwa wie vorher (Versuche in `docs/bots.md`); «einfach» kauft jetzt mit 80 % (keine Versteigerungen mehr)
 
-Teil B: Spielstand speichern und fortsetzen
-- [ ] Lokal und Solo: automatisch in `localStorage`, «Fortsetzen» im Hauptmenü, Neuladen führt zurück ins Spiel
-- [ ] Online: verschlüsselter Spielstand (`room-save.ts`, `ZUERIPOLY_SAVE_KEY`), Wiederherstellen nach Server-Neustart, Tests, Durchspiel-Test `--restart`
+Teil B: Spielstand speichern und fortsetzen (2026-10-19) ✓
+- [x] Lokal und Solo: nach jeder Aktion in `localStorage` (`game/local-save.ts`, ein Speicherplatz), Neuladen führt zurück ins Spiel, «Spiel verlassen» behält den Stand, Linie 4 «Spielstand fortsetzen» im Hauptmenü, Hinweis in der Lobby («ersetzt das gespeicherte Spiel»), Spielende löscht den Stand
+- [x] Online: verschlüsselter Spielstand (`room-save.ts`, AES-256-GCM, Schlüssel `ZUERIPOLY_SAVE_KEY` oder `saves/save-key`), Nachricht `game:save`, Anfrage `room:restore`; nach einem Neustart stellt der erste Browser den Raum wieder her, ein neuerer Stand gilt, solange noch nicht weitergespielt wurde; beim Beenden meldet der Server niemanden ab
+- [x] Tests: `room-save.test.ts`, `restore.test.ts`, Spielende ohne Stand (`game.test.ts`); Durchspiel-Tests lokal/solo (neu laden, verlassen und fortsetzen), online `--restart` (auch mit `--prod`)
+- [ ] Nach dem nächsten Push prüfen: Render hat `ZUERIPOLY_SAVE_KEY` (aus `render.yaml`, sonst im Dashboard unter Environment setzen); dann einmal live einen Neustart ausprobieren
 
 Teil C: Ton, Bewegung, Handy, Kleines
 - [ ] Töne (Web Audio) und Stummschalter (Kopfleiste und Hauptmenü)

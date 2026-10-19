@@ -4,6 +4,8 @@
 //   ID aus der Nachricht. Würfel und Mischen kommen aus der Zufallsquelle des Raums.
 // - Bots, Vertretung abwesender Spieler und das Zeitlimit laufen hier, mit Pausen wie im Browser.
 // - Anwesenheit: getrennt, wieder da, ausgestiegen; nach `absentMs` entscheidet der Host. Host-Wechsel.
+// - Spielstand: Nach jeder Änderung bekommen alle Menschen den verschlüsselten Stand (`game:save`,
+//   room-save.ts). Nach einem Neustart baut `Room.fromSave` den Raum daraus wieder auf.
 import { randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import type {
   Action,
@@ -14,7 +16,6 @@ import type {
   GameOptions,
   GameState,
   PlayerId,
-  Rng,
   SeededRng,
   TokenId,
 } from "@zueripoly/engine";
@@ -33,7 +34,8 @@ import {
   validateGameConfig,
 } from "@zueripoly/engine";
 import { botPauseMs, playbackMs } from "./pace";
-import type { AbsentDecision, GameUpdate, Reply, RoomPhase, RoomSnapshot, SeatGrant, SeatInfo, TurnClock } from "./protocol";
+import type { AbsentDecision, GameSaveMessage, GameUpdate, Reply, RoomPhase, RoomSnapshot, SeatGrant, SeatInfo, TurnClock } from "./protocol";
+import type { RoomSave } from "./room-save";
 
 /** Zeiten des Raums. Die Tests setzen kurze Werte ein. */
 export interface Timing {
@@ -65,7 +67,9 @@ export const DEFAULT_TIMING: Timing = {
 
 /** Wohin der Raum Nachrichten schickt (vom Server verdrahtet, in Tests austauschbar). */
 export interface RoomOutput {
-  emit(socketId: string, event: "room:state" | "game:update" | "game:clock", payload: unknown): void;
+  emit(socketId: string, event: "room:state" | "game:update" | "game:clock" | "game:save", payload: unknown): void;
+  /** Spielstand verschlüsseln (room-save.ts). */
+  seal(save: RoomSave): string;
   /** Verbindung vom Raum lösen und ihr den Grund mitteilen («room:closed»). */
   release(socketId: string, reason: string): void;
   log(message: string): void;
@@ -95,7 +99,7 @@ interface Seat {
 interface Game {
   state: GameState;
   rng: SeededRng;
-  botRng: Rng;
+  botRng: SeededRng;
   seq: number;
   lastEvents: GameEvent[];
 }
@@ -130,12 +134,104 @@ export class Room {
   private clock: TurnClock | null = null;
   /** Seit wann niemand mehr verbunden ist (für das Aufräumen). */
   emptySince: number | null = null;
+  /** Aus einem gespeicherten Stand entstanden (nach einem Neustart). */
+  wasRestored = false;
+  /** Aus einem gespeicherten Stand wiederhergestellt und seither noch kein Spielzug (siehe `adoptNewer`). */
+  private untouchedRestore = false;
 
   constructor(
     readonly code: string,
     private readonly timing: Timing,
     private readonly out: RoomOutput,
   ) {}
+
+  /**
+   * Raum aus einem gespeicherten Stand (nach einem Neustart). Alle Menschen gelten als getrennt; das Spiel
+   * ruht, bis jemand mit seinem Sitzplatz-Schlüssel zurückkommt (`resume`).
+   */
+  static fromSave(save: RoomSave, timing: Timing, out: RoomOutput): Room {
+    const room = new Room(save.code, timing, out);
+    room.applySave(save, Date.now());
+    room.wasRestored = true;
+    room.emptySince = Date.now();
+    return room;
+  }
+
+  /** Spielstand und Plätze übernehmen. Bestehende Verbindungen bleiben auf ihrem Platz. */
+  private applySave(save: RoomSave, now: number): void {
+    const sockets = new Map(this.seats.map((s) => [s.id, s] as const));
+    this.phase = "game";
+    this.hostId = save.hostId;
+    this.options = { ...save.options };
+    this.seats = save.seats.map((saved) => {
+      const before = sockets.get(saved.id);
+      const socketId = before && !saved.left && saved.key !== null && before.key === saved.key ? before.socketId : null;
+      if (before?.socketId && socketId === null) this.out.release(before.socketId, "Dein Platz gilt in diesem Spielstand nicht mehr.");
+      const human = saved.bot === null;
+      return {
+        ...saved,
+        socketId,
+        ready: true,
+        awaySince: human && socketId === null ? now : null,
+        // Wer vorher ausgestiegen ist, braucht sofort einen Entscheid; die anderen haben die übliche Frist.
+        askAt: !human || socketId !== null || saved.standIn !== null ? null : saved.left ? now : now + this.timing.absentMs,
+      };
+    });
+    this.game = {
+      state: save.state,
+      rng: createSeededRng(save.rngState),
+      botRng: createSeededRng(save.botRngState),
+      seq: save.seq,
+      lastEvents: [],
+    };
+    this.untouchedRestore = true;
+  }
+
+  /** Nummer des aktuellen Spielstands (0 ohne Spiel). */
+  get seq(): number {
+    return this.game?.seq ?? 0;
+  }
+
+  /**
+   * Kommt nach dem Wiederherstellen ein neuerer Stand (ein anderer Browser war weiter), gilt dieser,
+   * solange seither noch nicht gespielt wurde. Gibt zurück, ob der Stand übernommen wurde.
+   */
+  adoptNewer(save: RoomSave): boolean {
+    if (!this.untouchedRestore || !this.game || save.seq <= this.game.seq) return false;
+    this.stopTimers();
+    this.applySave(save, Date.now());
+    this.out.log(`Raum ${this.code}: neuerer Spielstand übernommen (Nr. ${save.seq}).`);
+    this.afterPresenceChange();
+    for (const seat of this.connectedSeats()) this.sendSync(seat);
+    return true;
+  }
+
+  /** Spielstand zum Aufbewahren (nur während eines laufenden Spiels). */
+  private toSave(): RoomSave | null {
+    const game = this.game;
+    if (this.phase !== "game" || !game || game.state.winner !== null) return null;
+    return {
+      code: this.code,
+      hostId: this.hostId,
+      options: { ...this.options },
+      seats: this.seats.map((s) => ({ id: s.id, name: s.name, token: s.token, bot: s.bot, key: s.key, left: s.left, standIn: s.standIn })),
+      state: game.state,
+      rngState: game.rng.getState(),
+      botRngState: game.botRng.getState(),
+      seq: game.seq,
+      savedAt: Date.now(),
+    };
+  }
+
+  /** Verschlüsselten Stand an Menschen schicken (alle verbundenen oder nur `only`). Nach Spielende: `blob: null`. */
+  private sendSave(only?: Seat): void {
+    if (!this.game) return;
+    const save = this.toSave();
+    const message: GameSaveMessage = { code: this.code, seq: this.game.seq, blob: save ? this.out.seal(save) : null };
+    for (const seat of only ? [only] : this.connectedSeats()) {
+      if (seat.socketId !== null && seat.bot === null) this.out.emit(seat.socketId, "game:save", message);
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // Abfragen
@@ -213,6 +309,7 @@ export class Room {
     const update: GameUpdate = { seq: this.game.seq, state: publicState(this.game.state), events: [], sync: true };
     this.out.emit(seat.socketId, "game:update", update);
     this.out.emit(seat.socketId, "game:clock", this.clockNow());
+    this.sendSave(seat);
   }
 
   private broadcastUpdate(events: GameEvent[]): void {
@@ -337,6 +434,8 @@ export class Room {
       seat.left = true;
       seat.awaySince = Date.now();
       seat.askAt = seat.awaySince;
+      // Der Schlüssel des Ausgestiegenen gilt auch in den aufbewahrten Ständen nicht mehr.
+      this.sendSave();
     }
     if (wasHost) this.hostId = this.nextHost(seat);
     this.afterPresenceChange();
@@ -575,6 +674,7 @@ export class Room {
         seat.standIn = STAND_IN_LEVEL;
         seat.askAt = null;
         this.out.log(`Raum ${this.code}: Computer übernimmt für ${seat.name}.`);
+        this.sendSave();
         break;
       case "remove": {
         const result = removePlayer(this.game.state, seat.id);
@@ -597,7 +697,9 @@ export class Room {
     game.state = result.state;
     game.seq += 1;
     game.lastEvents = result.events;
+    this.untouchedRestore = false;
     this.broadcastUpdate(result.events);
+    this.sendSave();
     if (result.state.winner !== null) {
       const winner = result.state.players.find((p) => p.id === result.state.winner);
       this.out.log(`Raum ${this.code}: ${winner?.name ?? "?"} gewinnt.`);
@@ -691,10 +793,14 @@ export class Room {
     this.clock = null;
   }
 
-  /** Raum auflösen: Zeitgeber stoppen, verbundene Browser informieren. */
-  dispose(reason: string): void {
+  /**
+   * Raum auflösen: Zeitgeber stoppen, verbundene Browser informieren. Beim Beenden des Servers
+   * (`notify = false`) keine Abmeldung: Die Browser behalten Platz und Spielstand und stellen den Raum
+   * nach dem Neustart wieder her.
+   */
+  dispose(reason: string, notify = true): void {
     this.stopTimers();
-    for (const seat of this.connectedSeats()) this.out.release(seat.socketId!, reason);
+    if (notify) for (const seat of this.connectedSeats()) this.out.release(seat.socketId!, reason);
     for (const seat of this.seats) seat.socketId = null;
   }
 }

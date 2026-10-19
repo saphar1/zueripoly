@@ -65,7 +65,12 @@ export function OnlineRoom({ client, resume, onExit, leaveAsk }: OnlineRoomProps
     return (
       <>
         <ConnectionBanner status={online.status} />
-        <Message title={code ? `Raum ${code}` : "Raum"} text="Verbinde mit dem Raum …" action="Abbrechen" onAction={onExit} />
+        <Message
+          title={code ? `Raum ${code}` : "Raum"}
+          text={online.restoring ? "Der Spielserver wurde neu gestartet. Der Raum wird aus dem gespeicherten Spielstand wiederhergestellt …" : "Verbinde mit dem Raum …"}
+          action="Abbrechen"
+          onAction={onExit}
+        />
       </>
     );
   }

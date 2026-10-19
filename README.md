@@ -4,7 +4,7 @@ Ein Brettspiel rund ums Geld, die Quartiere und die Trams von Zürich. Kaufe Str
 
 Alle Namen, Karten und Grafiken sind eigene Inhalte. Die Spielregeln folgen einem klassischen Immobilien-Brettspiel; dessen Name, Logo und Grafiken werden nicht verwendet.
 
-**Stand:** Lokal, Solo gegen Computergegner und Online mit Raumcode spielbar, auch mit Freunden auf ihren eigenen Geräten: im Internet (Seite auf GitHub Pages, Spielserver auf Render) oder im gleichen WLAN (`npm start`). Siehe [PLAN.md](PLAN.md).
+**Stand:** Lokal, Solo gegen Computergegner und Online mit Raumcode spielbar, auch mit Freunden auf ihren eigenen Geräten: im Internet (Seite auf GitHub Pages, Spielserver auf Render) oder im gleichen WLAN (`npm start`). Spiele werden laufend gespeichert: Lokal und Solo im Browser («Spielstand fortsetzen» im Hauptmenü), online überleben laufende Spiele einen Neustart des Servers. Siehe [PLAN.md](PLAN.md).
 
 ## Starten
 

@@ -4,7 +4,7 @@ import { afterEach } from "vitest";
 import { io as connect, type Socket } from "socket.io-client";
 import type { BotLevel, GameState, PlayerId } from "@zueripoly/engine";
 import { chooseBotAction, createSeededRng, getWaitingFor } from "@zueripoly/engine";
-import type { GameUpdate, Reply, RequestName, Requests, RoomSnapshot, SeatGrant, TurnClock } from "../src/protocol";
+import type { GameSaveMessage, GameUpdate, Reply, RequestName, Requests, RoomSnapshot, SeatGrant, TurnClock } from "../src/protocol";
 import type { Timing } from "../src/room";
 import { startZueriServer, type ZueriServer, type ZueriServerOptions } from "../src/server";
 
@@ -64,6 +64,8 @@ export class TestClient {
   seq = 0;
   updates: GameUpdate[] = [];
   clock: TurnClock | null = null;
+  /** Zuletzt erhaltener verschlüsselter Spielstand (wie ihn der Browser aufbewahrt). */
+  save: GameSaveMessage | null = null;
   closedReason: string | null = null;
   grant: SeatGrant | null = null;
   /** Fehlermeldungen auf eigene Spielzüge (z. B. weil sich der Stand inzwischen geändert hat). */
@@ -85,6 +87,9 @@ export class TestClient {
     });
     this.socket.on("game:clock", (clock: TurnClock | null) => {
       this.clock = clock;
+    });
+    this.socket.on("game:save", (save: GameSaveMessage) => {
+      this.save = save;
     });
     this.socket.on("room:closed", (info: { reason: string }) => {
       this.closedReason = info.reason;

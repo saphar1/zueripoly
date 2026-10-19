@@ -38,6 +38,8 @@ describe("Online-Spiel mit simulierten Clients", () => {
       expect(p.state!.winner).toBe(winner);
       expect(p.updates.flatMap((u) => u.events).some((e) => e.type === "gameWon")).toBe(true);
     }
+    // Nach dem Spielende gibt es nichts mehr aufzubewahren.
+    await waitUntil(() => players.every((p) => p.save?.blob === null), "kein Spielstand mehr");
     expect(expectError(await players[1]!.request("game:toLobby", {}))).toContain("Host");
     expect((await players[0]!.request("game:toLobby", {})).ok).toBe(true);
     await waitUntil(() => players.every((p) => p.room?.phase === "lobby"), "zurück in der Lobby");

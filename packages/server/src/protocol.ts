@@ -16,6 +16,8 @@ export const ROOM_CODE_LENGTH = 5;
 export const ROOM_CODE_ALPHABET = "ACDEFGHJKMNPRTUVWXY346789";
 /** Link-Parameter, der den Raumcode vorausfüllt: `/?raum=K7MP4`. */
 export const ROOM_LINK_PARAM = "raum";
+/** Höchstlänge eines verschlüsselten Spielstands (Zeichen), siehe «room:restore». Üblich sind etwa 3 KB. */
+export const SAVE_MAX_CHARS = 12 * 1024;
 
 export type RoomPhase = "lobby" | "game";
 
@@ -73,6 +75,16 @@ export interface TurnClock {
   limitMs: number;
 }
 
+/**
+ * Verschlüsselter Spielstand des Raums zum Aufbewahren im Browser. Startet der Server neu, schickt der
+ * Browser ihn mit «room:restore» zurück. `blob: null` = nichts mehr aufbewahren (Spiel zu Ende).
+ */
+export interface GameSaveMessage {
+  code: string;
+  seq: number;
+  blob: string | null;
+}
+
 export type Reply<T extends object = object> = ({ ok: true } & T) | { ok: false; error: string };
 
 export interface SeatGrant {
@@ -87,6 +99,8 @@ export interface Requests {
   "room:create": { data: { name: string }; reply: SeatGrant };
   "room:join": { data: { code: string; name: string }; reply: SeatGrant };
   "room:resume": { data: { code: string; seatKey: string }; reply: SeatGrant };
+  /** Raum nach einem Neustart aus dem aufbewahrten Stand wiederherstellen; danach «room:resume». */
+  "room:restore": { data: { blob: string }; reply: { code: string } };
   "room:leave": { data: Record<string, never>; reply: object };
   /** Eigener Platz in der Lobby: Name, Figur, bereit. */
   "lobby:seat": { data: { name?: string; token?: TokenId; ready?: boolean }; reply: object };
@@ -111,6 +125,7 @@ export const REQUEST_NAMES: readonly RequestName[] = [
   "room:create",
   "room:join",
   "room:resume",
+  "room:restore",
   "room:leave",
   "lobby:seat",
   "lobby:options",
@@ -130,6 +145,8 @@ export interface ServerEvents {
   "game:update": (update: GameUpdate) => void;
   /** Uhr für den Entscheid, der gerade ansteht (null: keine Uhr). */
   "game:clock": (clock: TurnClock | null) => void;
+  /** Neuer verschlüsselter Spielstand zum Aufbewahren (nach jeder Änderung im Spiel). */
+  "game:save": (save: GameSaveMessage) => void;
   /** Du bist nicht mehr in diesem Raum (entfernt, Platz in anderem Fenster geöffnet, Raum aufgelöst). */
   "room:closed": (info: { reason: string }) => void;
 }

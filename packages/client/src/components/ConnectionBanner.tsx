@@ -3,7 +3,14 @@
 import type { ConnectionStatus } from "../online/connection";
 import "./ConnectionBanner.css";
 
-export function ConnectionBanner({ status }: { status: ConnectionStatus }) {
+export function ConnectionBanner({ status, restoring = false }: { status: ConnectionStatus; restoring?: boolean }) {
+  if (restoring) {
+    return (
+      <p className="connection" role="status">
+        <strong>Der Spielserver wurde neu gestartet.</strong> Der Raum wird aus dem gespeicherten Spielstand wiederhergestellt …
+      </p>
+    );
+  }
   if (status === "online") return null;
   return (
     <p className="connection" role="status">

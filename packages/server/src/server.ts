@@ -3,6 +3,7 @@
 // Ungültige oder unerwartete Nachrichten bekommen eine Fehlermeldung, der Server läuft weiter.
 // Daneben liefert er auf Wunsch die gebaute Oberfläche aus (static-files.ts), damit im WLAN und
 // auf Render eine Adresse für alles reicht.
+import { randomBytes } from "node:crypto";
 import { createServer, type Server as HttpServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { networkInterfaces } from "node:os";
@@ -11,14 +12,15 @@ import { ENGINE_VERSION, type TokenId } from "@zueripoly/engine";
 import { isLocalRequest, lanAddresses, routeAddress } from "./lan";
 import { normalizeOrigin, originAllowed } from "./origin";
 import { asObject, cleanName, parseAction, parseBotLevel, parseDecision, parseOptions, parseSeatId, parseToken } from "./parse";
-import { REQUEST_NAMES, type Reply, type RequestName, type Requests, SERVER_PORT } from "./protocol";
+import { REQUEST_NAMES, type Reply, type RequestName, type Requests, SAVE_MAX_CHARS, SERVER_PORT } from "./protocol";
 import { TokenBucket } from "./rate-limit";
 import { DEFAULT_TIMING, type Timing } from "./room";
 import { normalizeRoomCode } from "./room-code";
 import { RoomRegistry } from "./room-registry";
+import { SAVE_KEY_BYTES } from "./room-save";
 import { createStaticHandler } from "./static-files";
 
-/** Grösste Nachricht, die ein Browser schicken darf (Bytes). */
+/** Grösste Nachricht, die ein Browser schicken darf (Bytes). Reicht auch für einen Spielstand («room:restore»). */
 const MAX_MESSAGE_BYTES = 16 * 1024;
 /** Nach so vielen abgelehnten Nachrichten wegen Flut wird die Verbindung getrennt. */
 const MAX_STRIKES = 40;
@@ -37,6 +39,8 @@ export interface ZueriServerOptions {
   clientDir?: string;
   /** Fremde Seiten, die verbinden dürfen (z. B. https://name.github.io). Die eigene Adresse darf immer. */
   allowedOrigins?: string[];
+  /** Schlüssel für die aufbewahrten Spielstände (32 Byte). Ohne: zufällig, Stände gelten dann nur bis zum Neustart. */
+  saveKey?: Buffer;
 }
 
 export interface ZueriServer {
@@ -71,6 +75,11 @@ function handlers(registry: RoomRegistry): { [K in RequestName]: Handler } {
       const code = normalizeRoomCode(asObject(data)?.code);
       if (!code) return fail("Der Raumcode hat 5 Zeichen, zum Beispiel K7MP4.");
       return name ? registry.join(socket.id, code, name) : fail(NAME_HINT);
+    },
+    "room:restore": (_socket, data) => {
+      const blob = asObject(data)?.blob;
+      if (typeof blob !== "string" || blob.length > SAVE_MAX_CHARS) return fail(INVALID);
+      return registry.restore(blob);
     },
     "room:resume": (socket, data) => {
       const raw = asObject(data);
@@ -187,10 +196,14 @@ export async function startZueriServer(options: ZueriServerOptions = {}): Promis
     },
   });
 
-  const registry = new RoomRegistry(timing, {
-    emit: (socketId, event, payload) => io.to(socketId).emit(event, payload),
-    log,
-  });
+  const registry = new RoomRegistry(
+    timing,
+    {
+      emit: (socketId, event, payload) => io.to(socketId).emit(event, payload),
+      log,
+    },
+    options.saveKey ?? randomBytes(SAVE_KEY_BYTES),
+  );
   const table = handlers(registry);
   const known = new Set<string>(REQUEST_NAMES);
 

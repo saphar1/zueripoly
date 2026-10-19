@@ -20,7 +20,7 @@ Zwei Wege, beide gratis (Entscheid 2026-10-13):
 | Seite | GitHub Pages (fertige Dateien, baut bei jedem Push auf `main`) | dein PC (`npm start`) |
 | Spielserver | Render, Gratisstufe, Frankfurt | dein PC (`npm start`) |
 | Dein PC muss laufen | nein | ja |
-| Grenzen | Server schläft nach 15 Minuten ohne Spiel, Aufwachen bis 1 Minute. Neustart (auch jeder Push) löscht alle Räume. | Gäste-WLAN trennt Geräte oft voneinander. Server-Neustart löscht alle Räume. |
+| Grenzen | Server schläft nach 15 Minuten ohne Spiel, Aufwachen bis 1 Minute. Nach einem Neustart (auch jeder Push) stellen die Browser laufende Spiele wieder her, Lobbys sind weg. | Gäste-WLAN trennt Geräte oft voneinander. Nach einem Server-Neustart wie im Internet. |
 
 Solo und Lokal laufen ganz im Browser und brauchen den Spielserver nicht. Auf GitHub Pages starten sie darum immer sofort, auch wenn der Server schläft.
 
@@ -31,7 +31,7 @@ Freunden einfach die Pages-Adresse schicken (oder in der Lobby «Link kopieren»
 Einrichtung (einmalig):
 1. GitHub: öffentliches Repository, Settings → Pages → Source «GitHub Actions». Der Workflow `.github/workflows/pages.yml` testet (`npm test`), baut und veröffentlicht bei jedem Push auf `main`.
 2. Render: New → Blueprint → Repository wählen. `render.yaml` beschreibt den Dienst (Gratisstufe, Frankfurt, Build `npm ci --include=dev && npm run build`, Start `npm run start -w @zueripoly/server`, Prüfung `/healthz`). Render baut bei jedem Push auf `main` neu. Node-Version aus `.node-version`.
-3. Render fragt dabei nach `ZUERIPOLY_ORIGINS`: `https://saphar1.github.io` (die Seite, die verbinden darf; mehrere mit Komma). Später änderbar unter Render → Dienst → Environment.
+3. Render fragt dabei nach `ZUERIPOLY_ORIGINS`: `https://saphar1.github.io` (die Seite, die verbinden darf; mehrere mit Komma). Später änderbar unter Render → Dienst → Environment. `ZUERIPOLY_SAVE_KEY` (Schlüssel für die Spielstände) erzeugt Render selbst (`generateValue` in `render.yaml`). Fehlt er unter Environment (z. B. weil der Blueprint nicht neu synchronisiert wurde), dort von Hand einen langen Zufallstext eintragen; ohne ihn überleben Spiele keinen Neustart.
 4. Die Adresse des Spielservers (`https://zueripoly.onrender.com`) steht im Workflow und wird beim Bauen eingebaut. Ändert sie sich: entweder im Workflow anpassen oder ohne Codeänderung unter GitHub → Settings → Secrets and variables → Actions → Reiter **Variables** (nicht «Secrets») `ZUERIPOLY_SERVER_URL` setzen und den Workflow neu laufen lassen (Actions → «Seite auf GitHub Pages» → Run workflow).
 
 Die Render-Adresse zeigt das Spiel ebenfalls (der Server liefert die gebaute Seite selbst aus) und taugt als Ersatz.
@@ -73,6 +73,7 @@ Liegt die Seite woanders als der Server (GitHub Pages → Render), wird die Serv
 |---|---|---|
 | `PORT` | Server | Port (Standard 3001; Render setzt ihn selbst) |
 | `ZUERIPOLY_ORIGINS` | Server | Fremde Seiten, die verbinden dürfen, mit Komma getrennt |
+| `ZUERIPOLY_SAVE_KEY` | Server | Schlüssel für die aufbewahrten Spielstände (32 Byte base64 oder beliebiger Text). Ohne: Datei `saves/save-key`, wird beim ersten Start angelegt |
 | `ZUERIPOLY_CLIENT_DIR` | Server | Ordner der gebauten Seite (Standard `packages/client/dist`) |
 | `ZUERIPOLY_BASE` | Bauen | Pfad der Seite (Standard `/`, GitHub Pages `/zueripoly/`) |
 | `VITE_ZUERIPOLY_SERVER` | Bauen | Adresse des Spielservers, wenn nicht dieselbe wie die Seite |
@@ -87,6 +88,7 @@ Anfragen haben immer eine Antwort (Socket.IO «ack»): `{ ok: true, … }` oder 
 | `room:create {name}` | alle | Raum eröffnen, du bist Host. Antwort: Code, Sitzplatz-Schlüssel, Platz (`p1`–`p6`) |
 | `room:join {code, name}` | alle | Beitreten (nur in der Lobby, höchstens 6 Plätze) |
 | `room:resume {code, seatKey}` | alle | Zurück auf den eigenen Platz (Lobby oder Spiel) |
+| `room:restore {blob}` | alle | Raum nach einem Neustart aus dem aufbewahrten Spielstand wiederherstellen, danach `room:resume`. Antwort: Code |
 | `room:leave` | alle | Verlassen. Lobby: Platz weg. Spiel: Platz bleibt, der Host entscheidet |
 | `lobby:seat {name?, token?, ready?}` | alle | Eigener Name, Figur (jede nur einmal), bereit |
 | `lobby:options`, `lobby:addBot`, `lobby:botLevel`, `lobby:removeSeat`, `lobby:start` | Host | Optionen, Computergegner, Plätze entfernen, Start |
@@ -102,6 +104,7 @@ Nachrichten vom Server:
 | `room:state` | Raum (Phase, Host, Plätze mit bereit / verbunden / getrennt seit / ausgestiegen / vertreten / Entscheid nötig, Optionen, dein Platz) |
 | `game:update` | Fortlaufende Nummer `seq`, Spielstand, neue Ereignisse. `sync: true` = Vollstand ohne Abspielen |
 | `game:clock` | Restzeit des Zeitlimits für den aktuellen Entscheid (oder `null`) |
+| `game:save` | Verschlüsselter Spielstand zum Aufbewahren: `{code, seq, blob}`; `blob: null` nach Spielende |
 | `room:closed` | Du bist nicht mehr im Raum (entfernt, Platz in anderem Fenster geöffnet, Raum aufgelöst) |
 
 ## Räume und Lobby
@@ -135,7 +138,25 @@ Nachrichten vom Server:
 - Nachrichten höchstens **16 KB**, höchstens **500 Räume**. Unbekannte Nachrichten bekommen «Unbekannte Nachricht.».
 - Jede Anfrage und jeder Zeitgeber laufen in `try/catch`: Fehler werden protokolliert, der Server läuft weiter.
 - **Aufräumen:** Leere Lobby (niemand verbunden) nach 5 Minuten, leeres Spiel nach 10 Minuten. Räume ohne Menschen sofort.
-- Spielstände werden noch **nicht gespeichert**: Startet der Server neu, sind die Räume weg (Phase 6). Auf Render passiert das bei jedem Push und wenn der Dienst schlafen geht.
+- Startet der Server neu, sind die Räume zuerst weg; laufende Spiele stellen die Browser wieder her (nächster Abschnitt). Auf Render passiert das bei jedem Push und wenn der Dienst schlafen geht.
+
+## Spielstand und Neustart
+
+Der Server hat keine Datenbank und auf Render keinen festen Speicher. Darum bewahren **die Browser der Spieler** den Spielstand auf (Entscheid 2026-10-13, gebaut in Phase 6, Teil B):
+
+1. Nach jeder Änderung im Spiel (Spielzug, Computer übernimmt, jemand steigt aus, jemand verbindet neu) schickt der Raum allen Menschen `game:save` mit dem **verschlüsselten** Stand. Der Browser legt ihn im sessionStorage (pro Fenster) und im localStorage ab (`zueripoly.roomSave`, `zueripoly.lastRoomSave`).
+2. Startet der Server neu, verbindet Socket.IO von selbst neu. `room:resume` antwortet dann «Den Raum … gibt es nicht mehr». Hat der Browser einen Stand für diesen Raum, schickt er `room:restore` und danach nochmals `room:resume`. Auf dem Spielbrett steht so lange «Der Spielserver wurde neu gestartet …». Dasselbe passiert nach dem Neuladen und mit «Zurück in Raum …».
+3. Der Server öffnet den Stand (`room-save.ts`) und baut den Raum auf (`Room.fromSave`): gleiche Plätze, gleicher Host, gleiche Würfel- und Kartenreihenfolge. Alle gelten als getrennt, bis sie zurückkommen. Das Spiel ruht, bis der erste Mensch wieder da ist.
+4. Kommt danach ein Browser mit einem **neueren** Stand (höhere `seq`), gilt dieser, solange seither noch nicht gespielt wurde. Bekommt ein Browser nach dem Wiederverbinden einen älteren Stand vom Server, reicht er seinen neueren selbst nach.
+
+Warum verschlüsselt? Im Stand stecken die Reihenfolge der Kartenstapel, die Zufallsquellen und die Sitzplatz-Schlüssel aller Spieler. AES-256-GCM verschlüsselt und prüft die Echtheit zugleich: Ein geänderter Stand lässt sich nicht öffnen. Den Schlüssel kennt nur der Server (`ZUERIPOLY_SAVE_KEY`, sonst `saves/save-key`). Format: «z1.» + base64url(IV | Prüfwert | verschlüsselt(deflate(JSON))), üblich etwa 3 KB.
+
+Grenzen:
+- Stände älter als 24 Stunden werden abgelehnt, ebenso Stände eines anderen Schlüssels («passt nicht zu diesem Server»).
+- Nur laufende Spiele, keine Lobbys. Nach Spielende kommt `blob: null`, der Browser vergisst den Stand.
+- Wer ausgestiegen ist, kommt auch nach dem Neustart nicht zurück (sein Schlüssel fehlt im Stand).
+- Beim Beenden meldet der Server niemanden ab (kein `room:closed`), sonst würden die Browser Platz und Stand vergessen.
+- Ein Spieler könnte nach einem Neustart einen älteren eigenen Stand einspielen, wenn er als Erster kommt und sofort weitergespielt wird. Für Freundesrunden ist das in Ordnung.
 
 ## Tests
 
@@ -147,8 +168,10 @@ Nachrichten vom Server:
 | `game.test.ts` | 2, 3 und 4 Spieler spielen mindestens 10 Züge (alle sehen denselben Stand), eine ganze Partie bis zum Gewinner, Bots, Aktionen ausserhalb des eigenen Zugs, ungültige Aktionen, geheime Stapelreihenfolge, Zeitlimit |
 | `reconnect.test.ts` | Getrennt-Anzeige, Wiederverbinden mit vollem Stand, falscher Schlüssel, zweites Fenster, Host-Entscheide (warten, Computer, entfernen), Host-Wechsel, ruhendes Spiel, Aufräumen |
 | `robustness.test.ts` | kaputte Nachrichten, `__proto__`, zu grosse Nachrichten, Flutbremse, Namen |
+| `room-save.test.ts` | Versiegeln und Öffnen, Grösse, geänderte Bytes, falscher Schlüssel, zu alt, Schlüssel aus Umgebung oder Datei |
+| `restore.test.ts` | Neustart: Raum wiederherstellen und weiterspielen (mit Bot), neuerer Stand gilt, falscher Schlüssel, Ausgestiegene bleiben draussen |
 | `static.test.ts` | Seite ausliefern: Dateien, Typen, Zwischenspeichern, 404/405, keine Pfad-Ausbrüche (`..`, `%2e%2e`, `\`), `/healthz` |
 | `lan.test.ts` | WLAN-Adressen (private IPv4, virtuelle Adapter weg, Weg ins Internet zuerst), nur der eigene PC bekommt sie |
 | `origin.test.ts` | erlaubte Seite (CORS), gleiche Adresse, ohne Origin, fremde Seite abgelehnt (Polling und WebSocket) |
 
-Oberfläche: `npm run playtest -w @zueripoly/client -- --online` (drei Browserfenster spielen eine Partie, eines lädt mittendrin neu) und `npm run screenshots -w @zueripoly/client -- --online`. Mit `-- --online --prod` spielt der Test «Pages + Render» nach: Seite gebaut unter `/zueripoly/` mit eingebauter Serveradresse, ausgeliefert von einem eigenen Server, Spielserver unter einer anderen Adresse, der nur diese Seite erlaubt (Bilder `online-prod-*.png`).
+Oberfläche: `npm run playtest -w @zueripoly/client -- --online` (drei Browserfenster spielen eine Partie, eines lädt mittendrin neu) und `npm run screenshots -w @zueripoly/client -- --online`. Mit `-- --online --restart` startet der Spielserver mitten in der Partie neu (gleicher Port, gleicher Schlüssel); die Fenster stellen den Raum wieder her und spielen bis zum Gewinner weiter (Bild `online-nach-neustart.png`). Mit `-- --online --prod` spielt der Test «Pages + Render» nach: Seite gebaut unter `/zueripoly/` mit eingebauter Serveradresse, ausgeliefert von einem eigenen Server, Spielserver unter einer anderen Adresse, der nur diese Seite erlaubt (Bilder `online-prod-*.png`).

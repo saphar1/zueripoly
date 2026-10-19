@@ -3,7 +3,8 @@
 //   einer Adresse ausliefert, auch für andere Geräte im gleichen WLAN.
 // - npm run dev: nur Spielserver (mit --dev), die Seite kommt von Vite (http://localhost:5173).
 // Umgebungsvariablen: PORT (Standard 3001), ZUERIPOLY_CLIENT_DIR (Ordner der gebauten Oberfläche),
-// ZUERIPOLY_ORIGINS (fremde Seiten, die verbinden dürfen, mit Komma getrennt, z. B. die GitHub-Pages-Adresse).
+// ZUERIPOLY_ORIGINS (fremde Seiten, die verbinden dürfen, mit Komma getrennt, z. B. die GitHub-Pages-Adresse),
+// ZUERIPOLY_SAVE_KEY (Schlüssel für aufbewahrte Spielstände, 32 Byte base64; sonst Datei saves/save-key).
 import { existsSync } from "node:fs";
 import { networkInterfaces } from "node:os";
 import path from "node:path";
@@ -11,6 +12,7 @@ import { fileURLToPath } from "node:url";
 import { ENGINE_VERSION } from "@zueripoly/engine";
 import { lanAddresses, routeAddress } from "./lan";
 import { parseOrigins } from "./origin";
+import { loadSaveKey } from "./room-save";
 import { SERVER_PORT } from "./protocol";
 import { startZueriServer } from "./server";
 
@@ -19,9 +21,11 @@ const dev = process.argv.includes("--dev");
 const clientDir = path.resolve(process.env.ZUERIPOLY_CLIENT_DIR ?? fileURLToPath(new URL("../../client/dist", import.meta.url)));
 const built = !dev && existsSync(path.join(clientDir, "index.html"));
 const allowedOrigins = parseOrigins(process.env.ZUERIPOLY_ORIGINS);
+const saveKeyFile = fileURLToPath(new URL("../../../saves/save-key", import.meta.url));
 
 try {
-  const server = await startZueriServer({ port, clientDir: built ? clientDir : undefined, allowedOrigins });
+  const save = loadSaveKey(process.env.ZUERIPOLY_SAVE_KEY, saveKeyFile);
+  const server = await startZueriServer({ port, clientDir: built ? clientDir : undefined, allowedOrigins, saveKey: save.key });
   console.log(`ZüriPoly-Server läuft auf Port ${server.port} (Engine ${ENGINE_VERSION}).`);
   if (dev) {
     console.log("Im Browser spielen: http://localhost:5173 (Vite, startet mit npm run dev).");
@@ -35,6 +39,7 @@ try {
   } else {
     console.log(`Die Oberfläche ist noch nicht gebaut (${clientDir} fehlt). Im Projektordner: npm start`);
   }
+  console.log(`Schlüssel für Spielstände: ${save.source}`);
   if (allowedOrigins.length > 0) console.log(`Erlaubte fremde Seiten: ${allowedOrigins.join(", ")}`);
 
   const stop = () => {

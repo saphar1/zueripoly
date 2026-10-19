@@ -3,12 +3,16 @@
 //   Browser verschiedene Spieler sein (zum Testen).
 // - localStorage: merkt sich den letzten Platz auch nach dem Schliessen des Fensters; das Online-Menü
 //   bietet dann «Zurück in Raum …» an.
+// Dazu der verschlüsselte Spielstand des Raums (`game:save`): Startet der Server neu, stellt der Browser
+// den Raum damit wieder her («room:restore»). Lesen kann ihn nur der Server.
 // Speicher kann fehlen oder gesperrt sein (privates Fenster): Jeder Zugriff steht in try/catch.
-import type { SeatGrant } from "@zueripoly/server/protocol";
+import type { GameSaveMessage, SeatGrant } from "@zueripoly/server/protocol";
 
 const SESSION_KEY = "zueripoly.seat";
 const LAST_KEY = "zueripoly.lastSeat";
 const NAME_KEY = "zueripoly.name";
+const SESSION_SAVE_KEY = "zueripoly.roomSave";
+const LAST_SAVE_KEY = "zueripoly.lastRoomSave";
 /** Ältere Plätze bietet das Menü nicht mehr an (der Raum ist dann ohnehin aufgeräumt). */
 const LAST_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 
@@ -62,10 +66,38 @@ export function saveSeat(grant: SeatGrant, name: string): void {
   write(local, LAST_KEY, { ...seat, name, savedAt: Date.now() });
 }
 
-/** Platz vergessen (Raum verlassen, entfernt, Raum aufgelöst). */
+/** Platz vergessen (Raum verlassen, entfernt, Raum aufgelöst), samt aufbewahrtem Spielstand. */
 export function forgetSeat(code: string): void {
   if (loadWindowSeat()?.code === code) write(session, SESSION_KEY, null);
   if (read<LastSeat>(local, LAST_KEY)?.code === code) write(local, LAST_KEY, null);
+  forgetRoomSave(code);
+}
+
+function isSave(value: unknown): value is GameSaveMessage & { blob: string } {
+  const v = value as Partial<GameSaveMessage> | null;
+  return Boolean(v && typeof v.code === "string" && typeof v.seq === "number" && typeof v.blob === "string");
+}
+
+/** Neuen Spielstand aufbewahren (`blob: null` = Spiel zu Ende, nichts mehr aufbewahren). */
+export function saveRoomSave(save: GameSaveMessage): void {
+  if (save.blob === null) {
+    forgetRoomSave(save.code);
+    return;
+  }
+  write(session, SESSION_SAVE_KEY, save);
+  write(local, LAST_SAVE_KEY, save);
+}
+
+/** Aufbewahrter Spielstand für diesen Raum: der neuere aus Fenster und Browser. */
+export function loadRoomSave(code: string): { seq: number; blob: string } | null {
+  const saves = [read<unknown>(session, SESSION_SAVE_KEY), read<unknown>(local, LAST_SAVE_KEY)].filter(isSave).filter((s) => s.code === code);
+  saves.sort((a, b) => b.seq - a.seq);
+  return saves[0] ? { seq: saves[0].seq, blob: saves[0].blob } : null;
+}
+
+function forgetRoomSave(code: string): void {
+  if (read<GameSaveMessage>(session, SESSION_SAVE_KEY)?.code === code) write(session, SESSION_SAVE_KEY, null);
+  if (read<GameSaveMessage>(local, LAST_SAVE_KEY)?.code === code) write(local, LAST_SAVE_KEY, null);
 }
 
 export function loadName(): string {

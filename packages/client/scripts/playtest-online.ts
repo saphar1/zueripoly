@@ -6,6 +6,9 @@
 // Mit --prod wie im Internet (Seite auf GitHub Pages, Server auf Render): Die Seite wird gebaut
 // (Pfad /zueripoly/, Serveradresse eingebaut) und von einem eigenen Server ausgeliefert, der Spielserver
 // läuft unter einer anderen Adresse und erlaubt nur diese Seite. Bilder: screenshots/online-prod-*.png
+// Mit --restart startet der Spielserver mitten in der Partie neu (wie Render nach einem Push): Die Fenster
+// stellen den Raum aus dem aufbewahrten Spielstand wieder her und spielen bis zum Gewinner weiter.
+import { randomBytes } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import { createServer as createNetServer } from "node:net";
 import { tmpdir } from "node:os";
@@ -31,6 +34,9 @@ const MAX_STEPS = option("steps", 800);
 /** Bei diesem Schritt lädt Ben die Seite neu. */
 const RELOAD_AT = 25;
 const PROD = args.includes("--prod");
+const RESTART = args.includes("--restart");
+/** Bei diesem Schritt von Anna startet der Spielserver neu (mit --restart). */
+const RESTART_AT = 40;
 const PREFIX = PROD ? "online-prod" : "online";
 
 /** Freier Port (für die Seite, damit der Spielserver ihre Adresse schon beim Start kennt). */
@@ -47,13 +53,17 @@ function freePort(): Promise<number> {
 
 // Spielserver mit kurzen Bot-Pausen (die Browser laufen mit «weniger Bewegung»).
 const timing = { botScale: 0.05, playbackScale: 0.1 };
+/** Gleicher Schlüssel vor und nach dem Neustart (wie ZUERIPOLY_SAVE_KEY auf Render). */
+const saveKey = randomBytes(32);
+let gameOptions: Parameters<typeof startZueriServer>[0] = {};
 let base: string;
 let closeSite: () => Promise<void>;
 let game: Awaited<ReturnType<typeof startZueriServer>>;
 if (PROD) {
   const sitePort = await freePort();
   const siteOrigin = `http://localhost:${sitePort}`;
-  game = await startZueriServer({ port: 0, log: false, timing, allowedOrigins: [siteOrigin] });
+  gameOptions = { log: false, timing, saveKey, allowedOrigins: [siteOrigin] };
+  game = await startZueriServer({ ...gameOptions, port: 0 });
   const outDir = mkdtempSync(path.join(tmpdir(), "zueripoly-prod-"));
   process.env.ZUERIPOLY_BASE = "/zueripoly/";
   process.env.VITE_ZUERIPOLY_SERVER = `http://localhost:${game.port}`;
@@ -66,7 +76,8 @@ if (PROD) {
   };
   console.log(`Seite ${base} (gebaut), Spielserver http://localhost:${game.port} (erlaubt nur die Seite).`);
 } else {
-  game = await startZueriServer({ port: 0, log: false, timing });
+  gameOptions = { log: false, timing, saveKey };
+  game = await startZueriServer({ ...gameOptions, port: 0 });
   process.env.ZUERIPOLY_SERVER = `http://localhost:${game.port}`;
   const vite = await createServer({ root: clientRoot, logLevel: "warn", server: { port: 5199, strictPort: false } });
   await vite.listen();
@@ -75,6 +86,8 @@ if (PROD) {
 }
 
 const browser = await chromium.launch();
+let restarting = false;
+let restarted = false;
 const errors: string[] = [];
 let exitCode = 0;
 
@@ -83,6 +96,8 @@ async function openWindow(name: string): Promise<{ context: BrowserContext; page
   const page = await context.newPage();
   page.on("pageerror", (e) => errors.push(`${name}: Seitenfehler: ${e.message}`));
   page.on("console", (m) => {
+    // Während des Neustarts scheitern Verbindungsversuche; das meldet der Browser selbst in der Konsole.
+    if (restarting && /ERR_CONNECTION_REFUSED|WebSocket connection|Failed to load resource/.test(m.text())) return;
     if (m.type() === "error") errors.push(`${name}: Konsole: ${m.text()}`);
   });
   return { context, page };
@@ -131,6 +146,7 @@ try {
   async function play(i: number): Promise<void> {
     const page = pages[i]!;
     while (!finished && stats[i]!.steps < MAX_STEPS) {
+      while (restarting) await page.waitForTimeout(100);
       const state = await ready(page, 180_000);
       if (state === "end") {
         finished = true;
@@ -146,6 +162,11 @@ try {
         continue;
       }
       if (i === 0 && stats[i]!.steps === 20) await shot(page, "spiel-host");
+      if (RESTART && i === 0 && stats[i]!.steps === RESTART_AT && !restarted) {
+        restarted = true;
+        await restartServer();
+        continue;
+      }
       try {
         if ((await randomStep(page, state)).traded) stats[i]!.trades++;
       } catch (error) {
@@ -155,6 +176,26 @@ try {
       }
     }
   }
+  /** Spielserver beenden und auf demselben Port mit demselben Schlüssel neu starten. */
+  async function restartServer(): Promise<void> {
+    restarting = true;
+    await host.waitForTimeout(1000);
+    const port = game.port;
+    await game.close();
+    console.log("Spielserver beendet (alle Räume weg).");
+    await host.waitForTimeout(1500);
+    game = await startZueriServer({ ...gameOptions, port });
+    const started = Date.now();
+    while (game.registry.roomCount === 0) {
+      if (Date.now() - started > 30_000) throw new Error("Nach dem Neustart wurde der Raum nicht wiederhergestellt.");
+      await host.waitForTimeout(100);
+    }
+    await Promise.all(pages.map((p) => p.locator(".connection").waitFor({ state: "detached", timeout: 30_000 })));
+    await shot(host, "nach-neustart");
+    restarting = false;
+    console.log("Spielserver neu gestartet, Raum aus dem aufbewahrten Spielstand wiederhergestellt.");
+  }
+
   await Promise.all(NAMES.map((_, i) => play(i)));
 
   const winner = finished ? (await host.locator(".tafel--end .tafel__name").innerText()).trim() : "kein Gewinner";
@@ -162,6 +203,7 @@ try {
   console.log(`Ergebnis: ${winner}`);
   for (const [i, s] of stats.entries()) console.log(`  ${NAMES[i]}: ${s.steps} Schritte, ${s.trades} Handelsangebote`);
   if (!reloaded) throw new Error("Neu laden wurde nicht geprüft (Partie zu kurz).");
+  if (RESTART && !restarted) throw new Error("Der Neustart wurde nicht geprüft (Partie zu kurz).");
   // Alle Fenster zeigen dasselbe Ergebnis und dasselbe Protokoll-Ende.
   const lastLines = await Promise.all(pages.map((p) => p.locator(".log__text").first().innerText()));
   if (new Set(lastLines).size !== 1) throw new Error(`Protokoll-Enden unterscheiden sich: ${lastLines.join(" | ")}`);
