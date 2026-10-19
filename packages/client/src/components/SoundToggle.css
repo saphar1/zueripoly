@@ -1,0 +1,14 @@
+.sound-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sound-toggle__icon {
+  font-size: 20px;
+}
+
+/* Stumm: Lautsprecher hohl, Text bleibt lesbar */
+.sound-toggle[aria-pressed="true"] .sound-toggle__icon {
+  --icon-fill: currentColor;
+}

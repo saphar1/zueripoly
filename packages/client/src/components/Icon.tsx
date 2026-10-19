@@ -17,7 +17,9 @@ export type IconName =
   | "waves"
   | "close"
   | "plus"
-  | "minus";
+  | "minus"
+  | "sound"
+  | "soundOff";
 
 const PATHS: Record<IconName, () => JSX.Element> = {
   house: () => <path className="i-fill" d="M4 11 L12 4 L20 11 V20 H4 Z" />,
@@ -56,6 +58,18 @@ const PATHS: Record<IconName, () => JSX.Element> = {
   close: () => <path className="i-line" d="M6 6 L18 18 M18 6 L6 18" />,
   plus: () => <path className="i-line" d="M12 5 V19 M5 12 H19" />,
   minus: () => <path className="i-line" d="M5 12 H19" />,
+  sound: () => (
+    <>
+      <path className="i-fill" d="M3 9 H7 L12 5 V19 L7 15 H3 Z" />
+      <path className="i-line" d="M15.5 9 A4 4 0 0 1 15.5 15 M18 6.5 A7.5 7.5 0 0 1 18 17.5" />
+    </>
+  ),
+  soundOff: () => (
+    <>
+      <path className="i-fill" d="M3 9 H7 L12 5 V19 L7 15 H3 Z" />
+      <path className="i-line" d="M15.5 9.5 L21 15 M21 9.5 L15.5 15" />
+    </>
+  ),
   waves: () => <path className="i-line" d="M2 9 C5 6 8 6 11 9 S17 12 20 9 L22 8 M2 15 C5 12 8 12 11 15 S17 18 20 15 L22 14" />,
 };
 

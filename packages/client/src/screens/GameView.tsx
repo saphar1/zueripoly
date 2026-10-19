@@ -13,6 +13,7 @@ import { EventCard } from "../components/EventCard";
 import { GameLog } from "../components/GameLog";
 import { PlayerList, type PlayerPresence } from "../components/PlayerPanel";
 import { PropertyActions } from "../components/PropertyActions";
+import { SoundToggle } from "../components/SoundToggle";
 import { Sign, type SignMessage } from "../components/Sign";
 import type { LogEntry } from "../game/use-game-playback";
 import { useSignal } from "../screen-history";
@@ -129,12 +130,16 @@ export function GameView({
   return (
     <main className="game">
       {banner}
-      {/* Nur auf dem Handy: schmale Kopfleiste mit Zug und Menü (auf dem Desktop steht «Spiel verlassen» rechts unten). */}
+      {/* Nur auf dem Handy: schmale Kopfleiste mit Zug, Ton und Menü (auf dem Desktop steht der Ton in der
+          Kopfzeile «Spieler», «Spiel verlassen» rechts unten). */}
       <header className="game__bar">
         <p className="game__bar-title">
           ZüriPoly <span className="num">· Zug {view.turnNumber}</span>
         </p>
-        {leave && <LeaveGame {...leave} label="Menü" />}
+        <div className="game__bar-tools">
+          <SoundToggle />
+          {leave && <LeaveGame {...leave} label="Menü" />}
+        </div>
       </header>
 
       <div className="game__board">
@@ -186,6 +191,7 @@ export function GameView({
           focusSpace={focusSpace}
           onPlayerHover={setHoveredPlayer}
           onSpaceHover={setHovered}
+          tools={<SoundToggle className="game__sound-side" />}
         />
         <GameLog entries={game.log} />
         {leave && (

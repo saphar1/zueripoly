@@ -1,5 +1,5 @@
 // Spielerpanel im Stil einer Fahrplanzeile: Figur, Name, Kontostand, Besitzstreifen, Zustand.
-import { type CSSProperties, type PointerEvent, useState } from "react";
+import { type CSSProperties, type PointerEvent, type ReactNode, useState } from "react";
 import type { BotLevel, ColorGroup, GameState, PlayerId, PlayerState, SpaceIndex } from "@zueripoly/engine";
 import {
   BOT_LEVEL_NAMES,
@@ -229,16 +229,21 @@ interface PlayerListProps {
   focusSpace?: SpaceIndex | null;
   onPlayerHover?: (id: PlayerId | null) => void;
   onSpaceHover?: (index: SpaceIndex | null) => void;
+  /** Rechts in der Kopfzeile neben der Zugnummer (z. B. der Stummschalter). */
+  tools?: ReactNode;
 }
 
 /** Alle Spielerpanels mit Kopfzeile wie ein Fahrplan. */
-export function PlayerList({ state, presence, linkedPlayer = null, focusSpace = null, onPlayerHover, onSpaceHover }: PlayerListProps) {
+export function PlayerList({ state, presence, linkedPlayer = null, focusSpace = null, onPlayerHover, onSpaceHover, tools }: PlayerListProps) {
   const current = state.players[state.current];
   return (
     <section className="players" aria-label="Spieler">
       <header className="players__head">
         <h2>Spieler</h2>
-        <span className="num">Zug {state.turnNumber}</span>
+        <div className="players__meta">
+          <span className="num">Zug {state.turnNumber}</span>
+          {tools}
+        </div>
       </header>
       {state.players.map((player) => (
         <PlayerPanel

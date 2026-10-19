@@ -4,6 +4,7 @@ import { useState } from "react";
 import { describeSave, loadLocalGame } from "../game/local-save";
 import { Icon } from "../components/Icon";
 import { Logo } from "../components/Logo";
+import { SoundToggle } from "../components/SoundToggle";
 import "./MainMenu.css";
 
 interface Line {
@@ -38,6 +39,7 @@ export function MainMenu({ onLocal, onSolo, onOnline, onResume }: MainMenuProps)
       <header className="menu__head">
         <Logo className="menu__logo" />
         <p className="menu__claim">Das Brettspiel rund um Zürich.</p>
+        <SoundToggle className="menu__sound" />
       </header>
       <nav className="menu__lines" aria-label="Spielart wählen">
         <p className="menu__label">Abfahrten</p>

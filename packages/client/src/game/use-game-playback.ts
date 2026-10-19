@@ -10,6 +10,7 @@ import type { Rng } from "@zueripoly/engine";
 import type { SignMessage } from "../components/Sign";
 import { formatEvents } from "../game-text";
 import { motionMs, wait } from "../motion";
+import { type SoundName, playSound } from "../sound";
 import { landingNote } from "../space-text";
 
 export interface LogEntry {
@@ -28,6 +29,14 @@ const FOLLOW_UP: readonly GameEvent["type"][] = [
   "bankrupt",
   "playerRemoved",
   "gameWon",
+];
+
+/** Ton am Ende eines Schritts: das Wichtigste zuerst, nur einer. */
+const END_SOUNDS: readonly [GameEvent["type"], SoundName][] = [
+  ["gameWon", "win"],
+  ["houseBuilt", "build"],
+  ["propertyBought", "buy"],
+  ["moneyTransferred", "money"],
 ];
 
 /** Nur für die Augen, die beim Rollen aufflackern. Nie die Spiel-Zufallsquelle verbrauchen. */
@@ -170,6 +179,7 @@ export function useGamePlayback(initial: GameState) {
         const event = events[i]!;
         switch (event.type) {
           case "diceRolled": {
+            playSound("dice");
             const duration = motionMs("dice");
             const started = performance.now();
             while (performance.now() - started < duration - 90) {
@@ -199,10 +209,12 @@ export function useGamePlayback(initial: GameState) {
             break;
           }
           case "sentToJail":
+            playSound("jail");
             await wait(Math.max(motionMs("card"), 1));
             show(updatePlayer(shown, event.player, (p) => ({ ...p, position: JAIL_INDEX, inJail: true })));
             break;
           case "cardDrawn":
+            playSound("card");
             setCard(event.card);
             // Wenn die Karte die Figur noch bewegt: kurz lesen lassen, dann weiter.
             if (events.slice(i + 1).some((e) => e.type === "moved" || e.type === "sentToJail")) {
@@ -215,6 +227,10 @@ export function useGamePlayback(initial: GameState) {
       }
 
       setView(next);
+      if (animate) {
+        const sound = END_SOUNDS.find(([type]) => events.some((e) => e.type === type));
+        if (sound) playSound(sound[1]);
+      }
       const sign = signFor(next, events);
       if (sign) setMessage(sign);
       else {

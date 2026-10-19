@@ -21,6 +21,10 @@
   font-weight: 600;
 }
 
+.menu__sound {
+  margin-top: var(--space-5);
+}
+
 .menu__lines {
   display: flex;
   flex-direction: column;

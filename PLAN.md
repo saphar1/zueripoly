@@ -133,7 +133,7 @@ Teil B: Spielstand speichern und fortsetzen (2026-10-19) ✓
 - [ ] Nach dem nächsten Push prüfen: Render hat `ZUERIPOLY_SAVE_KEY` (aus `render.yaml`, sonst im Dashboard unter Environment setzen); dann einmal live einen Neustart ausprobieren
 
 Teil C: Ton, Bewegung, Handy, Kleines
-- [ ] Töne (Web Audio) und Stummschalter (Kopfleiste und Hauptmenü)
+- [x] Töne (Web Audio, `sound.ts`: Würfel, Karte, Tramglocke beim Kauf, Haus, Geld, Gefängnis, Sieg; erst nach dem ersten Klick, nicht bei verstecktem Tab) und Stummschalter `SoundToggle` (Hauptmenü, Handy-Kopfleiste, Desktop neben «Zug n»)
 - [ ] Bewegung: Betragsmarke beim Kontostand, Häuser setzen sich; `prefers-reduced-motion`
 - [ ] Mobile-Feinschliff Safari (`100dvh`, Safe Area, Eingabefelder ≥ 16 px), alle Bildschirme bei 390 × 844 und 375 × 667
 - [x] Favicon (`public/favicon.svg`, `apple-touch-icon.png`), Bot-Tempo «normal / schnell» in der Solo-Lobby (`preferences.ts`, Pausen × 0,4)

@@ -103,7 +103,16 @@
     font-weight: 600;
   }
 
-  .game__bar .game__leave {
+  .game__bar-tools {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2);
+  }
+
+  .game__bar .game__leave,
+  .game__bar .sound-toggle {
     padding-block: var(--space-1);
   }
 
@@ -139,7 +148,19 @@
     gap: var(--space-4);
   }
 
-  .game__leave-side {
+  .game__leave-side,
+  .game__sound-side {
+    display: none;
+  }
+}
+
+/* Sehr schmal: Kopfleiste bleibt einzeilig, der Stummschalter zeigt nur den Lautsprecher. */
+@media (max-width: 419px) {
+  .game__bar .sound-toggle {
+    padding-inline: var(--space-2);
+  }
+
+  .game__bar .sound-toggle__label {
     display: none;
   }
 }
