@@ -33,23 +33,27 @@ describe("Spielstand nach einem Neustart des Servers", () => {
     await startGame(players);
     await playUntil(players, 6);
     const [anna, ben] = players as [TestClient, TestClient];
-    const before = { seq: anna.seq, state: JSON.stringify(anna.state), annaGrant: anna.grant!, benGrant: ben.grant! };
     expect(anna.save!.code).toBe(anna.grant!.code);
     await first.close();
+    // Bezug ist der zuletzt aufbewahrte Stand (der Bot kann bis zum Beenden noch gezogen haben).
+    const kept = anna.save!;
+    const keptState = anna.updates.find((u) => u.seq === kept.seq)!.state;
+    const before = { seq: kept.seq, state: JSON.stringify(keptState), annaGrant: anna.grant!, benGrant: ben.grant! };
     // Beim Beenden keine Abmeldung: Die Browser behalten Platz und Spielstand.
     expect(anna.closedReason).toBeNull();
 
     const second = await startServer({ saveKey: KEY });
     expect(expectError(await (await TestClient.connect(second.port)).resume(before.annaGrant))).toContain("gibt es nicht mehr");
 
-    const anna2 = await comeBack(second.port, anna);
+    const anna2 = await comeBack(second.port, anna, kept.blob!);
     const ben2 = await comeBack(second.port, ben);
     expect(second.registry.roomCount).toBe(1);
     expect((await anna2.resume(before.annaGrant)).ok).toBe(true);
     expect((await ben2.resume(before.benGrant)).ok).toBe(true);
     await waitUntil(() => anna2.state !== null && ben2.state !== null, "Vollstand");
-    expect(anna2.seq).toBe(before.seq);
-    expect(JSON.stringify(anna2.state)).toBe(before.state);
+    // Erster Vollstand = Stand vor dem Neustart (danach darf der Bot schon weiterziehen).
+    expect(anna2.updates[0]).toMatchObject({ sync: true, seq: before.seq });
+    expect(JSON.stringify(anna2.updates[0]!.state)).toBe(before.state);
     expect(anna2.room?.seats.map((s) => [s.name, s.connected])).toEqual([
       ["Anna", true],
       ["Ben", true],
@@ -57,7 +61,7 @@ describe("Spielstand nach einem Neustart des Servers", () => {
     ]);
     expect(anna2.room?.hostId).toBe(before.annaGrant.seatId);
     // Neue Stände kommen gleich nach dem Wiederverbinden.
-    expect(anna2.save?.seq).toBe(before.seq);
+    expect(anna2.save?.seq).toBeGreaterThanOrEqual(before.seq);
 
     // Es geht weiter, auch der Bot zieht wieder.
     const turn = anna2.state!.turnNumber;
@@ -111,6 +115,39 @@ describe("Spielstand nach einem Neustart des Servers", () => {
     expect(expectError(await client.request("room:restore", { blob: 42 }))).toBe("Ungültige Anfrage.");
     expect(expectError(await client.request("room:restore", { blob: "z1." + "A".repeat(13_000) }))).toBe("Ungültige Anfrage.");
     expect(other.registry.roomCount).toBe(0);
+  });
+
+  it("ein alter Stand mit dem Schlüssel eines Ausgestiegenen wird vom neueren ersetzt; bis dahin ruht das Spiel", async () => {
+    const first = await startServer({ saveKey: KEY, timing: { absentMs: 3000 } });
+    const players = await setupRoom(first.port, ["Anna", "Ben", "Clara"]);
+    await startGame(players);
+    const [anna, ben, clara] = players as [TestClient, TestClient, TestClient];
+    await waitUntil(() => ben.save?.blob !== undefined && ben.save?.blob !== null, "Stand bei Ben");
+    const stale = ben.save!.blob!;
+    const staleRev = ben.save!.rev;
+    expect((await ben.request("room:leave", {})).ok).toBe(true);
+    // Gleiche Spielstand-Nummer, aber neuere Speicherung (ohne Bens Schlüssel).
+    await waitUntil(() => (anna.save?.rev ?? 0) > staleRev && anna.save!.seq === ben.save!.seq, "neuerer Stand bei Anna");
+    const fresh = anna.save!.blob!;
+    await first.close();
+
+    const second = await startServer({ saveKey: KEY, timing: { absentMs: 3000 } });
+    // Ben kommt zuerst mit dem alten Stand und will sofort spielen: Das Spiel ruht, bis alle zurück sind.
+    const ben2 = await comeBack(second.port, ben, stale);
+    expect((await ben2.resume(ben.grant!)).ok).toBe(true);
+    await waitUntil(() => ben2.save?.restoredFrom !== null && ben2.save?.restoredFrom !== undefined, "Stand nach dem Wiederverbinden");
+    const benAction = getWaitingFor(ben2.state!) === ben.me ? { type: "rollDice" } : { type: "endTurn" };
+    expect(expectError(await ben2.request("game:action", { action: benAction }))).toContain("sobald alle zurück sind");
+
+    // Anna bringt den neueren Stand: Er gilt, Bens Platz ist weg.
+    const anna2 = await comeBack(second.port, anna, fresh);
+    await waitUntil(() => ben2.closedReason !== null, "Ben abgemeldet");
+    expect(ben2.closedReason).toContain("gilt in diesem Spielstand nicht mehr");
+    expect(expectError(await (await TestClient.connect(second.port)).resume(ben.grant!))).toContain("gibt es nicht mehr");
+    expect((await anna2.resume(anna.grant!)).ok).toBe(true);
+    const clara2 = await TestClient.connect(second.port);
+    expect((await clara2.resume(clara.grant!)).ok).toBe(true);
+    await waitUntil(() => anna2.room?.seats.find((s) => s.id === ben.me)?.left === true, "Ben gilt als ausgestiegen");
   });
 
   it("wer das Spiel verlassen hat, kommt auch nach dem Neustart nicht zurück", async () => {

@@ -44,6 +44,8 @@ export interface RoomSave {
   rngState: number;
   botRngState: number;
   seq: number;
+  /** Laufende Nummer der Speicherung (siehe `Room.saveRev`). */
+  rev: number;
   savedAt: number;
 }
 

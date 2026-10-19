@@ -6,7 +6,8 @@
 // Dazu der verschlüsselte Spielstand des Raums (`game:save`): Startet der Server neu, stellt der Browser
 // den Raum damit wieder her («room:restore»). Lesen kann ihn nur der Server.
 // Speicher kann fehlen oder gesperrt sein (privates Fenster): Jeder Zugriff steht in try/catch.
-import type { GameSaveMessage, SeatGrant } from "@zueripoly/server/protocol";
+import type { GameSaveMessage, SaveVersion, SeatGrant } from "@zueripoly/server/protocol";
+import { isNewerSave } from "@zueripoly/server/protocol";
 
 const SESSION_KEY = "zueripoly.seat";
 const LAST_KEY = "zueripoly.lastSeat";
@@ -75,7 +76,7 @@ export function forgetSeat(code: string): void {
 
 function isSave(value: unknown): value is GameSaveMessage & { blob: string } {
   const v = value as Partial<GameSaveMessage> | null;
-  return Boolean(v && typeof v.code === "string" && typeof v.seq === "number" && typeof v.blob === "string");
+  return Boolean(v && typeof v.code === "string" && typeof v.seq === "number" && typeof v.rev === "number" && typeof v.blob === "string");
 }
 
 /** Neuen Spielstand aufbewahren (`blob: null` = Spiel zu Ende, nichts mehr aufbewahren). */
@@ -84,15 +85,16 @@ export function saveRoomSave(save: GameSaveMessage): void {
     forgetRoomSave(save.code);
     return;
   }
-  write(session, SESSION_SAVE_KEY, save);
-  write(local, LAST_SAVE_KEY, save);
+  const kept = { code: save.code, seq: save.seq, rev: save.rev, blob: save.blob };
+  write(session, SESSION_SAVE_KEY, kept);
+  write(local, LAST_SAVE_KEY, kept);
 }
 
 /** Aufbewahrter Spielstand für diesen Raum: der neuere aus Fenster und Browser. */
-export function loadRoomSave(code: string): { seq: number; blob: string } | null {
+export function loadRoomSave(code: string): (SaveVersion & { blob: string }) | null {
   const saves = [read<unknown>(session, SESSION_SAVE_KEY), read<unknown>(local, LAST_SAVE_KEY)].filter(isSave).filter((s) => s.code === code);
-  saves.sort((a, b) => b.seq - a.seq);
-  return saves[0] ? { seq: saves[0].seq, blob: saves[0].blob } : null;
+  const newest = saves.reduce<(typeof saves)[number] | null>((best, s) => (!best || isNewerSave(s, best) ? s : best), null);
+  return newest ? { seq: newest.seq, rev: newest.rev, blob: newest.blob } : null;
 }
 
 function forgetRoomSave(code: string): void {

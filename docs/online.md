@@ -147,7 +147,8 @@ Der Server hat keine Datenbank und auf Render keinen festen Speicher. Darum bewa
 1. Nach jeder Änderung im Spiel (Spielzug, Computer übernimmt, jemand steigt aus, jemand verbindet neu) schickt der Raum allen Menschen `game:save` mit dem **verschlüsselten** Stand. Der Browser legt ihn im sessionStorage (pro Fenster) und im localStorage ab (`zueripoly.roomSave`, `zueripoly.lastRoomSave`).
 2. Startet der Server neu, verbindet Socket.IO von selbst neu. `room:resume` antwortet dann «Den Raum … gibt es nicht mehr». Hat der Browser einen Stand für diesen Raum, schickt er `room:restore` und danach nochmals `room:resume`. Auf dem Spielbrett steht so lange «Der Spielserver wurde neu gestartet …». Dasselbe passiert nach dem Neuladen und mit «Zurück in Raum …».
 3. Der Server öffnet den Stand (`room-save.ts`) und baut den Raum auf (`Room.fromSave`): gleiche Plätze, gleicher Host, gleiche Würfel- und Kartenreihenfolge. Alle gelten als getrennt, bis sie zurückkommen. Das Spiel ruht, bis der erste Mensch wieder da ist.
-4. Kommt danach ein Browser mit einem **neueren** Stand (höhere `seq`), gilt dieser, solange seither noch nicht gespielt wurde. Bekommt ein Browser nach dem Wiederverbinden einen älteren Stand vom Server, reicht er seinen neueren selbst nach.
+4. Das Spiel ruht, bis alle mitspielenden Menschen zurück sind, höchstens 60 Sekunden (`absentMs`). Spielzüge werden so lange mit «… sobald alle zurück sind» abgelehnt.
+5. Kommt in dieser Zeit ein Browser mit einem **neueren** Stand, gilt dieser. Jeder Stand hat dafür eine Version aus Spielstand-Nummer `seq` und Speicher-Nummer `rev`; `rev` zählt auch Aussteigen und Vertretung. `game:save` nennt mit `restoredFrom`, aus welchem Stand der Raum kam; hat ein Browser einen neueren, schickt er ihn selbst nach. Plätze, die im neueren Stand nicht mehr gelten (z. B. Ausgestiegene), werden abgemeldet.
 
 Warum verschlüsselt? Im Stand stecken die Reihenfolge der Kartenstapel, die Zufallsquellen und die Sitzplatz-Schlüssel aller Spieler. AES-256-GCM verschlüsselt und prüft die Echtheit zugleich: Ein geänderter Stand lässt sich nicht öffnen. Den Schlüssel kennt nur der Server (`ZUERIPOLY_SAVE_KEY`, sonst `saves/save-key`). Format: «z1.» + base64url(IV | Prüfwert | verschlüsselt(deflate(JSON))), üblich etwa 3 KB.
 
@@ -156,7 +157,7 @@ Grenzen:
 - Nur laufende Spiele, keine Lobbys. Nach Spielende kommt `blob: null`, der Browser vergisst den Stand.
 - Wer ausgestiegen ist, kommt auch nach dem Neustart nicht zurück (sein Schlüssel fehlt im Stand).
 - Beim Beenden meldet der Server niemanden ab (kein `room:closed`), sonst würden die Browser Platz und Stand vergessen.
-- Ein Spieler könnte nach einem Neustart einen älteren eigenen Stand einspielen, wenn er als Erster kommt und sofort weitergespielt wird. Für Freundesrunden ist das in Ordnung.
+- Kommt nach einem Neustart niemand mit einem neueren Stand (alle anderen bleiben länger als 60 Sekunden weg), gilt der ältere. Auch ein Stand von vor dem Spielende kann so ein beendetes Spiel wieder öffnen, wenn alle anderen ihn schon vergessen haben. Ohne Speicher auf dem Server lässt sich das nicht ganz verhindern; für Freundesrunden ist das in Ordnung.
 
 ## Tests
 

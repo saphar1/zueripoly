@@ -38,6 +38,7 @@ function sample(state: GameState, rngState: number): RoomSave {
     rngState,
     botRngState: 99,
     seq: 321,
+    rev: 400,
     savedAt: Date.now(),
   };
 }

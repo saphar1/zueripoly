@@ -1,5 +1,5 @@
 // Nachrichten zwischen Server und Browser (Online-Spiel).
-// Diese Datei enthält nur Typen und Konstanten, keine Node-APIs: Der Client importiert sie
+// Diese Datei enthält nur Typen, Konstanten und kleine reine Helfer, keine Node-APIs: Der Client importiert sie
 // über «@zueripoly/server/protocol», damit beide Seiten dieselbe Sprache sprechen.
 //
 // Ablauf: Der Browser schickt Anfragen mit Bestätigung (Socket.IO «ack») und bekommt immer
@@ -79,10 +79,25 @@ export interface TurnClock {
  * Verschlüsselter Spielstand des Raums zum Aufbewahren im Browser. Startet der Server neu, schickt der
  * Browser ihn mit «room:restore» zurück. `blob: null` = nichts mehr aufbewahren (Spiel zu Ende).
  */
-export interface GameSaveMessage {
+export interface GameSaveMessage extends SaveVersion {
   code: string;
-  seq: number;
   blob: string | null;
+  /**
+   * Gerade nach einem Neustart wiederhergestellt (noch kein Spielzug): aus welchem Stand. Hat der Browser
+   * einen neueren (`isNewerSave`), schickt er ihn mit «room:restore» nach. Sonst null.
+   */
+  restoredFrom: SaveVersion | null;
+}
+
+/** Version eines Spielstands: Spielstand-Nummer und laufende Nummer der Speicherung (zählt auch Aussteigen usw.). */
+export interface SaveVersion {
+  seq: number;
+  rev: number;
+}
+
+/** Ist `a` neuer als `b`? */
+export function isNewerSave(a: SaveVersion, b: SaveVersion): boolean {
+  return a.seq > b.seq || (a.seq === b.seq && a.rev > b.rev);
 }
 
 export type Reply<T extends object = object> = ({ ok: true } & T) | { ok: false; error: string };

@@ -5,6 +5,7 @@
 // nicht mehr (Neustart des Servers), stellt er ihn zuerst aus dem aufbewahrten Spielstand wieder her.
 import { io, type Socket } from "socket.io-client";
 import type { GameSaveMessage, GameUpdate, Reply, RequestName, Requests, RoomSnapshot, SeatGrant, TurnClock } from "@zueripoly/server/protocol";
+import { isNewerSave } from "@zueripoly/server/protocol";
 import { forgetSeat, loadRoomSave, saveRoomSave, saveSeat } from "./seat-storage";
 
 export type ConnectionStatus = "connecting" | "online" | "offline";
@@ -77,11 +78,6 @@ export class OnlineClient {
       this.set({ room, roomAt: performance.now(), latest });
     });
     this.socket.on("game:update", (update: GameUpdate) => {
-      // Ein anderer Browser hat den Raum mit einem älteren Stand wiederhergestellt: den eigenen, neueren
-      // nachreichen (der Server übernimmt ihn, solange seither nicht gespielt wurde).
-      const code = this.snapshot.grant?.code;
-      const kept = update.sync && code ? loadRoomSave(code) : null;
-      if (kept && kept.seq > update.seq) void this.request("room:restore", { blob: kept.blob });
       const latest = this.snapshot.latest;
       if (!update.sync && latest && update.seq <= latest.seq) return;
       this.set({ latest: update });
@@ -91,7 +87,15 @@ export class OnlineClient {
       this.set({ clock: clock ? { ...clock, receivedAt: performance.now() } : null });
     });
     this.socket.on("game:save", (save: GameSaveMessage) => {
-      if (save.code === this.snapshot.grant?.code) saveRoomSave(save);
+      if (save.code !== this.snapshot.grant?.code) return;
+      // Ein anderer Browser hat den Raum mit einem älteren Stand wiederhergestellt: den eigenen, neueren
+      // nachreichen (der Server übernimmt ihn, solange seither nicht gespielt wurde) und ihn behalten.
+      const kept = save.restoredFrom ? loadRoomSave(save.code) : null;
+      if (kept && save.restoredFrom && isNewerSave(kept, save.restoredFrom)) {
+        void this.request("room:restore", { blob: kept.blob });
+        return;
+      }
+      saveRoomSave(save);
     });
     this.socket.on("room:closed", ({ reason }: { reason: string }) => this.close(reason));
   }

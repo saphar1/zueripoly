@@ -34,7 +34,8 @@ import {
   validateGameConfig,
 } from "@zueripoly/engine";
 import { botPauseMs, playbackMs } from "./pace";
-import type { AbsentDecision, GameSaveMessage, GameUpdate, Reply, RoomPhase, RoomSnapshot, SeatGrant, SeatInfo, TurnClock } from "./protocol";
+import { isNewerSave } from "./protocol";
+import type { AbsentDecision, GameSaveMessage, SaveVersion, GameUpdate, Reply, RoomPhase, RoomSnapshot, SeatGrant, SeatInfo, TurnClock } from "./protocol";
 import type { RoomSave } from "./room-save";
 
 /** Zeiten des Raums. Die Tests setzen kurze Werte ein. */
@@ -77,6 +78,7 @@ export interface RoomOutput {
 
 /** Stufe, mit der ein Computer für einen abwesenden Menschen spielt. */
 const STAND_IN_LEVEL: BotLevel = "clever";
+const RETURN_WAIT = "Der Server wurde neu gestartet. Das Spiel geht weiter, sobald alle zurück sind (höchstens eine Minute).";
 const SEAT_IDS: readonly PlayerId[] = ["p1", "p2", "p3", "p4", "p5", "p6"];
 
 interface Seat {
@@ -138,6 +140,15 @@ export class Room {
   wasRestored = false;
   /** Aus einem gespeicherten Stand wiederhergestellt und seither noch kein Spielzug (siehe `adoptNewer`). */
   private untouchedRestore = false;
+  /**
+   * Laufende Nummer jedes verschickten Stands. Zählt auch Änderungen ohne Spielzug (Aussteigen, Vertretung),
+   * damit ein Stand mit gleicher `seq`, aber ohne den Schlüssel eines Ausgestiegenen, als neuer gilt.
+   */
+  private saveRev = 0;
+  /** Nummer (`seq`, `rev`) des Stands, aus dem der Raum wiederhergestellt wurde (solange unberührt). */
+  private restoredFrom: SaveVersion | null = null;
+  /** Zeitpunkt der Wiederherstellung: Danach wartet das Spiel höchstens `absentMs` auf alle Menschen. */
+  private restoredAt = 0;
 
   constructor(
     readonly code: string,
@@ -185,6 +196,20 @@ export class Room {
       lastEvents: [],
     };
     this.untouchedRestore = true;
+    this.saveRev = save.rev;
+    this.restoredFrom = { seq: save.seq, rev: save.rev };
+    this.restoredAt = now;
+  }
+
+  /**
+   * Nach dem Wiederherstellen ruht das Spiel, bis alle mitspielenden Menschen zurück sind (höchstens
+   * `absentMs`). So kann ein neuerer Stand eines anderen Browsers den Raum noch ersetzen, bevor jemand
+   * mit einem alten Stand weiterspielt.
+   */
+  private waitingForReturn(now = Date.now()): boolean {
+    if (!this.untouchedRestore || !this.game || now >= this.restoredAt + this.timing.absentMs) return false;
+    const state = this.game.state;
+    return this.seats.some((s) => s.bot === null && !s.left && s.standIn === null && s.socketId === null && !state.players.find((p) => p.id === s.id)?.bankrupt);
   }
 
   /** Nummer des aktuellen Spielstands (0 ohne Spiel). */
@@ -197,12 +222,13 @@ export class Room {
    * solange seither noch nicht gespielt wurde. Gibt zurück, ob der Stand übernommen wurde.
    */
   adoptNewer(save: RoomSave): boolean {
-    if (!this.untouchedRestore || !this.game || save.seq <= this.game.seq) return false;
+    if (!this.untouchedRestore || !this.restoredFrom || !isNewerSave(save, this.restoredFrom)) return false;
     this.stopTimers();
     this.applySave(save, Date.now());
-    this.out.log(`Raum ${this.code}: neuerer Spielstand übernommen (Nr. ${save.seq}).`);
+    this.out.log(`Raum ${this.code}: neuerer Spielstand übernommen (Nr. ${save.seq}.${save.rev}).`);
     this.afterPresenceChange();
     for (const seat of this.connectedSeats()) this.sendSync(seat);
+    this.sendSave();
     return true;
   }
 
@@ -219,16 +245,27 @@ export class Room {
       rngState: game.rng.getState(),
       botRngState: game.botRng.getState(),
       seq: game.seq,
+      rev: this.saveRev,
       savedAt: Date.now(),
     };
   }
 
-  /** Verschlüsselten Stand an Menschen schicken (alle verbundenen oder nur `only`). Nach Spielende: `blob: null`. */
-  private sendSave(only?: Seat): void {
+  /**
+   * Verschlüsselten Stand an alle verbundenen Menschen schicken (nie nur an einzelne: Alle sollen dieselbe
+   * Version `rev` haben, sonst reichen sie nach einem Neustart unnötig Stände nach). Nach Spielende `blob: null`.
+   */
+  private sendSave(): void {
     if (!this.game) return;
+    this.saveRev += 1;
     const save = this.toSave();
-    const message: GameSaveMessage = { code: this.code, seq: this.game.seq, blob: save ? this.out.seal(save) : null };
-    for (const seat of only ? [only] : this.connectedSeats()) {
+    const message: GameSaveMessage = {
+      code: this.code,
+      seq: this.game.seq,
+      rev: this.saveRev,
+      blob: save ? this.out.seal(save) : null,
+      restoredFrom: this.untouchedRestore ? this.restoredFrom : null,
+    };
+    for (const seat of this.connectedSeats()) {
       if (seat.socketId !== null && seat.bot === null) this.out.emit(seat.socketId, "game:save", message);
     }
   }
@@ -309,7 +346,6 @@ export class Room {
     const update: GameUpdate = { seq: this.game.seq, state: publicState(this.game.state), events: [], sync: true };
     this.out.emit(seat.socketId, "game:update", update);
     this.out.emit(seat.socketId, "game:clock", this.clockNow());
-    this.sendSave(seat);
   }
 
   private broadcastUpdate(events: GameEvent[]): void {
@@ -405,6 +441,8 @@ export class Room {
     this.emptySince = null;
     this.broadcastRoom();
     this.sendSync(seat);
+    // Neuer Stand für alle (Vertretung beendet, und der Zurückgekehrte braucht einen).
+    this.sendSave();
     if (this.phase === "game") this.scheduleStep();
     this.schedulePresence();
     return ok(this.grant(seat));
@@ -610,6 +648,7 @@ export class Room {
     this.out.log(`Raum ${this.code}: Spiel gestartet (${this.seats.map((s) => s.name).join(", ")}).`);
     this.broadcastRoom();
     for (const seat of this.connectedSeats()) this.sendSync(seat);
+    this.sendSave();
     this.scheduleStep();
     return ok();
   }
@@ -641,6 +680,7 @@ export class Room {
     const seat = this.seatBySocket(socketId);
     if (!seat) return fail("Du bist in keinem Raum.");
     if (this.phase !== "game" || !this.game) return fail("Das Spiel hat noch nicht begonnen.");
+    if (this.waitingForReturn()) return fail(RETURN_WAIT);
     const result = applyAction(this.game.state, seat.id, action, this.game.rng);
     if (!result.ok) return fail(result.error.message);
     this.commit(result);
@@ -660,6 +700,7 @@ export class Room {
     const host = this.hostSeat(socketId);
     if ("ok" in host) return host;
     if (this.phase !== "game" || !this.game || this.game.state.winner !== null) return fail("Das Spiel läuft nicht.");
+    if (this.waitingForReturn()) return fail(RETURN_WAIT);
     const seat = this.seatById(seatId);
     if (!seat || seat.bot !== null) return fail("Diesen Platz gibt es nicht.");
     if (seat.socketId !== null) return fail(`${seat.name} ist wieder verbunden.`);
@@ -698,6 +739,7 @@ export class Room {
     game.seq += 1;
     game.lastEvents = result.events;
     this.untouchedRestore = false;
+    this.restoredFrom = null;
     this.broadcastUpdate(result.events);
     this.sendSave();
     if (result.state.winner !== null) {
@@ -727,6 +769,11 @@ export class Room {
       if (hadClock || this.clock) this.broadcastClock();
     };
     if (this.phase !== "game" || !game || game.state.winner !== null || !this.hasConnectedHuman()) return finish();
+    if (this.waitingForReturn()) {
+      // Später nochmals schauen (kommen alle früher zurück, plant `resume` den nächsten Schritt).
+      this.stepTimer = setTimeout(() => this.guard(() => this.scheduleStep()), this.restoredAt + this.timing.absentMs - Date.now() + 5);
+      return finish();
+    }
     const waiting = getWaitingFor(game.state);
     const seat = waiting ? this.seatById(waiting) : undefined;
     if (!seat) return finish();
