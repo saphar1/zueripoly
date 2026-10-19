@@ -147,7 +147,7 @@ export class Room {
   private saveRev = 0;
   /** Nummer (`seq`, `rev`) des Stands, aus dem der Raum wiederhergestellt wurde (solange unberührt). */
   private restoredFrom: SaveVersion | null = null;
-  /** Zeitpunkt der Wiederherstellung: Danach wartet das Spiel höchstens `absentMs` auf alle Menschen. */
+  /** Zeitpunkt der ersten Wiederherstellung: Danach wartet das Spiel höchstens `absentMs` auf alle Menschen. */
   private restoredAt = 0;
 
   constructor(
@@ -163,6 +163,7 @@ export class Room {
   static fromSave(save: RoomSave, timing: Timing, out: RoomOutput): Room {
     const room = new Room(save.code, timing, out);
     room.applySave(save, Date.now());
+    room.restoredAt = Date.now();
     room.wasRestored = true;
     room.emptySince = Date.now();
     return room;
@@ -179,13 +180,16 @@ export class Room {
       const socketId = before && !saved.left && saved.key !== null && before.key === saved.key ? before.socketId : null;
       if (before?.socketId && socketId === null) this.out.release(before.socketId, "Dein Platz gilt in diesem Spielstand nicht mehr.");
       const human = saved.bot === null;
+      // Beim Ersetzen durch einen neueren Stand laufen die Fristen weiter (sonst liessen sie sich verlängern).
+      const away = human && socketId === null;
+      const keepAsk = away && before !== undefined && before.askAt !== null && !saved.left && saved.standIn === null;
       return {
         ...saved,
         socketId,
         ready: true,
-        awaySince: human && socketId === null ? now : null,
+        awaySince: away ? (before?.awaySince ?? now) : null,
         // Wer vorher ausgestiegen ist, braucht sofort einen Entscheid; die anderen haben die übliche Frist.
-        askAt: !human || socketId !== null || saved.standIn !== null ? null : saved.left ? now : now + this.timing.absentMs,
+        askAt: keepAsk ? before.askAt : !away || saved.standIn !== null ? null : saved.left ? now : now + this.timing.absentMs,
       };
     });
     this.game = {
@@ -198,7 +202,6 @@ export class Room {
     this.untouchedRestore = true;
     this.saveRev = save.rev;
     this.restoredFrom = { seq: save.seq, rev: save.rev };
-    this.restoredAt = now;
   }
 
   /**
@@ -220,6 +223,8 @@ export class Room {
   /**
    * Kommt nach dem Wiederherstellen ein neuerer Stand (ein anderer Browser war weiter), gilt dieser,
    * solange seither noch nicht gespielt wurde. Gibt zurück, ob der Stand übernommen wurde.
+   * Seit der Wiederherstellung verschickte Stände tragen dieselbe Version wie der wiederhergestellte
+   * (`sendSave`), darum kommen nur Stände von vor dem Neustart in Frage.
    */
   adoptNewer(save: RoomSave): boolean {
     if (!this.untouchedRestore || !this.restoredFrom || !isNewerSave(save, this.restoredFrom)) return false;
@@ -253,10 +258,18 @@ export class Room {
   /**
    * Verschlüsselten Stand an alle verbundenen Menschen schicken (nie nur an einzelne: Alle sollen dieselbe
    * Version `rev` haben, sonst reichen sie nach einem Neustart unnötig Stände nach). Nach Spielende `blob: null`.
+   *
+   * `changed`: Spielzug oder Platzänderung (Aussteigen, Vertretung). Nur dann steigt `rev`. Gleich nach einer
+   * Wiederherstellung bleibt die Version sonst stehen: Wer mehrmals neu verbindet, darf keine «neueren»
+   * Stände sammeln, die einen echten neueren Stand verdrängen könnten. Eine Änderung beendet diese Phase.
    */
-  private sendSave(): void {
+  private sendSave(changed = false): void {
     if (!this.game) return;
-    this.saveRev += 1;
+    if (changed) {
+      this.untouchedRestore = false;
+      this.restoredFrom = null;
+    }
+    if (!this.untouchedRestore) this.saveRev += 1;
     const save = this.toSave();
     const message: GameSaveMessage = {
       code: this.code,
@@ -473,7 +486,7 @@ export class Room {
       seat.awaySince = Date.now();
       seat.askAt = seat.awaySince;
       // Der Schlüssel des Ausgestiegenen gilt auch in den aufbewahrten Ständen nicht mehr.
-      this.sendSave();
+      this.sendSave(true);
     }
     if (wasHost) this.hostId = this.nextHost(seat);
     this.afterPresenceChange();
@@ -715,7 +728,7 @@ export class Room {
         seat.standIn = STAND_IN_LEVEL;
         seat.askAt = null;
         this.out.log(`Raum ${this.code}: Computer übernimmt für ${seat.name}.`);
-        this.sendSave();
+        this.sendSave(true);
         break;
       case "remove": {
         const result = removePlayer(this.game.state, seat.id);
@@ -738,10 +751,8 @@ export class Room {
     game.state = result.state;
     game.seq += 1;
     game.lastEvents = result.events;
-    this.untouchedRestore = false;
-    this.restoredFrom = null;
     this.broadcastUpdate(result.events);
-    this.sendSave();
+    this.sendSave(true);
     if (result.state.winner !== null) {
       const winner = result.state.players.find((p) => p.id === result.state.winner);
       this.out.log(`Raum ${this.code}: ${winner?.name ?? "?"} gewinnt.`);

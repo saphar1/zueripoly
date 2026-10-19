@@ -138,6 +138,11 @@ describe("Spielstand nach einem Neustart des Servers", () => {
     await waitUntil(() => ben2.save?.restoredFrom !== null && ben2.save?.restoredFrom !== undefined, "Stand nach dem Wiederverbinden");
     const benAction = getWaitingFor(ben2.state!) === ben.me ? { type: "rollDice" } : { type: "endTurn" };
     expect(expectError(await ben2.request("game:action", { action: benAction }))).toContain("sobald alle zurück sind");
+    // Mehrmals neu verbinden bringt keine «neueren» Stände: Die Version bleibt die des wiederhergestellten.
+    const base = ben2.save!.restoredFrom!;
+    for (let i = 0; i < 3; i++) expect((await ben2.resume(ben.grant!)).ok).toBe(true);
+    await waitUntil(() => ben2.save !== null, "Stand");
+    expect({ seq: ben2.save!.seq, rev: ben2.save!.rev }).toEqual(base);
 
     // Anna bringt den neueren Stand: Er gilt, Bens Platz ist weg.
     const anna2 = await comeBack(second.port, anna, fresh);
@@ -148,6 +153,37 @@ describe("Spielstand nach einem Neustart des Servers", () => {
     const clara2 = await TestClient.connect(second.port);
     expect((await clara2.resume(clara.grant!)).ok).toBe(true);
     await waitUntil(() => anna2.room?.seats.find((s) => s.id === ben.me)?.left === true, "Ben gilt als ausgestiegen");
+  });
+
+  it("ein neuerer Stand verlängert die Wartezeit nach dem Neustart nicht", async () => {
+    const first = await startServer({ saveKey: KEY, timing: { absentMs: 1200 } });
+    const players = await setupRoom(first.port, ["Anna", "Ben", "Clara"]);
+    await startGame(players);
+    const [anna, ben] = players as [TestClient, TestClient, TestClient];
+    await waitUntil(() => Boolean(anna.save?.blob), "Stand");
+    const old = anna.save!.blob!;
+    const oldRev = anna.save!.rev;
+    // Eine Platzänderung ohne Spielzug erzeugt einen neueren Stand: Clara steigt aus.
+    expect((await players[2]!.request("room:leave", {})).ok).toBe(true);
+    await waitUntil(() => (ben.save?.rev ?? 0) > oldRev, "neuerer Stand");
+    const fresh = ben.save!.blob!;
+    await first.close();
+
+    const second = await startServer({ saveKey: KEY, timing: { absentMs: 1200 } });
+    const started = Date.now();
+    const anna2 = await comeBack(second.port, anna, old);
+    expect((await anna2.resume(anna.grant!)).ok).toBe(true);
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    const ben2 = await comeBack(second.port, ben, fresh);
+    // Ben bleibt weg: Nach 1,2 s ab der ersten Wiederherstellung geht es trotzdem weiter.
+    ben2.close();
+    await waitUntil(() => anna2.room?.seats.find((s) => s.id === "p3")?.left === true, "neuerer Stand übernommen");
+    const mover = getWaitingFor(anna2.state!) === anna2.me;
+    if (mover) {
+      await waitUntil(() => Date.now() - started > 1300, "Frist vorbei", 3000);
+      expect((await anna2.request("game:action", { action: { type: "rollDice" } })).ok).toBe(true);
+    }
+    expect(Date.now() - started).toBeLessThan(2400);
   });
 
   it("wer das Spiel verlassen hat, kommt auch nach dem Neustart nicht zurück", async () => {
