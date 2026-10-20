@@ -30,15 +30,23 @@
   letter-spacing: -0.02em;
 }
 
-/* Name links, Kaufpreis rechts auf derselben Grundlinie */
+/* Name links, Kaufpreis rechts auf derselben Grundlinie. Reicht der Platz nicht (lange Namen wie
+   «Bahnhofstrasse» auf schmalen Karten), rutscht der Preis rechtsbündig in die nächste Zeile. */
 .deed-card__title {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-2);
+  gap: 0 var(--space-2);
+}
+
+.deed-card__name {
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .deed-card__price {
+  margin-left: auto;
   font-family: var(--font-display);
   font-weight: 700;
   white-space: nowrap;
