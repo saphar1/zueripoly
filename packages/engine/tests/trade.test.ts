@@ -64,11 +64,11 @@ describe("Handel", () => {
   it("belastete Felder: Empfänger zahlt 10 % Zins oder löst sofort ab", () => {
     let state = own(own(newGame(2), "p1", 39), "p2", 37);
     state.properties[39]!.mortgaged = true; // Hypothek 200, Zins 20
-    state.properties[37]!.mortgaged = true; // Hypothek 175, Zins 20 (aufgerundet auf 5)
-    // p1 gibt 39, bekommt 37 und löst 37 sofort ab (175 + 20 = 195).
+    state.properties[37]!.mortgaged = true; // Hypothek 180, Zins 20 (18 aufgerundet auf 5)
+    // p1 gibt 39, bekommt 37 und löst 37 sofort ab (180 + 20 = 200).
     ({ state } = act(state, "p1", offer("p2", side([39]), side([37]), [37])));
     const { state: after } = act(state, "p2", { type: "acceptTrade", lift: [] });
-    expect(player(after, "p1").money).toBe(1500 - 195);
+    expect(player(after, "p1").money).toBe(1500 - 200);
     expect(player(after, "p2").money).toBe(1500 - 20);
     expect(after.properties[37]).toMatchObject({ owner: "p1", mortgaged: false });
     expect(after.properties[39]).toMatchObject({ owner: "p2", mortgaged: true });

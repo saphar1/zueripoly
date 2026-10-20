@@ -136,8 +136,8 @@ describe("Karten", () => {
     const state = cardOnTop(own(placeAt(newGame(2), "p1", 33), "p2", 5, 15), "event", "E05");
     const { state: after } = act(state, "p1", { type: "rollDice" }, dice([1, 2])); // Feld 36 → 5 über Start
     expect(player(after, "p1").position).toBe(5);
-    expect(player(after, "p1").money).toBe(1500 + 200 - 100);
-    expect(player(after, "p2").money).toBe(1600);
+    expect(player(after, "p1").money).toBe(1500 + 200 - 120);
+    expect(player(after, "p2").money).toBe(1620);
   });
 
   it("E04: nächster Versorger, neu würfeln und 10-fach zahlen", () => {
@@ -181,7 +181,7 @@ describe("Karten", () => {
     setHouses(state, 8, 4);
     setHouses(state, 9, 5);
     const { state: after } = act(state, "p1", { type: "rollDice" }, dice([1, 3])); // Feld 17
-    expect(player(after, "p1").money).toBe(1500 - 8 * 40 - 115);
+    expect(player(after, "p1").money).toBe(1500 - 8 * 40 - 160);
     const none = cardOnTop(placeAt(newGame(2), "p1", 13), "community", "G15");
     expect(player(act(none, "p1", { type: "rollDice" }, dice([1, 3])).state, "p1").money).toBe(1500);
   });

@@ -49,7 +49,7 @@ Landet man auf einem Feld, das einem anderen Spieler gehört (und nicht hypothek
   - Ohne Haus: Grundmiete. Besitzt der Spieler **alle Strassen der Farbgruppe** (und keine ist belastet), ist die Miete **doppelt**, solange kein Haus steht.
   - Mit 1 bis 4 Häusern oder 1 Hotel: Mietstaffel aus brett.md.
   - Innerhalb einer Farbgruppe bleibt die Verdopplung für unbebaute Strassen auch dann bestehen, wenn eine andere Strasse der Gruppe bebaut ist.
-- **Bahnhöfe:** 25 / 50 / 100 / 200 CHF bei 1 / 2 / 3 / 4 Bahnhöfen im Besitz des Eigentümers. Gezählt werden alle Bahnhöfe im Besitz, auch belastete (diese bringen selbst aber keine Miete).
+- **Bahnhöfe:** 30 / 60 / 110 / 170 CHF bei 1 / 2 / 3 / 4 Bahnhöfen im Besitz des Eigentümers. Gezählt werden alle Bahnhöfe im Besitz, auch belastete (diese bringen selbst aber keine Miete).
 - **Versorger:** Besitzt der Eigentümer **einen** Versorger: **5 ×** die gewürfelte Augensumme; beide: **10 ×** die Augensumme. Auch hier zählen belastete Versorger beim Zählen mit.
   - Wer wegen einer Ereigniskarte zum Versorger muss, würfelt neu und zahlt **10 ×** die neue Augensumme.
   - Wer wegen einer Ereigniskarte zum nächsten Bahnhof muss, zahlt dem Besitzer die **doppelte** Miete.

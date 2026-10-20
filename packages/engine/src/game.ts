@@ -10,6 +10,7 @@ import {
   STATION_INDICES,
   TOKENS,
   UTILITY_INDICES,
+  UTILITY_MULTIPLIERS,
 } from "./board";
 import { DECK_CARDS, getCard } from "./cards";
 import { rollDice, shuffle, type Rng } from "./random";
@@ -449,10 +450,10 @@ function landOn(ctx: Ctx, player: PlayerState, landing: Landing): void {
       if (property.owner === player.id || property.mortgaged) return;
       let rent: number;
       if (space.kind === "utility" && landing === "cardUtility") {
-        // Karte «Strom fällt aus»: neu würfeln und das 10-Fache zahlen.
+        // Karte «Strom fällt aus»: neu würfeln und den Faktor für beide Versorger zahlen (10 ×).
         const dice = rollDice(ctx.rng);
         emit(ctx, { type: "diceRolled", player: player.id, dice, purpose: "utilityRent" });
-        rent = 10 * (dice[0] + dice[1]);
+        rent = UTILITY_MULTIPLIERS[1] * (dice[0] + dice[1]);
       } else {
         const dice = s.turn.dice ?? [0, 0];
         rent = calculateRent(s, space.index, dice[0] + dice[1]);

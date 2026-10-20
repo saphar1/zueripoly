@@ -28,7 +28,7 @@ describe("Bauen", () => {
   it("baut gleichmässig und kostet den Hauspreis", () => {
     let state = lightblue();
     ({ state } = act(state, "p1", { type: "buildHouse", space: 6 }));
-    expect(player(state, "p1").money).toBe(1450);
+    expect(player(state, "p1").money).toBe(1500 - 60);
     expect(state.bank.houses).toBe(31);
     expectRejected(state, "p1", { type: "buildHouse", space: 6 }, "unevenBuilding");
     ({ state } = act(state, "p1", { type: "buildHouse", space: 8 }));
@@ -88,7 +88,7 @@ describe("Gebäude verkaufen", () => {
     setHouses(state, 9, 1);
     expectRejected(state, "p1", { type: "sellBuilding", space: 8 }, "unevenBuilding");
     ({ state } = act(state, "p1", { type: "sellBuilding", space: 6 }));
-    expect(player(state, "p1").money).toBe(1525);
+    expect(player(state, "p1").money).toBe(1500 + 30);
     expect(state.bank.houses).toBe(32 - 3);
     expectRejected(lightblue(), "p1", { type: "sellBuilding", space: 6 }, "noBuildings");
   });
@@ -99,7 +99,7 @@ describe("Gebäude verkaufen", () => {
     ({ state } = act(state, "p1", { type: "sellBuilding", space: 9 }));
     expect(levels(state, 6, 8, 9)).toEqual([5, 5, 4]);
     expect(state.bank).toEqual({ houses: 28, hotels: 10 });
-    expect(player(state, "p1").money).toBe(1525);
+    expect(player(state, "p1").money).toBe(1500 + 30);
   });
 
   it("reisst ein Hotel ganz ab, wenn die Bank keine 4 Häuser hat (Wert von 5 Bauten)", () => {
@@ -112,7 +112,7 @@ describe("Gebäude verkaufen", () => {
     const { state: after, events } = act(state, "p1", { type: "sellBuilding", space: 9 });
     expect(levels(after, 6, 8, 9)).toEqual([5, 5, 0]);
     expect(after.bank).toEqual({ houses: 0, hotels: 10 });
-    expect(player(after, "p1").money).toBe(1500 + 125);
+    expect(player(after, "p1").money).toBe(1500 + 5 * 30);
     expect(eventsOfType(events, "buildingSold")[0]).toMatchObject({ fromLevel: 5, toLevel: 0 });
   });
 });

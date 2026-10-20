@@ -81,6 +81,12 @@ export function GameView({
   const focusSpace = hovered ?? selected;
   const linkedPlayer = hoveredPlayer ?? (focusSpace !== null ? (ownerOf(view, focusSpace)?.id ?? null) : null);
 
+  // Lokal: Wartet ein anderer Spieler, gehört die offene Besitzkarte (mit Knöpfen zum Verwalten) nicht mehr zur Lage.
+  // Online bleibt sie offen: Dort schaut sich nur der eigene Platz Felder an.
+  useEffect(() => {
+    if (me === null) setSelected(null);
+  }, [waiting, me]);
+
   const actNow = useCallback(
     (action: Action) => {
       if (canAct) onAct(action);

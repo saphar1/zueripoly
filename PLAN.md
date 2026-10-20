@@ -138,6 +138,13 @@ Teil C: Ton, Bewegung, Handy, Kleines (2026-10-19) ✓
 - [x] Mobile-Feinschliff Safari: `100dvh` (mit `100vh` davor als Rückfall), `viewport-fit=cover` + `env(safe-area-inset-*)` (Seiten, Home-Leiste, Kopfleiste, Verbindungshinweis), alle Texteingaben ≥ 16 px; alle Bildschirme bei 390 × 844 und 375 × 667 geprüft (kein seitliches Scrollen, Handy-Kopfleiste einzeilig)
 - [x] Favicon (`public/favicon.svg`, `apple-touch-icon.png`), Bot-Tempo «normal / schnell» in der Solo-Lobby (`preferences.ts`, Pausen × 0,4)
 
+Nachtrag (2026-10-20): Balance und Fehlersuche ✓
+- [x] Mieten flacher (Wunsch des Entwicklers): Grundmiete etwa 18 % des Preises (ohne Haus Ø 45 statt 32 CHF), 3 Häuser höchstens 900 statt 1400, Hotel höchstens 1300 statt 2000; Mieten nach einer Formel (`docs/brett.md`, Abschnitt 2)
+- [x] Strassen meist +10 CHF, Häuser etwa +10 %, Bahnhöfe 30/60/110/170, Reparaturkarten 30/120 und 40/160
+- [x] Messwerkzeug `npm run balance -w @zueripoly/engine`; Partien etwa 18 % länger (Median 180 statt 153 Züge), alle enden, clever schlägt einfach im Zweikampf 82 %
+- [x] Fehler behoben: Auslöse-Auswahl hing beim nächsten Handelsangebot fest (`key`), Hotelverkauf zeigte bei Häusermangel den falschen Betrag, Abspielen und Töne liefen nach «Spiel verlassen» weiter, Besitzkarte des vorherigen Spielers blieb lokal offen, Karte E04 mit fester 10
+- [x] Lokal/Solo: Knopf «Geld automatisch auftreiben» bei Schulden (der Schuldner blockiert ohne Zeitlimit nicht mehr)
+
 Gefunden und behoben in Teil C: Die Sicherheitsprüfung meldete zweimal Lücken beim Wiederherstellen (alter Stand eines Ausgestiegenen, Version hochtreiben durch Neuverbinden, Wartezeit verlängern), behoben mit Versionen (`seq`, `rev`) und fester Wartezeit; «Bauen · Farbe» legt eine offene Karte zurück (sie verdeckte die Besitzkarte).
 
 **Phase 6 abgeschlossen (2026-10-19).** Alle geplanten Phasen sind fertig.
@@ -147,3 +154,7 @@ Gefunden und behoben in Teil C: Die Sicherheitsprüfung meldete zweimal Lücken 
 - Pfeiltasten-Navigation über das Brett (heute 40 Tab-Halte)
 - Mehrere Speicherplätze für Lokal/Solo
 - Lautstärke einstellbar, eigene Töne für Miete zahlen und Start überqueren
+- Schuldner dürfen Felder fast gratis an Freunde handeln und dann Bankrott gehen (`validate.ts`, Handel bei Schulden enger fassen)
+- Zeitlimit beginnt nach jedem Verwaltungsschritt neu (`use-turn-timer.ts`): ein Zug lässt sich so strecken
+- Beim Übernehmen belasteter Felder einzelne zum Auslösen wählen (heute nur «alle» oder «keine»)
+- «200 CHF» in Kartentexten aus `START_SALARY` erzeugen

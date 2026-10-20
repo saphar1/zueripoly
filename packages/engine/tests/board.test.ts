@@ -54,7 +54,7 @@ describe("Brett", () => {
 
   it("hat Hypothek = halber Preis, gleiche Hauspreise je Gruppe und steigende Mieten", () => {
     const streets = BOARD.filter((s): s is StreetSpace => s.kind === "street");
-    const housePrice = { brown: 50, lightblue: 50, pink: 100, orange: 100, red: 150, yellow: 150, green: 200, navy: 200 };
+    const housePrice = { brown: 60, lightblue: 60, pink: 110, orange: 110, red: 160, yellow: 160, green: 220, navy: 220 };
     for (const s of streets) {
       expect(s.mortgage).toBe(s.price / 2);
       expect(s.housePrice).toBe(housePrice[s.group]);
@@ -64,13 +64,13 @@ describe("Brett", () => {
   });
 
   it("stimmt bei einigen Stichproben mit docs/brett.md überein", () => {
-    expect(getSpace(1)).toMatchObject({ name: "Albisrieden", price: 60, rents: [5, 25, 45, 140, 240, 380] });
-    expect(getSpace(14)).toMatchObject({ name: "Höngg", price: 160, rents: [20, 80, 230, 650, 900, 1150] });
-    expect(getSpace(24)).toMatchObject({ name: "Rennweg", price: 240, rents: [30, 120, 360, 900, 1100, 1350] });
-    expect(getSpace(39)).toMatchObject({ name: "Bahnhofstrasse", price: 400, rents: [75, 225, 600, 1400, 1700, 2000] });
+    expect(getSpace(1)).toMatchObject({ name: "Albisrieden", price: 70, rents: [15, 90, 200, 345, 430, 500] });
+    expect(getSpace(14)).toMatchObject({ name: "Höngg", price: 170, rents: [30, 150, 325, 560, 700, 810] });
+    expect(getSpace(24)).toMatchObject({ name: "Rennweg", price: 250, rents: [45, 185, 400, 695, 865, 1005] });
+    expect(getSpace(39)).toMatchObject({ name: "Bahnhofstrasse", price: 400, rents: [75, 240, 520, 900, 1120, 1300] });
   });
 
-  it("hat nur runde Beträge und eine sinnvolle Mietstaffel (Balance 2026-10-14)", () => {
+  it("hat nur runde Beträge und eine sinnvolle Mietstaffel (Balance 2026-10-20)", () => {
     for (const space of BOARD) {
       if (!isPropertySpace(space)) continue;
       expect(space.price % 5, space.name).toBe(0);
@@ -80,9 +80,12 @@ describe("Brett", () => {
       if (space.kind !== "street") continue;
       const [base, ...houses] = space.rents;
       for (const rent of space.rents) expect(rent % 5, space.name).toBe(0);
-      // Grundmiete mindestens 8 % des Preises, erstes Haus mindestens 3 × Grundmiete, Staffel steigt.
-      expect(base, space.name).toBeGreaterThanOrEqual(space.price * 0.08);
+      // Grundmiete mindestens 15 % des Preises, erstes Haus mindestens 3 × Grundmiete, Staffel steigt.
+      // Obergrenzen (Wunsch des Entwicklers 2026-10-20): 3 Häuser unter 1000 CHF, Hotel höchstens 1300 CHF.
+      expect(base, space.name).toBeGreaterThanOrEqual(space.price * 0.15);
       expect(houses[0], space.name).toBeGreaterThanOrEqual(base * 3);
+      expect(houses[2], space.name).toBeLessThan(1000);
+      expect(houses[4], space.name).toBeLessThanOrEqual(1300);
       for (let i = 1; i < space.rents.length; i++) expect(space.rents[i]!, space.name).toBeGreaterThan(space.rents[i - 1]!);
     }
     // Eine teurere Strasse bringt auf keiner Stufe weniger Miete als die billigere davor.

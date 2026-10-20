@@ -70,7 +70,7 @@ describe("Spieler aus dem Spiel nehmen", () => {
   it("als Gläubiger: die offene Schuld an ihn verfällt", () => {
     const start = own(own(newGame(3), "p1", 37, 39), "p2", 1);
     setHouses(start, 37, 1);
-    setHouses(start, 39, 1); // Miete 200
+    setHouses(start, 39, 1); // Miete 240
     player(start, "p2").money = 100;
     start.current = 1;
     placeAt(start, "p2", 35);

@@ -3,7 +3,7 @@
 //
 // `view` ist, was gerade angezeigt wird. Während einer Bewegung ist das noch der alte Stand mit
 // verschobener Figur; erst am Ende springt `view` auf den neuen Stand (Geld, Besitz, Gefängnis).
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CardId, Dice, GameEvent, GameState, PlayerId, PlayerState } from "@zueripoly/engine";
 import { BOARD_SIZE, JAIL_INDEX, getSpace, rollDice } from "@zueripoly/engine";
 import type { Rng } from "@zueripoly/engine";
@@ -140,6 +140,14 @@ function standing(state: GameState): SignMessage | null {
 export function useGamePlayback(initial: GameState) {
   const busyRef = useRef(false);
   const nextLogId = useRef(0);
+  // Nach dem Verlassen der Spielansicht bricht `play` beim nächsten Halt ab: keine Zustandsänderungen, keine Töne mehr.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const [view, setView] = useState(initial);
   const [busy, setBusy] = useState(false);
@@ -166,6 +174,7 @@ export function useGamePlayback(initial: GameState) {
    */
   const play = useCallback(
     async (previous: GameState, events: readonly GameEvent[], next: GameState, animate = true) => {
+      if (!mounted.current) return;
       busyRef.current = true;
       setBusy(true);
       setCard(null);
@@ -185,6 +194,7 @@ export function useGamePlayback(initial: GameState) {
             while (performance.now() - started < duration - 90) {
               setRollingDice(rollDice(FLICKER));
               await wait(90);
+              if (!mounted.current) return;
             }
             setRollingDice(null);
             show({ ...shown, turn: { ...shown.turn, dice: event.dice } });
@@ -203,6 +213,7 @@ export function useGamePlayback(initial: GameState) {
                 const at = position;
                 show(updatePlayer(shown, event.player, (p) => ({ ...p, position: at, inJail: false })));
                 await wait(step);
+                if (!mounted.current) return;
               }
             }
             setMovingPlayer(null);
@@ -211,6 +222,7 @@ export function useGamePlayback(initial: GameState) {
           case "sentToJail":
             playSound("jail");
             await wait(Math.max(motionMs("card"), 1));
+            if (!mounted.current) return;
             show(updatePlayer(shown, event.player, (p) => ({ ...p, position: JAIL_INDEX, inJail: true })));
             break;
           case "cardDrawn":
@@ -219,6 +231,7 @@ export function useGamePlayback(initial: GameState) {
             // Wenn die Karte die Figur noch bewegt: kurz lesen lassen, dann weiter.
             if (events.slice(i + 1).some((e) => e.type === "moved" || e.type === "sentToJail")) {
               await wait(motionMs("card") + 1400);
+              if (!mounted.current) return;
             }
             break;
           default:

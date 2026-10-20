@@ -65,8 +65,8 @@ export const EVENT_CARDS: readonly Card[] = [
   {
     id: "E11",
     deck: "event",
-    text: "Der Hauswart schickt die Rechnung: 25 CHF pro Haus, 100 CHF pro Hotel.",
-    effect: { kind: "repairs", perHouse: 25, perHotel: 100 },
+    text: "Der Hauswart schickt die Rechnung: 30 CHF pro Haus, 120 CHF pro Hotel.",
+    effect: { kind: "repairs", perHouse: 30, perHotel: 120 },
   },
   {
     id: "E12",
@@ -188,8 +188,8 @@ export const COMMUNITY_CARDS: readonly Card[] = [
   {
     id: "G15",
     deck: "community",
-    text: "Das Strassenbauamt saniert: 40 CHF pro Haus, 115 CHF pro Hotel.",
-    effect: { kind: "repairs", perHouse: 40, perHotel: 115 },
+    text: "Das Strassenbauamt saniert: 40 CHF pro Haus, 160 CHF pro Hotel.",
+    effect: { kind: "repairs", perHouse: 40, perHotel: 160 },
   },
   {
     id: "G16",

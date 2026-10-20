@@ -317,7 +317,18 @@ export function ActionPanel({
     label = "Handelsangebot";
     // Online steht der Anbieter nicht am selben Gerät: Zurückziehen kann er nur selbst.
     const canCancel = me === null && !isBot(state, state.trade.from);
-    body = <TradeOfferView state={state} offer={state.trade} legal={legal} disabled={disabled} canCancel={canCancel} onAct={onAct} />;
+    // Neues Angebot = neue Auslöse-Auswahl (sonst bliebe die eines früheren Angebots hängen).
+    body = (
+      <TradeOfferView
+        key={JSON.stringify(state.trade)}
+        state={state}
+        offer={state.trade}
+        legal={legal}
+        disabled={disabled}
+        canCancel={canCancel}
+        onAct={onAct}
+      />
+    );
   } else if (state.mortgageDecision) {
     const spaces = state.mortgageDecision.spaces.map((i) => getPropertySpace(i));
     const liftAll = spaces.reduce((sum, s) => sum + unmortgageCost(s), 0);
@@ -353,7 +364,20 @@ export function ActionPanel({
           {player.name} schuldet {nameOf(state, debt.creditor)} <strong>{formatChf(debt.amount)}</strong>. Bargeld:{" "}
           {formatChf(player.money)}, es fehlen {formatChf(Math.max(0, debt.amount - player.money))}.
         </p>
-        <p className="tafel__hint">Geld auftreiben: Feld anklicken und Gebäude verkaufen oder eine Hypothek aufnehmen. Sobald es reicht, wird automatisch bezahlt.</p>
+        <p className="tafel__hint">
+          Geld auftreiben: Feld anklicken und Gebäude verkaufen oder eine Hypothek aufnehmen, oder handeln. Sobald es reicht,
+          wird automatisch bezahlt.
+        </p>
+        {/* Lokal ohne Zeitlimit könnte ein Schuldner sonst das Spiel blockieren. «timeout» treibt Geld auf wie beim
+            Zeitlimit (Hypotheken, dann Gebäude). Nur solange es reicht (sonst bleibt nur Bankrott), und nie online:
+            Dort dürfen Clients kein «timeout» schicken. */}
+        {me === null && !legal.some((a) => a.type === "declareBankruptcy") && (
+          <div className="tafel__actions">
+            <button type="button" className="button button--primary" disabled={disabled} onClick={() => onAct({ type: "timeout" })}>
+              Geld automatisch auftreiben
+            </button>
+          </div>
+        )}
         <ChoiceButtons
           legal={legal}
           disabled={disabled}

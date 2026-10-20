@@ -6,7 +6,8 @@
 // Online: -- --online --players 3 (eigener Spielserver, ein Browserfenster pro Person; siehe playtest-online.ts).
 // Spielstand: nach --reload Schritten (Standard 60) neu laden, nach doppelt so vielen über «Spiel verlassen»
 // ins Menü und «Spielstand fortsetzen»; beide Male muss der Stand gleich bleiben.
-// Strategie: meist der Hauptknopf (kaufen, würfeln, Zug beenden), oft bauen, belasten nur bei Schulden.
+// Strategie: meist der Hauptknopf (kaufen, würfeln, Zug beenden), oft bauen, belasten nur bei Schulden
+// (dort meist von Hand über die Besitzkarte, sonst «Geld automatisch auftreiben»).
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
@@ -125,6 +126,7 @@ try {
 
   let steps = 0;
   let trades = 0;
+  const debtSteps = { manual: 0, auto: 0 };
   let offers = 0;
   let result = "kein Gewinner";
   while (steps < MAX_STEPS) {
@@ -157,7 +159,9 @@ try {
       });
       continue;
     }
-    if ((await randomStep(page, state)).traded) trades++;
+    const step = await randomStep(page, state);
+    if (step.traded) trades++;
+    if (step.debt) debtSteps[step.debt]++;
   }
 
   await page.screenshot({ path: path.join(outDir, "playtest-ende.png") });
@@ -166,6 +170,7 @@ try {
     console.log("Spielende: Spielstand gelöscht.");
   }
   console.log(`Schritte: ${steps}, Handelsangebote: ${trades}, Ergebnis: ${result}`);
+  console.log(`Schulden: ${debtSteps.manual} Schritte von Hand (Besitzkarte), ${debtSteps.auto}× «Geld automatisch auftreiben».`);
   const logLines = await page.locator(".log__text").count();
   console.log(`Protokollzeilen sichtbar: ${logLines}`);
   if (SOLO) {

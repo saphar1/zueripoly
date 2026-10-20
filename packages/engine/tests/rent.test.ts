@@ -42,11 +42,11 @@ describe("Miete", () => {
 
   it("Häuser und Hotel nach Mietstaffel", () => {
     for (const [level, expected] of [
-      [1, 225],
-      [2, 600],
-      [3, 1400],
-      [4, 1700],
-      [5, 2000],
+      [1, 240],
+      [2, 520],
+      [3, 900],
+      [4, 1120],
+      [5, 1300],
     ] as const) {
       const state = own(newGame(2), "p1", 37, 39);
       setHouses(state, 37, level === 5 ? 4 : level);
@@ -59,15 +59,15 @@ describe("Miete", () => {
   it("unbebaute Strasse behält die Verdopplung, wenn eine andere der Gruppe bebaut ist", () => {
     const state = own(newGame(2), "p1", 6, 8, 9);
     setHouses(state, 9, 1);
-    expect(calculateRent(state, 6, 0)).toBe(20);
-    expect(calculateRent(state, 9, 0)).toBe(60);
+    expect(calculateRent(state, 6, 0)).toBe(40);
+    expect(calculateRent(state, 9, 0)).toBe(130);
   });
 
-  it("Bahnhöfe: 25 / 50 / 100 / 200", () => {
+  it("Bahnhöfe: 30 / 60 / 110 / 170", () => {
     const stations = [5, 15, 25, 35];
     for (let n = 1; n <= 4; n++) {
       const state = own(newGame(2), "p1", ...stations.slice(0, n));
-      expect(rentPaid(state, 1, [1, 3]).amount).toBe([25, 50, 100, 200][n - 1]);
+      expect(rentPaid(state, 1, [1, 3]).amount).toBe([30, 60, 110, 170][n - 1]);
     }
   });
 

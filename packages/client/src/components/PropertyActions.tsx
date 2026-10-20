@@ -40,9 +40,12 @@ export function PropertyActions({ state, actor, index, disabled, onAct }: Proper
     const building = property.houses === HOTEL_LEVEL - 1 ? "Hotel" : "Haus";
     options.push({ action: permit, label: `${building} gratis bauen · Baubewilligung` });
     options.push({ action: build, label: `${building} bauen · ${formatChf(space.housePrice)}` });
+    // Hat die Bank keine 4 Häuser für den Rückbau, wird das Hotel ganz abgerissen (Engine: Wert von 5 Bauten).
+    const demolish = property.houses === HOTEL_LEVEL && state.bank.houses < HOTEL_LEVEL - 1;
+    const refund = (space.housePrice / 2) * (demolish ? HOTEL_LEVEL : 1);
     options.push({
       action: { type: "sellBuilding", space: index },
-      label: `${property.houses === HOTEL_LEVEL ? "Hotel" : "Haus"} verkaufen · +${formatChf(space.housePrice / 2)}`,
+      label: `${property.houses === HOTEL_LEVEL ? "Hotel" : "Haus"} verkaufen · +${formatChf(refund)}${demolish ? " · Hotel wird ganz abgerissen" : ""}`,
     });
   }
   options.push({ action: { type: "mortgage", space: index }, label: `Hypothek aufnehmen · +${formatChf(space.mortgage)}` });

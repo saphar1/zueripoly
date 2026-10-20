@@ -20,7 +20,7 @@ export const GO_TO_JAIL_INDEX = 30;
 export const STATION_PRICE = 200;
 export const UTILITY_PRICE = 150;
 /** Miete bei 1, 2, 3 oder 4 Bahnhöfen im Besitz. */
-export const STATION_RENTS = [25, 50, 100, 200] as const;
+export const STATION_RENTS = [30, 60, 110, 170] as const;
 /** Faktor auf die Augensumme bei 1 oder 2 Versorgern im Besitz. */
 export const UTILITY_MULTIPLIERS = [5, 10] as const;
 
@@ -78,45 +78,45 @@ function utility(index: SpaceIndex, name: string): UtilitySpace {
 
 export const BOARD: readonly Space[] = [
   { kind: "start", index: 0, name: "Start" },
-  street(1, "Albisrieden", "brown", 60, [5, 25, 45, 140, 240, 380], 50),
+  street(1, "Albisrieden", "brown", 70, [15, 90, 200, 345, 430, 500], 60),
   { kind: "community", index: 2, name: "Gemeindekarte" },
-  street(3, "Altstetten", "brown", 60, [10, 45, 90, 270, 480, 700], 50),
+  street(3, "Altstetten", "brown", 80, [15, 100, 215, 370, 460, 535], 60),
   { kind: "tax", index: 4, name: "Staats- und Gemeindesteuer", amount: 100 },
   station(5, "Hauptbahnhof"),
-  street(6, "Seebach", "lightblue", 100, [10, 45, 130, 380, 550, 750], 50),
+  street(6, "Seebach", "lightblue", 110, [20, 120, 255, 440, 550, 640], 60),
   { kind: "event", index: 7, name: "Ereigniskarte" },
-  street(8, "Schwamendingen", "lightblue", 100, [10, 45, 130, 380, 550, 750], 50),
-  street(9, "Affoltern", "lightblue", 120, [15, 60, 140, 420, 650, 850], 50),
+  street(8, "Schwamendingen", "lightblue", 110, [20, 120, 255, 440, 550, 640], 60),
+  street(9, "Affoltern", "lightblue", 130, [25, 130, 280, 485, 605, 700], 60),
   { kind: "jail", index: 10, name: "Gefängnis" },
-  street(11, "Wiedikon", "pink", 140, [15, 65, 200, 600, 800, 1000], 100),
+  street(11, "Wiedikon", "pink", 150, [25, 140, 305, 525, 655, 760], 110),
   utility(12, "Stromnetz"),
-  street(13, "Wipkingen", "pink", 140, [15, 65, 200, 600, 800, 1000], 100),
-  street(14, "Höngg", "pink", 160, [20, 80, 230, 650, 900, 1150], 100),
+  street(13, "Wipkingen", "pink", 150, [25, 140, 305, 525, 655, 760], 110),
+  street(14, "Höngg", "pink", 170, [30, 150, 325, 560, 700, 810], 110),
   station(15, "Stadelhofen"),
-  street(16, "Letzigrund", "orange", 180, [20, 90, 250, 700, 950, 1200], 100),
+  street(16, "Letzigrund", "orange", 190, [35, 160, 345, 600, 745, 865], 110),
   { kind: "community", index: 17, name: "Gemeindekarte" },
-  street(18, "Langstrasse", "orange", 180, [20, 90, 250, 700, 950, 1200], 100),
-  street(19, "Zürich West", "orange", 200, [25, 100, 280, 750, 1000, 1250], 100),
+  street(18, "Langstrasse", "orange", 190, [35, 160, 345, 600, 745, 865], 110),
+  street(19, "Zürich West", "orange", 210, [40, 170, 365, 630, 785, 910], 110),
   { kind: "vacation", index: 20, name: "Ferien am Zürichsee" },
-  street(21, "Niederdorf", "red", 220, [25, 110, 300, 850, 1050, 1300], 150),
+  street(21, "Niederdorf", "red", 230, [40, 175, 385, 665, 825, 960], 160),
   { kind: "event", index: 22, name: "Ereigniskarte" },
-  street(23, "Limmatquai", "red", 220, [25, 110, 300, 850, 1050, 1300], 150),
-  street(24, "Rennweg", "red", 240, [30, 120, 360, 900, 1100, 1350], 150),
+  street(23, "Limmatquai", "red", 230, [40, 175, 385, 665, 825, 960], 160),
+  street(24, "Rennweg", "red", 250, [45, 185, 400, 695, 865, 1005], 160),
   station(25, "Oerlikon"),
-  street(26, "Fluntern", "yellow", 260, [35, 130, 380, 950, 1150, 1400], 150),
-  street(27, "Hottingen", "yellow", 260, [35, 130, 380, 950, 1150, 1400], 150),
+  street(26, "Fluntern", "yellow", 270, [50, 195, 420, 725, 900, 1045], 160),
+  street(27, "Hottingen", "yellow", 270, [50, 195, 420, 725, 900, 1045], 160),
   utility(28, "Seewasserwerk"),
-  street(29, "Hirslanden", "yellow", 280, [40, 140, 410, 1000, 1200, 1450], 150),
+  street(29, "Hirslanden", "yellow", 290, [50, 200, 435, 755, 940, 1090], 160),
   { kind: "goToJail", index: 30, name: "Gehe ins Gefängnis" },
-  street(31, "Enge", "green", 300, [45, 150, 430, 1050, 1250, 1500], 200),
-  street(32, "Seefeld", "green", 300, [45, 150, 430, 1050, 1250, 1500], 200),
+  street(31, "Enge", "green", 310, [55, 210, 450, 780, 975, 1130], 220),
+  street(32, "Seefeld", "green", 310, [55, 210, 450, 780, 975, 1130], 220),
   { kind: "community", index: 33, name: "Gemeindekarte" },
-  street(34, "Utoquai", "green", 320, [50, 170, 500, 1100, 1300, 1550], 200),
+  street(34, "Utoquai", "green", 330, [60, 215, 470, 810, 1010, 1170], 220),
   station(35, "Hardbrücke"),
   { kind: "event", index: 36, name: "Ereigniskarte" },
-  street(37, "Paradeplatz", "navy", 350, [55, 180, 550, 1200, 1400, 1650], 200),
+  street(37, "Paradeplatz", "navy", 360, [65, 225, 490, 850, 1055, 1225], 220),
   { kind: "tax", index: 38, name: "Serafe-Rechnung", amount: 50 },
-  street(39, "Bahnhofstrasse", "navy", 400, [75, 225, 600, 1400, 1700, 2000], 200),
+  street(39, "Bahnhofstrasse", "navy", 400, [75, 240, 520, 900, 1120, 1300], 220),
 ];
 
 export function isPropertySpace(space: Space): space is PropertySpace {

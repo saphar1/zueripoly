@@ -190,7 +190,7 @@ function formatMoney(state: GameState, event: Extract<GameEvent, { type: "moneyT
   switch (event.reason) {
     case "rent": {
       const where = event.space !== null ? ` für ${spaceAcc(event.space)}` : "";
-      const comment = event.amount >= 500 ? " Das tut weh." : "";
+      const comment = event.amount >= 400 ? " Das tut weh." : "";
       return `${from} zahlt ${to} ${amount} Miete${where}.${comment}`;
     }
     case "tax": {

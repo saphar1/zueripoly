@@ -64,19 +64,35 @@ Zwei Fallen gibt es im Original auch:
 
 - `npm test`: Einzelfälle (`tests/bot.test.ts`), 100 gemischte Bot-Partien und 100 Zweikämpfe. Jede Aktion muss gültig sein, nach jeder Aktion gelten die Invarianten, jede Partie endet mit Gewinner, und «clever» gewinnt mindestens 70 % der Zweikämpfe gegen «einfach».
 - `npm run bots -w @zueripoly/engine` (optional `-- --games 500 --check`): Tabelle mit Siegquoten je Paarung.
+- `npm run balance -w @zueripoly/engine` (optional `-- --games 200 --players 4`): gemischte Bot-Partien, ausgewertet nach Spieldauer (Durchschnitt, Median, 90 %), erstem Haus, Bankrotten und Mieten je Stufe (Anzahl, Ø, max.). Zum Vergleichen von Varianten der Tabelle in `board.ts`.
 
-Ergebnis nach der Balance vom 2026-10-14 (neue Mieten, Pasch 1 von 7 und nur durchfahren, Baubewilligung; dazu die Regeln vom 2026-10-13: keine Versteigerungen, Gefängnis ein Zug, Steuern 100 / 50). 200 Partien je Paarung, mit Invariantenprüfung:
+Ergebnis nach der Balance vom 2026-10-20 (flachere Mieten, Häuser und Strassen etwas teurer, Bahnhöfe 30/60/110/170). 200 Partien je Paarung:
 
 | Paarung | beendet | Siege clever | Siege einfach | Ø Züge | max. Züge |
 |---|---|---|---|---|---|
-| einfach gegen einfach | 200 | – | 100 % | 138 | 280 |
-| clever gegen einfach | 200 | 84 % | 17 % | 142 | 273 |
-| clever gegen clever | 200 | 100 % | – | 138 | 257 |
-| 1 clever gegen 3 einfach | 200 | 70 % | 31 % | 185 | 567 |
-| 2 clever gegen 2 einfach | 200 | 89 % | 12 % | 170 | 619 |
-| 6 gemischt (3 + 3) | 200 | 96 % | 4 % | 212 | 562 |
+| einfach gegen einfach | 200 | – | 100 % | 152 | 291 |
+| clever gegen einfach | 200 | 82 % | 19 % | 160 | 408 |
+| clever gegen clever | 200 | 100 % | – | 156 | 372 |
+| 1 clever gegen 3 einfach | 200 | 69 % | 32 % | 211 | 558 |
+| 2 clever gegen 2 einfach | 200 | 93 % | 7 % | 198 | 412 |
+| 6 gemischt (3 + 3) | 200 | 93 % | 7 % | 247 | 537 |
 
-Zum Vergleich: Nach den Regeln vom 2026-10-13 (alte Mieten) dauerte der Zweikampf Ø 141 Züge, in Phase 4 (mit Versteigerungen) 121.
+Zum Vergleich nach der Balance vom 2026-10-14: Zweikampf clever gegen einfach Ø 142 Züge (84 %), 1 gegen 3 Ø 185, 6 gemischt Ø 212. Nach den Regeln vom 2026-10-13 (alte Mieten) dauerte der Zweikampf Ø 141 Züge, in Phase 4 (mit Versteigerungen) 121.
+
+### Balance-Versuche (2026-10-20)
+
+Wunsch des Entwicklers: Grundmiete höher, Mieten mit vielen Häusern tiefer (3 Häuser nie 1000 CHF und mehr, Hotel höchstens etwa 1300), Häuser und Strassen etwas teurer, Partien höchstens ein bisschen länger. Gemessen mit `npm run balance -w @zueripoly/engine -- --games 200` (4 Bots, gemischt):
+
+| Variante | Ø Züge | Median | 90 % unter | max. | Bemerkung |
+|---|---|---|---|---|---|
+| Tabelle vom 2026-10-14 | 156 | 153 | 214 | 357 | ohne Haus Ø 32 CHF, 3 Häuser bis 1400, Hotel bis 2000 |
+| Häuser-Mieten × Preis mit Gruppenzuschlag, Grundmiete 15 % | 206 | 195 | 298 | 401 | Spitzen gekappt, aber 32 % länger |
+| dazu 1. und 2. Haus stärker, Grundmiete 18 % | 243 | – | – | 8687 | eine Partie blieb hängen (alle haben Hotels, zahlen sich gleich viel) |
+| Formel Preis^0,6, Grundmiete 15 % | 192 | 182 | 260 | 518 | billige Strassen stärker, Reihenfolge stimmt automatisch |
+| Formel Preis^0,5, Grundmiete 15 % | 188 | 173 | 247 | 2369 | kürzer, aber ein Ausreisser |
+| **Formel Preis^0,55, Grundmiete 18 %** | **188** | **180** | **265** | **587** | **gewählt** (300 Partien, mit Reparaturkarten 30/120 und 40/160): ohne Haus Ø 45 CHF (vorher 32), 1 Haus Ø 182, 3 Häuser Ø 627 (vorher 803), Hotel Ø 712; Mieten ab 1000 CHF nur noch 1,4 % (vorher 4,1 %), nur bei 4 Häusern und Hotels |
+
+Erkenntnis: Eine höhere Grundmiete allein verkürzt kaum, das Geld wandert nur im Kreis. Die Länge hängt daran, wie stark eine ganze Farbgruppe mit Häusern wirkt. Der Exponent unter 1 macht billige und mittlere Gruppen stärker, ohne die Spitze zu erhöhen.
 
 ### Balance-Versuche (2026-10-14)
 

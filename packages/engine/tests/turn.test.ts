@@ -103,11 +103,11 @@ describe("Würfeln und Ziehen", () => {
 
 describe("Kaufen und Versteigern", () => {
   it("kauft ein freies Feld zum Preis", () => {
-    let { state } = act(newGame(2), "p1", { type: "rollDice" }, dice([1, 2])); // Feld 3 Altstetten, 60
+    let { state } = act(newGame(2), "p1", { type: "rollDice" }, dice([1, 2])); // Feld 3 Altstetten, 80
     expect(getLegalActions(state, "p1").map((a) => a.type)).toEqual(expect.arrayContaining(["buyProperty", "declineProperty"]));
     ({ state } = act(state, "p1", { type: "buyProperty" }));
     expect(state.properties[3]?.owner).toBe("p1");
-    expect(player(state, "p1").money).toBe(1440);
+    expect(player(state, "p1").money).toBe(1420);
     expect(state.turn.phase).toBe("postRoll");
   });
 

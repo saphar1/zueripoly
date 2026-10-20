@@ -67,11 +67,21 @@ export async function trade(page: Page): Promise<boolean> {
  * Ein Schritt wie ein zufälliger Mensch: meist der Hauptknopf, oft bauen, ab und zu handeln,
  * bei Schulden Geld auftreiben. Gibt zurück, ob ein Handelsangebot verschickt wurde.
  */
-export async function randomStep(page: Page, state: Exclude<Readiness, "end">): Promise<{ traded: boolean }> {
-  if (state === "manage") {
-    // Schulden, aber Bankrott noch nicht erlaubt: Geld auftreiben.
+export async function randomStep(
+  page: Page,
+  state: Exclude<Readiness, "end">,
+): Promise<{ traded: boolean; debt?: "manual" | "auto" }> {
+  // Schulden, aber Bankrott noch nicht erlaubt: Geld auftreiben. Lokal und solo bietet die Tafel dafür
+  // «Geld automatisch auftreiben» an; damit der Weg über die Besitzkarte geprüft bleibt, meist von Hand.
+  const auto = page.locator(".tafel .tafel__actions .button:not(:disabled)", { hasText: "Geld automatisch auftreiben" });
+  const autoOffered = state === "buttons" && (await auto.count()) > 0;
+  if (state === "manage" || (autoOffered && Math.random() < 0.6)) {
     if (!(await manage(page, /verkaufen|Hypothek aufnehmen/))) throw new Error("Schulden, aber keine Aktion möglich.");
-    return { traded: false };
+    return { traded: false, debt: "manual" };
+  }
+  if (autoOffered) {
+    await auto.click();
+    return { traded: false, debt: "auto" };
   }
   // Ab und zu handeln.
   if (Math.random() < 0.05 && (await page.getByRole("button", { name: "Handeln" }).count()) > 0) {
